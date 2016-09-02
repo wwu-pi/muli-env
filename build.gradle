@@ -1,0 +1,21 @@
+apply plugin: 'eclipse'
+apply plugin: 'java'
+apply plugin: 'application'
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven { url 'https://raw.githubusercontent.com/maven-eclipse/swt-repo/master/' }
+	flatDir { dirs 'lib' } // oh god, why :<
+}
+
+dependencies {
+	compile 'de.wwu.muggl:muggl-core:+'
+}
+
+sourceSets {
+	main.java.srcDir "src"
+	main.resources.srcDir "res"
+}
+
+mainClassName = 'de.wwu.muli.env.MuliRunner'

@@ -11,6 +11,9 @@ repositories {
 
 dependencies {
 	compile 'de.wwu.muggl:muggl-core:+'
+	compile 'de.wwu.muggl:muggl-common:+'
+    compile 'log4j:log4j:1.2.17'
+	
 }
 
 sourceSets {

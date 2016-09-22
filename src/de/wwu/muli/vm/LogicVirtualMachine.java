@@ -79,10 +79,7 @@ public class LogicVirtualMachine extends SymbolicVirtualMachine {
 	@Override
 	public Objectref getAnObjectref(ClassFile classFile) {
 		// Get and check the initialized class.
-		InitializedClass initializedClass = classFile.getInitializedClass();
-		if (initializedClass == null) {
-			initializedClass = new InitializedClass(classFile, this);
-		}
+		InitializedClass initializedClass = classFile.getTheInitializedClass(this);
 		
 		// Get the object reference.
 		Objectref objectref = initializedClass.getANewInstance();

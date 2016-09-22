@@ -29,7 +29,7 @@ public class Application extends de.wwu.muggl.vm.Application {
 			String initialClassName,
 			Method method
 			) throws ClassFileException, InitializationException {
-		super(classLoader, initialClassName, method);
+		this.classLoader = classLoader;
 		ClassFile classFile = this.classLoader.getClassAsClassFile(initialClassName);
 		this.virtualMachine = new LogicVirtualMachine(this, this.classLoader, classFile, method);
 		if (Globals.getInst().logger.isDebugEnabled())
@@ -37,19 +37,15 @@ public class Application extends de.wwu.muggl.vm.Application {
 	}
 
 	/**
-	 * Basic constructor for initialization without an existing class loader.
-	 * @param classPathEntries A String array of class path entries.
-	 * @param initialClassName The class that is to be executed initially.
-	 * @param initialMethodNumber The methods number in the class file that is to be executed first.
-	 * @throws ClassFileException Thrown on fatal errors loading or parsing a class file.
-	 * @throws InitializationException If initialization of auxiliary classes fails.
+	 * Unused constructor - just to prevent superconstructors from running.
+	 * @throws IllegalAccessError On any access.
 	 */
+	@SuppressWarnings("unused")
 	private Application(
 			String[] classPathEntries,
 			String initialClassName,
 			int initialMethodNumber
 			) throws ClassFileException, InitializationException {
-		super(classPathEntries, initialClassName, initialMethodNumber);
-		throw new UnsupportedOperationException("Constructor not supported by muli: Not useful.");
+		throw new IllegalAccessError("Constructor not supported by muli: Not useful.");
 	}
 }

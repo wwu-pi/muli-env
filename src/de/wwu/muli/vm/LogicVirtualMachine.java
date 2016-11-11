@@ -17,40 +17,35 @@ import de.wwu.muggl.instructions.general.Switch;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.solvers.SolverManager;
-import de.wwu.muggl.symbolic.flow.coverage.CoverageController;
 import de.wwu.muggl.symbolic.generating.Generator;
-import de.wwu.muggl.symbolic.searchAlgorithms.SearchAlgorithm;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.DepthFirstSearchAlgorithm;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.StackToTrail;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChange;
-import de.wwu.muggl.symbolic.searchAlgorithms.iterativeDeepening.IterativeDeepeningSearchAlgorithm;
 import de.wwu.muggl.symbolic.structures.Loop;
-import de.wwu.muggl.symbolic.testCases.SolutionProcessor;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
-import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.classfile.structures.UndefinedValue;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muggl.vm.impl.symbolic.SymbolicFrame;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
-import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
-import de.wwu.muggl.solvers.exceptions.TimeoutException;
 import de.wwu.muggl.solvers.expressions.ConstraintExpression;
 import de.wwu.muggl.solvers.expressions.Expression;
 import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.solvers.expressions.NumericVariable;
 import de.wwu.muggl.solvers.expressions.Term;
+import de.wwu.muli.env.search.LogicSearchAlgorithm;
+import de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm;
+import de.wwu.muli.env.search.dfs.StackToTrail;
 
 /**
  * This concrete class represents a virtual machine for the logic execution of java bytecode. It
@@ -65,7 +60,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	private SolverManager			solverManager;
 
 	// The search algorithm.
-	private final SearchAlgorithm	searchAlgorithm;
+	private final LogicSearchAlgorithm	searchAlgorithm;
 	private boolean					doNotTryToTrackBack;
 
 	// Solution related fields.
@@ -84,7 +79,6 @@ public class LogicVirtualMachine extends VirtualMachine {
 	// Temporary fields for the time measuring.
 	private long					timeExecutionInstructionTemp;
 	private long					timeLoopDetectionTemp;
-	private long					timeCoverageCheckingTemp;
 	private long					timeSolutionGenerationTemp;
 
 	// Fields for counting the instructions executed since the last solution was found.
@@ -136,7 +130,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 * @throws InitializationException If initialization of auxiliary classes fails.
 	 * @throws NullPointerException If succeededSVM is null.
 	 */
-	public LogicVirtualMachine(SearchAlgorithm searchAlgorithm,
+	public LogicVirtualMachine(LogicSearchAlgorithm searchAlgorithm,
 			LogicVirtualMachine succeededSVM) throws InitializationException {
 		this(succeededSVM.getApplication(), succeededSVM.getClassLoader(), succeededSVM
 				.getClassFile(), succeededSVM.getInitialMethod(), searchAlgorithm);
@@ -170,7 +164,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 * @throws InitializationException If initialization of auxiliary classes fails.
 	 */
 	private LogicVirtualMachine(Application application, MugglClassLoader classLoader,
-			ClassFile classFile, Method initialMethod, SearchAlgorithm searchAlgorithm)
+			ClassFile classFile, Method initialMethod, LogicSearchAlgorithm searchAlgorithm)
 			throws InitializationException {
 		super(application, classLoader, classFile, initialMethod);
 		Options options = Options.getInst();
@@ -184,7 +178,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 			throw new InitializationException("Solver manager of class " + options.solverManager + " does not exist.");
 		}
 		this.searchAlgorithm = searchAlgorithm;
-		this.stack = new StackToTrail<Object>(true, this.searchAlgorithm);
+		this.stack = new StackToTrail(true, this.searchAlgorithm);
 		this.doNotTryToTrackBack = false;
 		this.doNotProcessSolutions = false;
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
@@ -211,20 +205,13 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 * 
 	 * @return An instance of SearchAlgorithm.
 	 */
-	private static SearchAlgorithm selectSearchAlgorithm() {
-		SearchAlgorithm searchAlgorithm;
-		if (Options.getInst().searchAlgorithm == 2) {
-			searchAlgorithm = new IterativeDeepeningSearchAlgorithm(
-					Options.getInst().iterativeDeepeningStartingDepth,
-					Options.getInst().iterativeDeepeningDeepnessIncrement);
-		} else if (Options.getInst().searchAlgorithm == 1) {
-			searchAlgorithm = new DepthFirstSearchAlgorithm();
-		} else {
-			searchAlgorithm = new DepthFirstSearchAlgorithm();
-			if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-				Globals.getInst().symbolicExecLogger
-						.warn("The breadth first search algorithm is currently not implemented. Using depth first instead.");
-		}
+	private static LogicSearchAlgorithm selectSearchAlgorithm() {
+		LogicSearchAlgorithm searchAlgorithm;
+		// TODO let this depend on the search area's respective search algorithm!
+		searchAlgorithm = new DepthFirstSearchAlgorithm();/*new IterativeDeepeningSearchAlgorithm(
+				Options.getInst().iterativeDeepeningStartingDepth,
+				Options.getInst().iterativeDeepeningDeepnessIncrement);*/
+
 		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
 			Globals.getInst().symbolicExecLogger.trace("Using search algorithm: "
 					+ searchAlgorithm.getName());
@@ -395,7 +382,6 @@ public class LogicVirtualMachine extends VirtualMachine {
 		// Execute the instruction.
 		if (this.measureExecutionTime) this.timeExecutionInstructionTemp = System.nanoTime();
 		int oldpc = this.pc;
-		Frame oldFrame = this.currentFrame;
 		super.executedInstructions++;
 		instruction.executeSymbolically(this.currentFrame);
 		if (this.measureExecutionTime)
@@ -430,7 +416,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 		this.instructionsExecutedSinceLastSolution = 0;
 
 		// Generate an expression from the solutions.
-		try {
+//		try {
 			// Check if there would be a return value.
 			Object returnValue;
 			if (this.hasAReturnValue || this.threwAnUncaughtException) {
@@ -438,6 +424,8 @@ public class LogicVirtualMachine extends VirtualMachine {
 			} else {
 				returnValue = new UndefinedValue();
 			}
+			
+			//TODO use return value! -> Store into returned solutions
 
 			// Add the solutions.
 //			this.solutionProcessor.addSolution(this.solverManager.getSolution(), returnValue,
@@ -446,7 +434,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 
 			// Commit the coverage of control flow edges and def-use chains.
 //			this.coverage.commitAllchanges();
-		} catch (SolverUnableToDecideException e) {
+/*		} catch (SolverUnableToDecideException e) {
 			// This should not happen as the Constraints already were solvable.
 			if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
 				Globals.getInst().symbolicExecLogger
@@ -459,7 +447,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 				Globals.getInst().symbolicExecLogger
 						.debug("Could not generate a Solution as a TimeoutException was thrown with the message: "
 								+ e.getMessage() + ".");
-		}
+		}*/
 	}
 
 	
@@ -737,7 +725,6 @@ public class LogicVirtualMachine extends VirtualMachine {
 		/*
 		 * Check which fields are annotated and replace undefined fields by logic variables.
 		 */
-		Constant[] constantPool = classFile.getConstantPool();
 		for (Field field : classFile.getFields()) {
 			for (Attribute attribute : field.getAttributes()) {
 				if (attribute.getStructureName().equals("attribute_free_field")) {
@@ -799,7 +786,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 * 
 	 * @return The SearchAlgorithm.
 	 */
-	public SearchAlgorithm getSearchAlgorithm() {
+	public LogicSearchAlgorithm getSearchAlgorithm() {
 		return this.searchAlgorithm;
 	}
 

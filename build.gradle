@@ -16,7 +16,13 @@ dependencies {
 	compile 'de.wwu.muggl:muggl-core:+'
 	compile 'de.wwu.muggl:muggl-common:+'
     compile 'log4j:log4j:1.2.17'
-	runtime 'de.wwu.muli:muli-classpath:+' // TODO maybe this needs to be duplicated into muggl?
+	compile 'de.wwu.muli:muli-classpath:+' // TODO maybe this needs to be duplicated into muggl? // actually: runtime only. but currently it is required to compile testfiles
+}
+
+eclipse {
+	classpath {
+	    downloadSources = true
+	}
 }
 
 sourceSets {

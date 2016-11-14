@@ -14,6 +14,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.ArrayRest
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FieldPut;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Restore;
 import de.wwu.muggl.vm.execution.ConversionException;
+import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.vm.LogicExecutionException;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
@@ -25,21 +26,21 @@ public interface LogicSearchAlgorithm extends SearchAlgorithm {
 	void recoverState(LogicVirtualMachine arg0);
 
 	void generateNewChoicePoint(LogicVirtualMachine arg0, int arg1, Generator arg2)
-			throws ConversionException, LogicExecutionException;
+			throws ConversionException, ExecutionException;
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, String arg1) throws LogicExecutionException;
+	void generateNewChoicePoint(LogicVirtualMachine arg0, String arg1) throws ExecutionException;
 
 	void generateNewChoicePoint(LogicVirtualMachine arg0, GeneralInstructionWithOtherBytes arg1,
 			ConstraintExpression arg2);
 
 	void generateNewChoicePoint(LogicVirtualMachine arg0, LCmp arg1, Term arg2, Term arg3)
-			throws LogicExecutionException;
+			throws ExecutionException;
 
 	void generateNewChoicePoint(LogicVirtualMachine arg0, CompareFp arg1, boolean arg2, Term arg3, Term arg4)
-			throws LogicExecutionException;
+			throws ExecutionException;
 
 	void generateNewChoicePoint(LogicVirtualMachine arg0, Switch arg1, Term arg2, IntConstant[] arg3, int[] arg4,
-			IntConstant arg5, IntConstant arg6) throws LogicExecutionException;
+			IntConstant arg5, IntConstant arg6) throws ExecutionException;
 
 	boolean savingFieldValues();
 

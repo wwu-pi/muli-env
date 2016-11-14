@@ -42,10 +42,12 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.TrailElem
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPush;
 import de.wwu.muggl.vm.execution.ConversionException;
+import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicFrame;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muli.env.search.LogicSearchAlgorithm;
+import de.wwu.muli.vm.LogicExecutionException;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
@@ -354,7 +356,7 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 * @throws SymbolicExecutionException If a type is encountered that no array can be created for.
 	 */
 	public void generateNewChoicePoint(
-			SymbolicVirtualMachine vm, int localVariableIndex, Generator generator
+			LogicVirtualMachine vm, int localVariableIndex, Generator generator
 			) throws ConversionException, SymbolicExecutionException {
 		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
 		// If a custom generator is present, generate a GeneratorChoicePoint.
@@ -393,8 +395,8 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 * 
 	 * @throws SymbolicExecutionException If a type is encountered that no array can be created for.
 	 */
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, String type)
-			throws SymbolicExecutionException {
+	public void generateNewChoicePoint(LogicVirtualMachine vm, String type)
+			throws ExecutionException {
 		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();	
 		this.currentChoicePoint = new ArrayInitializationChoicePoint(vm.getCurrentFrame(), vm
 				.getPc(), type, this.currentChoicePoint);
@@ -418,7 +420,7 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 * @param constraintExpression The ConstraintExpression describing the choice at this
 	 *        conditional jump Instruction.
 	 */
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm,
+	public void generateNewChoicePoint(LogicVirtualMachine vm,
 			GeneralInstructionWithOtherBytes instruction, ConstraintExpression constraintExpression) {
 		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
 		try {
@@ -452,8 +454,8 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 * @param rightTerm The term of long variables and constants of the right hand side of the comparison.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point generation.
 	 */
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, LCmp instruction,
-			Term leftTerm, Term rightTerm) throws SymbolicExecutionException {
+	public void generateNewChoicePoint(LogicVirtualMachine vm, LCmp instruction,
+			Term leftTerm, Term rightTerm) throws ExecutionException {
 		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
 		this.currentChoicePoint = new LongComparisonChoicePoint(
 				vm.getCurrentFrame(),
@@ -485,8 +487,8 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
 	 */
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, CompareFp instruction,
-			boolean less, Term leftTerm, Term rightTerm) throws SymbolicExecutionException {
+	public void generateNewChoicePoint(LogicVirtualMachine vm, CompareFp instruction,
+			boolean less, Term leftTerm, Term rightTerm) throws ExecutionException {
 		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
 
 		if (instruction instanceof CompareDouble) {
@@ -534,12 +536,12 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 *         targets or if there are no choices at all.
 	 * @throws NullPointerException If either of the specified arrays is null, or if the instruction
 	 *         is tableswitch and at least one of the boundaries is null.
-	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
+	 * @throws ExecutionException If an Exception is thrown during the choice point
 	 *         generation.
 	 */
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, Switch instruction, Term termFromStack,
+	public void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
 			IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
-			throws SymbolicExecutionException {
+			throws ExecutionException {
 		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
 
 		if (instruction instanceof Lookupswitch) {

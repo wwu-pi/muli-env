@@ -23,6 +23,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChan
 import de.wwu.muggl.symbolic.structures.Loop;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
+import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.Limitations;
@@ -55,7 +56,7 @@ import de.wwu.muli.env.search.dfs.StackToTrail;
  * @author Jan C. Dageförde
  * @version 1.0.0, 2016-09-09
  */
-public class LogicVirtualMachine extends VirtualMachine {
+public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// The Solver Manager.
 	private SolverManager			solverManager;
 
@@ -464,15 +465,15 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 */
 	@Override
 	protected Frame createFrame(Frame invokedBy, Method method, Object[] arguments) throws ExecutionException {
-		// Get a fresh frame.
-		Frame frame = super.createFrame(invokedBy, method, arguments);
-		// TODO compare to symb.VM: There, a symbolic frame is created and added to an operand stack. necessary?
+		LogicFrame frame = new LogicFrame(invokedBy, this, method, method.getClassFile()
+				.getConstantPool(), arguments);
+		frame.setOperandStack(new StackToTrail(false, this.searchAlgorithm));
 
 		/*
 		 * Check which local variables are annotated and replace undefined local variables by logic
 		 * variables.
 		 */
-		// TODO: Impossible in Java 6 since annotations of local variables are not visible.
+		// TODO do this!
 		
 		// Return it.
 		return frame;
@@ -495,7 +496,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 		// Only check for loops if this has not been done already and if there should be an abortion
 		// after a number of loops at all.
 		if (Options.getInst().maximumLoopsToTake != -1
-				&& !((SymbolicFrame) this.currentFrame).getLoopsHaveBeenChecked()) {
+				&& !((LogicFrame) this.currentFrame).getLoopsHaveBeenChecked()) {
 			// Get the instructions.
 			Instruction[] instructions = this.currentFrame.getMethod()
 					.getInstructionsAndOtherBytes();
@@ -513,7 +514,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 					// Was it a backward jump?
 					if (a > jumpTarget) {
 						Loop loop = new Loop(a, jumpTarget);
-						((SymbolicFrame) this.currentFrame).getLoops().add(loop);
+						((LogicFrame) this.currentFrame).getLoops().add(loop);
 					}
 				}
 
@@ -522,7 +523,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 			}
 
 			// Mark that loops have been checked.
-			((SymbolicFrame) this.currentFrame).setLoopsHaveBeenChecked();
+			((LogicFrame) this.currentFrame).setLoopsHaveBeenChecked();
 		}
 	}
 
@@ -601,7 +602,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 */
 	public void generateNewChoicePoint(GeneralInstructionWithOtherBytes instruction,
 			Generator generator, String type)
-			throws LogicExecutionException {
+			throws ExecutionException {
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -638,7 +639,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 *         generation.
 	 */
 	public void generateNewChoicePoint(LCmp instruction, Term leftTerm, Term rightTerm)
-			throws LogicExecutionException {
+			throws ExecutionException {
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -663,7 +664,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 *         generation.
 	 */
 	public void generateNewChoicePoint(CompareFp instruction, boolean less, Term leftTerm,
-			Term rightTerm) throws LogicExecutionException {
+			Term rightTerm) throws ExecutionException {
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -694,7 +695,7 @@ public class LogicVirtualMachine extends VirtualMachine {
 	 *         generation.
 	 */
 	public void generateNewChoicePoint(Switch instruction, Term termFromStack, IntConstant[] keys,
-			int[] pcs, IntConstant low, IntConstant high) throws LogicExecutionException {
+			int[] pcs, IntConstant low, IntConstant high) throws ExecutionException {
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)

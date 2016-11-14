@@ -3,13 +3,15 @@ package de.wwu.muli.vm;
 import de.wwu.muggl.vm.execution.ExecutionException;
 
 /**
- * Exception that is to be thrown on problems while Executing java bytecode in the symbolic execution mode.
+ * Exception that is to be thrown on problems while Executing java bytecode in the logic execution mode.
  * It indicates unexpected circumstances that lead to abnormal execution conditions.
  *
  * @author Tim Majchrzak
  * @version 1.0.0, 2009-03-26
  */
 public class LogicExecutionException extends ExecutionException {
+
+	private static final long serialVersionUID = 3970915137386640619L;
 
 	/**
 	 * Constructs a new exception with null as its detail message.

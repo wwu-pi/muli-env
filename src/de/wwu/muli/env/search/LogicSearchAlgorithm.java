@@ -10,12 +10,8 @@ import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.solvers.expressions.Term;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.ArrayRestore;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FieldPut;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Restore;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
-import de.wwu.muli.vm.LogicExecutionException;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 public interface LogicSearchAlgorithm extends SearchAlgorithm {
@@ -41,17 +37,5 @@ public interface LogicSearchAlgorithm extends SearchAlgorithm {
 
 	void generateNewChoicePoint(LogicVirtualMachine arg0, Switch arg1, Term arg2, IntConstant[] arg3, int[] arg4,
 			IntConstant arg5, IntConstant arg6) throws ExecutionException;
-
-	boolean savingFieldValues();
-
-	void saveFieldValue(FieldPut arg0);
-
-	boolean savingLocalVariableValues();
-
-	void saveLocalVariableValue(Restore arg0);
-
-	boolean savingArrayValues();
-
-	void saveArrayValue(ArrayRestore arg0);
 
 }

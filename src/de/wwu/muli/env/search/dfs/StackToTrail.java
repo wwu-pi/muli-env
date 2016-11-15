@@ -23,6 +23,7 @@ import de.wwu.muli.env.search.LogicSearchAlgorithm;
  * @version 1.0.0, 2010-03-10
  */
 public class StackToTrail extends Stack<Object> {
+	private static final long serialVersionUID = 1507257881851151819L;
 	// Fields.
 	private boolean isVmStack;
 	private LogicSearchAlgorithm searchAlgorithm;
@@ -101,7 +102,6 @@ public class StackToTrail extends Stack<Object> {
 	 * @see java.util.Vector#equals(java.lang.Object)
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public synchronized boolean equals(Object obj) {
 		if (obj instanceof StackToTrail) {
 			StackToTrail stack = (StackToTrail) obj;

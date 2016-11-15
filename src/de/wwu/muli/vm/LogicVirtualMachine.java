@@ -34,7 +34,6 @@ import de.wwu.muggl.vm.classfile.structures.UndefinedValue;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
-import de.wwu.muggl.vm.impl.symbolic.SymbolicFrame;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
@@ -540,7 +539,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	private boolean checkForLoops(Instruction instruction, int oldPc) {
 		// Only do further operations if the instruction is actually a conditional jump.
 		if (instruction instanceof JumpConditional) {
-			Iterator<Loop> iterator = ((SymbolicFrame) this.currentFrame).getLoops().iterator();
+			Iterator<Loop> iterator = ((LogicFrame) this.currentFrame).getLoops().iterator();
 			while (iterator.hasNext()) {
 				Loop loop = iterator.next();
 				// Is there a matching entry?

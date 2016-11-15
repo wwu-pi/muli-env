@@ -45,9 +45,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicFrame;
-import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muli.env.search.LogicSearchAlgorithm;
-import de.wwu.muli.vm.LogicExecutionException;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
@@ -227,7 +225,6 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	 * @param vm The currently executing SymbolicalVirtualMachine.
 	 * @return false in any case.
 	 */
-	@SuppressWarnings("unused")
 	protected boolean trackBackFailed(LogicVirtualMachine vm) {
 		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
 			Globals.getInst().symbolicExecLogger.trace("No more tracking back is possible. Visited " + this.numberOfVisitedBranches + " branches in total.");

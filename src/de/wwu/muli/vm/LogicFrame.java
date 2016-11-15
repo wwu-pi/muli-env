@@ -2,16 +2,14 @@ package de.wwu.muli.vm;
 
 import java.util.ArrayList;
 
-import de.wwu.muggl.configuration.Options;
-import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.StackToTrail;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PopFromFrame;
 import de.wwu.muggl.symbolic.structures.Loop;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muli.env.search.dfs.StackToTrail;
 
 /**
  * The LogicFrame inherits the functionality of a "normal" Frame. It also offers some

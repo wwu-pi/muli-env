@@ -5,14 +5,17 @@ import java.util.Arrays;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.SimpleLayout;
+import org.eclipse.swt.SWT;
 
 import de.wwu.muli.vm.Application;
-
+import de.wwu.muggl.common.TimeSupport;
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;
+import de.wwu.muggl.symbolic.testCases.SolutionProcessor;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;
+import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 
@@ -29,26 +32,92 @@ public class MuliRunner {
 			return;
 		}
 		
+		// The following is inspired by de.wwu.muggl.ui.gui.support.ExecutionRunner.run()
+		// Initialize the Application.
+		boolean initialized = true;
+		long timeStarted;
+		MuliRunner runner;
 		try {
 			MuliRunner runner = new MuliRunner(args);
-			runner.executeClass();
-			
-			
 		} catch (ClassFileException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			initialized = false;
 		} catch (InitializationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			initialized = false;
 		}
-	}
-
-	private void executeClass() {
-
-		// Execute
-this.app.start();
 		
+		// Enter the main execution loop.
+		if (initialized) {
+			try {
+				timeStarted = System.currentTimeMillis();
+				// Execute
+				runner.app.start();
+
+				// The first sleep should be shorter.
+				boolean firstSleep = true;
+
+				// Sleep for the desired time.
+				if (firstSleep) {
+					Thread.sleep(Globals.SAFETY_SLEEP_DELAY);
+					firstSleep = false;
+				} else {
+					// Save the time sleeping started.
+					long sleeptStarted = System.currentTimeMillis();
+					int sleepFor = 50; // TODO make configurable (was: this.sleepFor)
+					int maximumSleepingSlice = Globals.SAFETY_SLEEP_DELAY;
+					// Continue to sleep until we slept long enough.
+					while (sleepFor > 0) {
+						// Has the execution finished?
+						if (runner.getExecutionFinished())
+							break;
+						// And now sleep.
+						try {
+							/*
+							 * Determine if the sleeping period is shorter than
+							 * the maximum time to sleep before checking if the
+							 * execution has finished. If the sleeping time is
+							 * high and execution finishes in the meanwhile,
+							 * there would be no output until sleeping is
+							 * finished. So this is checked more frequently with
+							 * higher sleeping times. It does not consume a lot
+							 * more cpu (actually its not really appreciable),
+							 * but the user will almost immediately get informed
+							 * if the execution finished.
+							 */
+							int sleepingSlice = Math.min(sleepFor, maximumSleepingSlice);
+							Thread.sleep(sleepingSlice);
+							// Sleeping finished as expected. So decrease
+							// the needed sleeping time by the minimum sleep
+							// delay.
+							sleepFor -= sleepingSlice;
+						} catch (InterruptedException e) {
+							// Sleeping was interrupted as the time to sleep
+							// was changed. Set it to the new time, but drop
+							// the time we slept already.
+							sleepFor = 50 - (int) (System.currentTimeMillis() - sleeptStarted); // TODO make 50 configurable (was: this.sleepFor)
+						}
+					}
+				}
+
+				// Finished the execution.
+				refreshExecutionWindow(true, false); // todo OUTPUT? end? something...
+
+			} catch (InterruptedException e) {
+				// Just give out a message and then abort.
+				this.executionComposite.drawMessageBoxForExecutionRunner("Error",
+						"Execution was not successfull due to a threading error. Please try again.",
+						SWT.OK | SWT.ICON_ERROR);
+				this.executionComposite.abortExecutionByExecutionRunner();
+			} finally {
+				runner.finalize();
+			}
+		}
+
 	}
+
 
 	private MuliRunner(String[] args) throws ClassFileException, InitializationException {
 		assert (args != null);
@@ -59,6 +128,7 @@ this.app.start();
 		
 		Globals.getInst().changeLogLevel(Level.TRACE);
 		Globals.getInst().execLogger.addAppender(new ConsoleAppender(new SimpleLayout()));
+		//Globals.getInst().logger.addAppender(new ConsoleAppender(new SimpleLayout()));
 		
 		// Accept class
 		String className = args[0];
@@ -73,7 +143,7 @@ this.app.start();
 		// TODO: remove args that control VM instead of program.
 		
 		// Instantiate class loader
-		MugglClassLoader classLoader = new MugglClassLoader(new String[]{"res/testfiles"});
+		MugglClassLoader classLoader = new MugglClassLoader(new String[]{"res"});
 		// TODO: Enable more classpaths from -cp arg
 		
 		// Find main method
@@ -83,6 +153,56 @@ this.app.start();
 
 		app = new Application(classLoader, className, mainMethod);
 		
+	}
+	
+	private boolean getExecutionFinished() {
+		// Continue only if the virtual machine executed by the Application has not changed.
+		if (!this.app.getVmIsInitializing()) {
+			// Find out, if the execution has finished.
+			return this.app.getExecutionFinished();
+		}
+		return false;
+	}
+	
+	/**
+	 * Finalize the ExecutionRunner by finalizing the Application.
+	 */
+	@Override
+	public void finalize() {
+		try {
+			// Finalize and clean up the Application.
+			if (this.app != null) {
+				synchronized (this.app) {
+					boolean forceCleanup = false;
+					try {
+						/*
+						 * Force cleanup if an error occurred. Some errors or special circumstances might
+						 * have the finalizer of the Application instance run and hence the cleanup
+						 * invoked. This might be done too early, though, leaving much memory occupied.
+						 * Running the clean up again will have great effect in that cases.
+						 */
+						forceCleanup = this.app.getVirtualMachine().errorOccured();
+					} catch (NullPointerException e) {
+						/*
+						 * There is no virtual machine present any more. This means that the
+						 * finalizer has been run already or there as another serious problem.
+						 * It hence is a good idea to run cleanup again.
+						 */
+						forceCleanup = true;
+					}
+					this.app.cleanUp(forceCleanup);
+					this.app = null;
+				}
+			}
+		} finally {
+			try {
+				super.finalize();
+			} catch (Throwable t) {
+				// Log it, but do nothing.
+				if (Globals.getInst().guiLogger.isEnabledFor(Level.WARN))
+					Globals.getInst().guiLogger.warn("Finalizing the Muli runner failed.");
+			}
+		}
 	}
 
 	private static void printUsage() {

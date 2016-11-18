@@ -32,8 +32,7 @@ public class Application extends de.wwu.muggl.vm.Application {
 		this.classLoader = classLoader;
 		ClassFile classFile = this.classLoader.getClassAsClassFile(initialClassName);
 		this.virtualMachine = new LogicVirtualMachine(this, this.classLoader, classFile, method);
-		if (Globals.getInst().logger.isDebugEnabled())
-			Globals.getInst().logger.debug("Application set up for logic execution.");
+		Globals.getInst().logger.debug("Application set up for logic execution.");
 	}
 
 	/**

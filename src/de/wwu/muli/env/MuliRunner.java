@@ -24,6 +24,7 @@ public class MuliRunner {
 	private static final String MAIN_METHOD_NAME = "main";
 	private static final String MAIN_METHOD_DESCRIPTOR = "([Ljava/lang/String;)V";
 	private Application app;
+	private boolean isRunning;
 
 	public static void main(String[] args) {
 		assert (args != null);
@@ -35,10 +36,9 @@ public class MuliRunner {
 		// The following is inspired by de.wwu.muggl.ui.gui.support.ExecutionRunner.run()
 		// Initialize the Application.
 		boolean initialized = true;
-		long timeStarted;
-		MuliRunner runner;
+		MuliRunner runner = null;
 		try {
-			MuliRunner runner = new MuliRunner(args);
+			runner = new MuliRunner(args);
 		} catch (ClassFileException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -49,25 +49,30 @@ public class MuliRunner {
 			initialized = false;
 		}
 		
+		if (!initialized) {
+			return;
+		}
+		
 		// Enter the main execution loop.
-		if (initialized) {
-			try {
-				timeStarted = System.currentTimeMillis();
-				// Execute
-				runner.app.start();
+		try {
+			final long timeStarted = System.currentTimeMillis();
+			// Execute
+			runner.startApplication();
 
-				// The first sleep should be shorter.
-				boolean firstSleep = true;
+			// The first sleep should be shorter.
+			boolean firstSleep = true;
 
+			while (runner.isRunning()) {
 				// Sleep for the desired time.
 				if (firstSleep) {
 					Thread.sleep(Globals.SAFETY_SLEEP_DELAY);
 					firstSleep = false;
 				} else {
 					// Save the time sleeping started.
-					long sleeptStarted = System.currentTimeMillis();
-					int sleepFor = 50; // TODO make configurable (was: this.sleepFor)
-					int maximumSleepingSlice = Globals.SAFETY_SLEEP_DELAY;
+					final long sleepStarted = System.currentTimeMillis();
+					int sleepFor = 50; // TODO make configurable (was:
+										// this.sleepFor)
+					final int maximumSleepingSlice = Globals.SAFETY_SLEEP_DELAY;
 					// Continue to sleep until we slept long enough.
 					while (sleepFor > 0) {
 						// Has the execution finished?
@@ -97,25 +102,42 @@ public class MuliRunner {
 							// Sleeping was interrupted as the time to sleep
 							// was changed. Set it to the new time, but drop
 							// the time we slept already.
-							sleepFor = 50 - (int) (System.currentTimeMillis() - sleeptStarted); // TODO make 50 configurable (was: this.sleepFor)
+							sleepFor = 50 - (int) (System.currentTimeMillis() - sleepStarted); // TODO
+																								// make
+																								// 50
+																								// configurable
+																								// (was:
+																								// this.sleepFor)
 						}
 					}
 				}
-
-				// Finished the execution.
-				refreshExecutionWindow(true, false); // todo OUTPUT? end? something...
-
-			} catch (InterruptedException e) {
-				// Just give out a message and then abort.
-				this.executionComposite.drawMessageBoxForExecutionRunner("Error",
-						"Execution was not successfull due to a threading error. Please try again.",
-						SWT.OK | SWT.ICON_ERROR);
-				this.executionComposite.abortExecutionByExecutionRunner();
-			} finally {
-				runner.finalize();
 			}
-		}
 
+			// Finished the execution.
+			final long milliSecondsRun = System.currentTimeMillis() - timeStarted;
+			System.out.println("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
+			// TODO OUTPUT? end? something...
+
+		} catch (InterruptedException e) {
+			// Just give out a message and then abort.
+			System.out.println("Error: InterruptedException");
+		} finally {
+			runner.finalize();
+		}
+			
+		
+
+	}
+
+
+	private void startApplication() {
+		this.app.start();
+		this.isRunning = true;
+	}
+
+
+	private boolean isRunning() {
+		return this.isRunning;
 	}
 
 
@@ -131,7 +153,7 @@ public class MuliRunner {
 		//Globals.getInst().logger.addAppender(new ConsoleAppender(new SimpleLayout()));
 		
 		// Accept class
-		String className = args[0];
+		final String className = args[0];
 		
 		// Extract arguments
 		String[] newArgs;
@@ -143,15 +165,18 @@ public class MuliRunner {
 		// TODO: remove args that control VM instead of program.
 		
 		// Instantiate class loader
-		MugglClassLoader classLoader = new MugglClassLoader(new String[]{"res"});
+		final MugglClassLoader classLoader = new MugglClassLoader(new String[]{"res"});
 		// TODO: Enable more classpaths from -cp arg
 		
 		// Find main method
-		ClassFile classFile = classLoader.getClassAsClassFile(className);
-		Method mainMethod = classFile.getMethodByNameAndDescriptor(MAIN_METHOD_NAME, MAIN_METHOD_DESCRIPTOR);
+		final ClassFile classFile = classLoader.getClassAsClassFile(className);
+		final Method mainMethod = classFile.getMethodByNameAndDescriptor(MAIN_METHOD_NAME, MAIN_METHOD_DESCRIPTOR);
+		// TODO pass newArgs to invoked main method
 
 
 		app = new Application(classLoader, className, mainMethod);
+		
+		this.isRunning = false;
 		
 	}
 	
@@ -159,7 +184,9 @@ public class MuliRunner {
 		// Continue only if the virtual machine executed by the Application has not changed.
 		if (!this.app.getVmIsInitializing()) {
 			// Find out, if the execution has finished.
-			return this.app.getExecutionFinished();
+			if (this.app.getExecutionFinished()) {
+				this.isRunning = false;
+			};
 		}
 		return false;
 	}

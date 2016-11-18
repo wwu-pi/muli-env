@@ -115,7 +115,7 @@ public class MuliRunner {
 
 			// Finished the execution.
 			final long milliSecondsRun = System.currentTimeMillis() - timeStarted;
-			System.out.println("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
+			Globals.getInst().execLogger.info("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
 			// TODO OUTPUT? end? something...
 
 		} catch (InterruptedException e) {
@@ -147,9 +147,10 @@ public class MuliRunner {
 		
 		Options.getInst().symbolicMode = true;
 		Options.getInst().logicMode = true;
+		Options.getInst().actualCliPrinting = true;
 		
-		Globals.getInst().changeLogLevel(Level.TRACE);
-		Globals.getInst().execLogger.addAppender(new ConsoleAppender(new SimpleLayout()));
+		//Globals.getInst().changeLogLevel(Level.TRACE);
+		Globals.getInst().execLogger.addAppender(new ConsoleAppender(new SimpleLayout(), "System.err"));
 		//Globals.getInst().logger.addAppender(new ConsoleAppender(new SimpleLayout()));
 		
 		// Accept class
@@ -226,8 +227,7 @@ public class MuliRunner {
 				super.finalize();
 			} catch (Throwable t) {
 				// Log it, but do nothing.
-				if (Globals.getInst().guiLogger.isEnabledFor(Level.WARN))
-					Globals.getInst().guiLogger.warn("Finalizing the Muli runner failed.");
+				Globals.getInst().guiLogger.warn("Finalizing the Muli runner failed.");
 			}
 		}
 	}

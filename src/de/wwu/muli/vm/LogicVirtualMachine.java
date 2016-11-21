@@ -261,6 +261,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				// The return object is used to store the NoExceptionHandlerFoundException
 				// containing the uncaught throwable as there is no returned value anyway.
 				this.returnedObject = e;
+				// TODO maybe throw this? would skip saveSolution() stuff (which is probably not needed anyway...)
 			} catch (InterruptedException e) {
 				// Mark that the actual execution has finished.
 				this.application.executionHasFinished();

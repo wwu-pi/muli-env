@@ -13,6 +13,7 @@ import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;
+import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 
@@ -113,7 +114,22 @@ public class MuliRunner {
 			// Finished the execution.
 			final long milliSecondsRun = System.currentTimeMillis() - timeStarted;
 			Globals.getInst().execLogger.info("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
-			// TODO OUTPUT? end? something...
+			
+			// If the application terminated with an exception, output it. 
+			if (runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
+				Object exception = runner.app.getVirtualMachine().getReturnedObject();
+				if (exception == null) {
+					throw new IllegalStateException("VM says that an uncaught exception was thrown, but no exception found. Terminating immediately.");
+				} else if (exception instanceof NoExceptionHandlerFoundException) {
+					// unwrap actual (maybe symbolic) exception  
+					String[] uncaught = ((NoExceptionHandlerFoundException)exception).getUncaughtThrowableNameAndMessage();
+					System.err.println("Unhandled exception: " + uncaught[0] + "; Message: " + uncaught[1]);
+				} else if (exception instanceof Throwable) {
+					// print regular stack trace.
+					((Throwable)exception).printStackTrace();
+				}
+			}
+			
 
 		} catch (InterruptedException e) {
 			// Just give out a message and then abort.

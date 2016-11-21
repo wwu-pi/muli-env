@@ -26,14 +26,17 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
+import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.classfile.structures.UndefinedValue;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
+import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muggl.vm.execution.ForwardingUnsuccessfulException;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
@@ -452,6 +455,27 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	}
 
 	
+	/* (non-Javadoc)
+	 * @see de.wwu.muggl.vm.VirtualMachine#invokeNative(de.wwu.muggl.vm.Frame, de.wwu.muggl.vm.classfile.structures.Method, de.wwu.muggl.vm.classfile.ClassFile, java.lang.Object[], de.wwu.muggl.vm.initialization.Objectref)
+	 */
+	@Override
+	public void invokeNative(Frame frame, Method method, ClassFile methodClassFile, Object[] parameters,
+			Objectref invokingObjectref) throws ForwardingUnsuccessfulException, VmRuntimeException {
+		if (method.getClassFile().getPackageName().startsWith("de.wwu.muli")) {
+			System.out.println("Asked to invoke: " + method.getFullNameWithParameterTypesAndNames());
+			// TODO have a look at "Invoke.invoke(...)", things are handled a little different. :(
+			ClassFile solutionClass;
+			try {
+				solutionClass = this.getClassLoader().getClassAsClassFile("de.wwu.muli.Solution");
+			} catch (ClassFileException e) {
+				throw new RuntimeException(e);
+			}
+			frame.getOperandStack().push(this.getAnObjectref(solutionClass));
+		} else {
+			super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
+		}
+	}
+
 	/**
 	 * Create a new frame and check whether its local variables should be initialized to logic
 	 * variables.

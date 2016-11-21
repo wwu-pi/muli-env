@@ -5,17 +5,14 @@ import java.util.Arrays;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.SimpleLayout;
-import org.eclipse.swt.SWT;
 
 import de.wwu.muli.vm.Application;
 import de.wwu.muggl.common.TimeSupport;
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;
-import de.wwu.muggl.symbolic.testCases.SolutionProcessor;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;
-import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 

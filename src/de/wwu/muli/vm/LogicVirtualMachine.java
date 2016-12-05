@@ -461,9 +461,9 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	public void invokeNative(Frame frame, Method method, ClassFile methodClassFile, Object[] parameters,
 			Objectref invokingObjectref) throws ForwardingUnsuccessfulException, VmRuntimeException {
+		// TODO have a look at "Invoke.invoke(...)", InvokeNative stuff is handled a little different everywhere. :(
 		if (method.getClassFile().getPackageName().startsWith("de.wwu.muli")) {
 			System.out.println("Asked to invoke: " + method.getFullNameWithParameterTypesAndNames());
-			// TODO have a look at "Invoke.invoke(...)", things are handled a little different. :(
 			ClassFile solutionClass;
 			try {
 				solutionClass = this.getClassLoader().getClassAsClassFile("de.wwu.muli.Solution");
@@ -480,7 +480,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * Create a new frame and check whether its local variables should be initialized to logic
 	 * variables.
 	 * 
-	 * @param invokedBy The frame this frame is invoked by. Might by null.
+	 * @param invokedBy The frame this frame is invoked by. Might be null.
 	 * @param method The Method that this frame holds.
 	 * @param arguments The arguments that will be stored in the local variables prior to execution.
 	 * @return The new frame.

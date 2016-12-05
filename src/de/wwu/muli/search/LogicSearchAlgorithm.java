@@ -1,4 +1,4 @@
-package de.wwu.muli.env.search;
+package de.wwu.muli.search;
 
 import de.wwu.muggl.instructions.bytecode.LCmp;
 import de.wwu.muggl.instructions.general.CompareFp;

@@ -1,4 +1,4 @@
-package de.wwu.muli.env.search.dfs;
+package de.wwu.muli.search.dfs;
 
 import java.util.Stack;
 
@@ -45,7 +45,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicFrame;
-import de.wwu.muli.env.search.LogicSearchAlgorithm;
+import de.wwu.muli.search.LogicSearchAlgorithm;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;

@@ -3,4 +3,4 @@
  *
  * @author Tim Majchrzak
  */
-package de.wwu.muli.env.search.iddfs;
+package de.wwu.muli.search.iddfs;

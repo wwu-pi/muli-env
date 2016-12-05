@@ -1,4 +1,4 @@
-package de.wwu.muli.env.search.iddfs;
+package de.wwu.muli.search.iddfs;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.bytecode.LCmp;
@@ -10,7 +10,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muggl.vm.initialization.InitializationException;
-import de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm;
+import de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import de.wwu.muggl.solvers.expressions.ConstraintExpression;
 import de.wwu.muggl.solvers.expressions.IntConstant;
@@ -208,7 +208,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 * @param instruction The Instruction generating the ChoicePoint.
 	 * @param constraintExpression The ConstraintExpression describing the choice at this
 	 *        conditional jump Instruction.
-	 * @see de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
 	 *      GeneralInstructionWithOtherBytes, ConstraintExpression)
 	 */
 	@Override
@@ -236,7 +236,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *        comparison.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
-	 * @see de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
 	 *      LCmp, Term, Term)
 	 */
 	@Override
@@ -266,7 +266,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *        comparison.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
-	 * @see de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
 	 *      CompareFp, boolean, Term, Term)
 	 */
 	@Override
@@ -302,7 +302,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *         is tableswitch and at least one of the boundaries is null.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
-	 * @see de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
 	 *      Switch, Term, IntConstant[], int[], IntConstant, IntConstant)
 	 */
 	@Override

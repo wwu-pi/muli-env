@@ -1,4 +1,4 @@
-package de.wwu.muli.env.search.dfs;
+package de.wwu.muli.search.dfs;
 
 import java.util.Stack;
 
@@ -7,7 +7,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Pop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Push;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPush;
-import de.wwu.muli.env.search.LogicSearchAlgorithm;
+import de.wwu.muli.search.LogicSearchAlgorithm;
 
 /**
  * The StackToTrail extends the java.util.Stack. Is overrides the functionality for push and pop. In

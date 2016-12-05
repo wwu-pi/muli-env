@@ -46,9 +46,9 @@ import de.wwu.muggl.solvers.expressions.Expression;
 import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.solvers.expressions.NumericVariable;
 import de.wwu.muggl.solvers.expressions.Term;
-import de.wwu.muli.env.search.LogicSearchAlgorithm;
-import de.wwu.muli.env.search.dfs.DepthFirstSearchAlgorithm;
-import de.wwu.muli.env.search.dfs.StackToTrail;
+import de.wwu.muli.search.LogicSearchAlgorithm;
+import de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm;
+import de.wwu.muli.search.dfs.StackToTrail;
 
 /**
  * This concrete class represents a virtual machine for the logic execution of java bytecode. It

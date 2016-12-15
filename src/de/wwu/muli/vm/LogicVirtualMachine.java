@@ -32,6 +32,10 @@ import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.classfile.structures.UndefinedValue;
+import de.wwu.muggl.vm.classfile.structures.attributes.AttributeFreeVariables;
+import de.wwu.muggl.vm.classfile.structures.attributes.AttributeLocalVariableTable;
+import de.wwu.muggl.vm.classfile.structures.attributes.elements.FreeVariable;
+import de.wwu.muggl.vm.classfile.structures.attributes.elements.LocalVariableTable;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
@@ -41,6 +45,7 @@ import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
+import de.wwu.muggl.solvers.expressions.BooleanVariable;
 import de.wwu.muggl.solvers.expressions.ConstraintExpression;
 import de.wwu.muggl.solvers.expressions.Expression;
 import de.wwu.muggl.solvers.expressions.IntConstant;
@@ -105,6 +110,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
 	// Constant.
 	private static final long		NANOS_MILLIS	= 1000000;
+
+	// Classes for Program-VM Communication
+	private final ClassFile CLASS_SOLUTION;
+	private final ClassFile ENUM_EXECUTIONMODE;
 
 	/**
 	 * Basic constructor, which initializes the additional fields.
@@ -201,6 +210,13 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.abortionCriterionMatched = false;
 		this.maximumLoopsReached = false;
 		this.abortionCriterionMatchedMessage = null;
+		// Initialise class references
+		try {
+			CLASS_SOLUTION = this.getClassLoader().getClassAsClassFile("de.wwu.muli.Solution");
+			ENUM_EXECUTIONMODE = this.getClassLoader().getClassAsClassFile("de.wwu.muli.ExecutionMode");
+		} catch (ClassFileException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -381,13 +397,16 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		// Update the coverage before actually executing the instruction. This is needed since
 		// exception handling might further update it.
 		Options options = Options.getInst();
-		Method method = null;
 
 		// Execute the instruction.
 		if (this.measureExecutionTime) this.timeExecutionInstructionTemp = System.nanoTime();
 		int oldpc = this.pc;
 		super.executedInstructions++;
-		instruction.executeSymbolically(this.currentFrame);
+		if (options.symbolicMode) {
+			instruction.executeSymbolically(this.currentFrame);
+		} else {
+			instruction.execute(this.currentFrame);
+		}
 		if (this.measureExecutionTime)
 			this.timeExecutionInstruction += System.nanoTime() - this.timeExecutionInstructionTemp;
 
@@ -462,15 +481,34 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	public void invokeNative(Frame frame, Method method, ClassFile methodClassFile, Object[] parameters,
 			Objectref invokingObjectref) throws ForwardingUnsuccessfulException, VmRuntimeException {
 		// TODO have a look at "Invoke.invoke(...)", InvokeNative stuff is handled a little different everywhere. :(
-		if (method.getClassFile().getPackageName().startsWith("de.wwu.muli")) {
+		if (method.getClassFile().getPackageName().startsWith("de.wwu.muli") && methodClassFile.getName().equals("de.wwu.muli.Muli")) {
 			System.out.println("Asked to invoke: " + method.getFullNameWithParameterTypesAndNames());
-			ClassFile solutionClass;
-			try {
-				solutionClass = this.getClassLoader().getClassAsClassFile("de.wwu.muli.Solution");
-			} catch (ClassFileException e) {
-				throw new RuntimeException(e);
+			String methodName = method.getName();
+			InitializedClass ic = ENUM_EXECUTIONMODE.getTheInitializedClass(this);
+			
+			switch (methodName) {
+			case "getVMExecutionMode":
+				Object em;
+				if (Options.getInst().symbolicMode) {
+					em = ic.getField(ENUM_EXECUTIONMODE.getFieldByName("SYMBOLIC"));
+				} else {
+					em = ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"));
+				}
+				frame.getOperandStack().push(em);
+				break;
+			case "setVMExecutionMode":
+				// parse param and set mode accordingly
+				if (parameters[0] == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("SYMBOLIC"))) {
+					Options.getInst().symbolicMode = true;
+				} else if (parameters[0] == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"))) {
+					Options.getInst().symbolicMode = false;
+				}
+				break;
+			default:
+				frame.getOperandStack().push(this.getAnObjectref(CLASS_SOLUTION));
 			}
-			frame.getOperandStack().push(this.getAnObjectref(solutionClass));
+			
+			
 		} else {
 			super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
 		}
@@ -497,8 +535,86 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		 * Check which local variables are annotated and replace undefined local variables by logic
 		 * variables.
 		 */
-		// TODO do this!
+		AttributeFreeVariables freeVariablesAttribute = null;
+		for (Attribute attribute : method.getAttributes()) {
+			if (attribute.getStructureName().equals("attribute_free_variables")) {
+				freeVariablesAttribute = (AttributeFreeVariables)attribute;
+				break;
+			} 
+		}
 		
+		if (freeVariablesAttribute != null && freeVariablesAttribute.getFreeVariables().length > 0) {
+			AttributeLocalVariableTable localVariablesTableAttribute = null;
+			for (Attribute attribute : method.getCodeAttribute().getAttributes()) {
+				if (attribute.getStructureName().equals("attribute_local_variable_table")) {
+					localVariablesTableAttribute = (AttributeLocalVariableTable)attribute;
+					break;
+				}
+			}
+			
+			for (FreeVariable freeVariable : freeVariablesAttribute.getFreeVariables()) {
+				// find type of free variable
+				final int freeVariableIndex = freeVariable.getIndex();
+				// Note to future selves: "Parameters" are not "Variables" are not "Local Variables". Or sometimes they are.
+				// Anyway, do NOT trust method names of frame.method! Instead, we better determine the type ourselves.
+				String type = null;
+				for (LocalVariableTable localVariable : localVariablesTableAttribute.getLocalVariableTable())
+				{
+					if (localVariable.getIndex() != freeVariableIndex) {
+						continue;
+					}
+					type = localVariable.getClassFile().getConstantPool()[localVariable.getDescriptorIndex()].getStringValue();
+					break; // Do not look any further.
+					
+				}
+				if (type == null) {
+					throw new IllegalStateException("Class File contains FreeVariable declaration for a non-existing variable");
+				}
+				
+				// Convert string type to expression type.
+				byte expressionType;
+				switch(type) {
+				case "B":
+					expressionType = Expression.BYTE;
+					break;
+				case "C":
+					expressionType = Expression.CHAR;
+					break;
+				case "D":
+					expressionType = Expression.DOUBLE;
+					break;
+				case "I":
+					expressionType = Expression.INT;
+					break;
+				case "F":
+					expressionType = Expression.FLOAT;
+					break;
+				case "J":
+					expressionType = Expression.LONG;
+					break;
+				case "S":
+					expressionType = Expression.SHORT;
+					break;
+				case "Z":
+					expressionType = Expression.BOOLEAN;
+					break;
+				default:
+					// TODO invent better exception type
+					throw new IllegalStateException("Free variables of non-primitive types are not supported");	
+				}
+				
+				// Put correct logic variable for field.
+				if (expressionType == Expression.BOOLEAN) {
+					frame.setLocalVariable(freeVariableIndex, 
+							new BooleanVariable(freeVariable.getName())
+							);
+				} else {
+					frame.setLocalVariable(freeVariableIndex, 
+							new NumericVariable(freeVariable.getName(), expressionType, false)
+							);
+				}
+			}
+		}
 		// Return it.
 		return frame;
 	}
@@ -752,46 +868,60 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		 */
 		for (Field field : classFile.getFields()) {
 			for (Attribute attribute : field.getAttributes()) {
-				if (attribute.getStructureName().equals("attribute_free_field")) {
-					if (!objectref.hasValueFor(field)) {
-						String typeString = field.getType();
-						byte type;
-						switch (typeString) {
-						case "char":
-						case "java.lang.Character":
-							type = Expression.CHAR;
-							break;
-						case "boolean":
-						case "java.lang.Boolean":
-							type = Expression.BOOLEAN;
-							break;
-						case "byte":
-						case "java.lang.Byte":
-							type = Expression.BYTE;
-							break;
-						case "double":
-						case "java.lang.Double":
-							type = Expression.DOUBLE;
-							break;
-						case "int":
-						case "java.lang.Integer":
-							type = Expression.INT;
-							break;
-						case "float":
-						case "java.lang.Float":
-							type = Expression.FLOAT;
-							break;
-						case "long":
-						case "java.lang.Long":
-							type = Expression.LONG;
-							break;
-						default:
-							type = Expression.SHORT;
-						}
-						objectref.putField(field, new NumericVariable(field.getName(), type, false));
-
-					}
+				if (!attribute.getStructureName().equals("attribute_free_field")) {
+					continue;
 				}
+				if (!objectref.hasValueFor(field)) {
+					String typeString = field.getType();
+					byte type;
+					switch (typeString) {
+					case "char":
+					case "java.lang.Character":
+						type = Expression.CHAR;
+						break;
+					case "boolean":
+					case "java.lang.Boolean":
+						type = Expression.BOOLEAN;
+						break;
+					case "byte":
+					case "java.lang.Byte":
+						type = Expression.BYTE;
+						break;
+					case "double":
+					case "java.lang.Double":
+						type = Expression.DOUBLE;
+						break;
+					case "int":
+					case "java.lang.Integer":
+						type = Expression.INT;
+						break;
+					case "float":
+					case "java.lang.Float":
+						type = Expression.FLOAT;
+						break;
+					case "long":
+					case "java.lang.Long":
+						type = Expression.LONG;
+						break;
+					case "short":
+					case "java.lang.Short":
+						type = Expression.SHORT;
+						break;
+					default:
+						// TODO invent better exception type
+						throw new IllegalStateException("Free variables of non-primitive types are not supported");	
+					}
+					
+					// Put correct logic variable for field.
+					if (type == Expression.BOOLEAN) {
+						objectref.putField(field, new BooleanVariable(field.getName()));
+					} else {
+						objectref.putField(field, new NumericVariable(field.getName(), type, false));
+					}
+
+				}
+				break;
+				
 			}
 		}
 		

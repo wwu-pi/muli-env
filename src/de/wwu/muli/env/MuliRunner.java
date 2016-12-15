@@ -158,7 +158,8 @@ public class MuliRunner {
 		assert (args != null);
 		assert (args.length > 0);
 		
-		Options.getInst().symbolicMode = true;
+		// Initially, symbolic mode is false. During execution this flag might change.
+		Options.getInst().symbolicMode = false;
 		Options.getInst().logicMode = true;
 		Options.getInst().actualCliPrinting = true;
 		

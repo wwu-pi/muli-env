@@ -11,6 +11,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.SolvingException;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.conditionalJump.ConditionalJumpChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.TrailElement;
 import de.wwu.muggl.vm.Frame;
+import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
@@ -77,17 +78,17 @@ public class ConditionalJumpChoicePointDepthFirst extends ConditionalJumpChoiceP
 		this.measureExecutionTime = Options.getInst().measureSymbolicExecutionTime;
 
 		// Add the ConstraintExpression.
-		SolverManager solverManager = ((SymbolicVirtualMachine) frame.getVm()).getSolverManager();
+		SolverManager solverManager = ((SearchingVM) frame.getVm()).getSolverManager();
 		solverManager.addConstraint(constraintExpression);
 
 		// Check if this ConstraintExpression does not violate other equations.
 		try {
 			if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
 			if (!solverManager.hasSolution()) {
-				if (this.measureExecutionTime) ((SymbolicVirtualMachine) frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
+				if (this.measureExecutionTime) ((SearchingVM) frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
 				tryTheNegatedConstraint(solverManager, constraintExpression);
 			} else {
-				if (this.measureExecutionTime) ((SymbolicVirtualMachine) frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
+				if (this.measureExecutionTime) ((SearchingVM) frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
 				// Set the pc to the jump target.
 				this.frame.getVm().setPC(pcWithJump);
 			}
@@ -117,12 +118,12 @@ public class ConditionalJumpChoicePointDepthFirst extends ConditionalJumpChoiceP
 			solverManager.addConstraint(constraintExpression.negate());
 			if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
 			if (solverManager.hasSolution()) {
-				if (this.measureExecutionTime) ((SymbolicVirtualMachine) this.frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
+				if (this.measureExecutionTime) ((SearchingVM) this.frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
 				// Use the non-jumping branch.
 				this.frame.getVm().setPC(this.pcNext);
 				this.alreadyVisitedNonJumpingBranch = true;
 			} else {
-				if (this.measureExecutionTime) ((SymbolicVirtualMachine) this.frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
+				if (this.measureExecutionTime) ((SearchingVM) this.frame.getVm()).increaseTimeSolvingForChoicePointGeneration(System.nanoTime() - this.timeSolvingTemp);
 				if (Globals.getInst().symbolicExecLogger.isTraceEnabled()) Globals.getInst().symbolicExecLogger.trace("Cannot proceed with the non-jumping branch either since this would violate the current constraint system. Tracking back...");
 				// Throw the appropriate Exception.
 				throw new EquationViolationException("Cannot continue with this choice point, since equations are violated.");

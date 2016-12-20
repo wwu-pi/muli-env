@@ -44,8 +44,8 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPush;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
-import de.wwu.muggl.vm.impl.symbolic.SymbolicFrame;
 import de.wwu.muli.search.LogicSearchAlgorithm;
+import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
@@ -257,7 +257,7 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 					vmStack.push(object);
 					if (vmPush.restoreStates()) {
 						// Restore states of the frame.
-						SymbolicFrame frame = (SymbolicFrame) object;
+						LogicFrame frame = (LogicFrame) object;
 						frame.setPc(vmPush.getPc());
 						frame.setMonitor(vmPush.getMonitor());
 					}
@@ -325,7 +325,7 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 		vm.setCurrentFrame(this.currentChoicePoint.getFrame());
 
 		// If the frame was set to have finished the execution normally, reset that.
-		((SymbolicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+		((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
 
 		// Set the pc!
 		vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());

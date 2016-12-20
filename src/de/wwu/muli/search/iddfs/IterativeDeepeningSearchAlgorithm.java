@@ -7,6 +7,7 @@ import de.wwu.muggl.instructions.general.GeneralInstructionWithOtherBytes;
 import de.wwu.muggl.instructions.general.Switch;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.vm.execution.ConversionException;
+import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muggl.vm.initialization.InitializationException;
@@ -188,7 +189,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 */
 	@Override
 	public void generateNewChoicePoint(
-			SymbolicVirtualMachine vm, int localVariableIndex, Generator generator
+			LogicVirtualMachine vm, int localVariableIndex, Generator generator
 			) throws ConversionException, SymbolicExecutionException {
 		this.currentLevelOfDeepness++;
 		if (this.currentLevelOfDeepness >= this.maximumDepth) {
@@ -212,7 +213,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *      GeneralInstructionWithOtherBytes, ConstraintExpression)
 	 */
 	@Override
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm,
+	public void generateNewChoicePoint(LogicVirtualMachine vm,
 			GeneralInstructionWithOtherBytes instruction, ConstraintExpression constraintExpression) {
 		this.currentLevelOfDeepness++;
 		if (this.currentLevelOfDeepness >= this.maximumDepth) {
@@ -240,8 +241,8 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *      LCmp, Term, Term)
 	 */
 	@Override
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, LCmp instruction,
-			Term leftTerm, Term rightTerm) throws SymbolicExecutionException {
+	public void generateNewChoicePoint(LogicVirtualMachine vm, LCmp instruction,
+			Term leftTerm, Term rightTerm) throws ExecutionException {
 		this.currentLevelOfDeepness++;
 		if (this.currentLevelOfDeepness >= this.maximumDepth) {
 			this.thereWereMorePossibilities = true;
@@ -270,8 +271,8 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *      CompareFp, boolean, Term, Term)
 	 */
 	@Override
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, CompareFp instruction,
-			boolean less, Term leftTerm, Term rightTerm) throws SymbolicExecutionException {
+	public void generateNewChoicePoint(LogicVirtualMachine vm, CompareFp instruction,
+			boolean less, Term leftTerm, Term rightTerm) throws ExecutionException {
 		this.currentLevelOfDeepness++;
 		if (this.currentLevelOfDeepness >= this.maximumDepth) {
 			this.thereWereMorePossibilities = true;
@@ -306,9 +307,9 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *      Switch, Term, IntConstant[], int[], IntConstant, IntConstant)
 	 */
 	@Override
-	public void generateNewChoicePoint(SymbolicVirtualMachine vm, Switch instruction, Term termFromStack,
+	public void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
 			IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
-			throws SymbolicExecutionException {
+			throws ExecutionException {
 		this.currentLevelOfDeepness++;
 		if (this.currentLevelOfDeepness >= this.maximumDepth) {
 			this.thereWereMorePossibilities = true;

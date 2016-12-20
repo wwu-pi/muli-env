@@ -41,6 +41,7 @@ import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.execution.ForwardingUnsuccessfulException;
+import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
@@ -505,10 +506,13 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				}
 				break;
 			default:
-				frame.getOperandStack().push(this.getAnObjectref(CLASS_SOLUTION));
+				throw new ForwardingUnsuccessfulException("Could not forward native method " + methodName);
 			}
 			
 			
+		} else if (methodClassFile.getName().equals("sun.misc.VM") && method.getName().equals("initialize")) {
+			// skip and log
+			Globals.getInst().execLogger.trace("sun.misc.VM.initialize detected; skipped."); // TODO sensible?   
 		} else {
 			super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
 		}
@@ -714,7 +718,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public void generateNewChoicePoint(GeneralInstructionWithOtherBytes instruction,
 			ConstraintExpression constraintExpression)
-			throws LogicExecutionException {
+			throws SymbolicExecutionException {
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -725,7 +729,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		if (instruction instanceof JumpConditional) { // Conditional jump found.
 			this.searchAlgorithm.generateNewChoicePoint(this, instruction, constraintExpression);
 		} else {
-			throw new LogicExecutionException(
+			throw new SymbolicExecutionException(
 					"Only conditional jump instructions might attempt to generate a choice point using this method.");
 		}
 	}
@@ -755,14 +759,14 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				this.searchAlgorithm.generateNewChoicePoint(this, ((Load) instruction)
 						.getLocalVariableIndex(), generator);
 			} catch (ConversionException e) {
-				throw new LogicExecutionException(
+				throw new SymbolicExecutionException(
 						"An object provided by a generator required conversion to Muggl, but conversion failed: "
 								+ e.getClass().getName() + " (" + e.getMessage() + ")");
 			}
 		} else if (instruction instanceof Newarray) {
 			this.searchAlgorithm.generateNewChoicePoint(this, type);
 		} else {
-			throw new LogicExecutionException(
+			throw new SymbolicExecutionException(
 					"Only loading instructions or newarray might attempt to generate a choice point using this method.");
 		}
 	}
@@ -1073,6 +1077,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * 
 	 * @param increment The time needed for a choice point generation.
 	 */
+	@Override
 	public void increaseTimeChoicePointGeneration(long increment) {
 		this.timeChoicePointGeneration += increment;
 	}
@@ -1092,6 +1097,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * 
 	 * @param increment The time needed for a solving action.
 	 */
+	@Override
 	public void increaseTimeSolvingForChoicePointGeneration(long increment) {
 		this.timeSolvingChoicePoints += increment;
 	}

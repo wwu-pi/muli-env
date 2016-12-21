@@ -115,6 +115,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// Classes for Program-VM Communication
 	private final ClassFile CLASS_SOLUTION;
 	private final ClassFile ENUM_EXECUTIONMODE;
+	private final ClassFile CLASS_VMPROPERTIESWRAPPER;
 
 	/**
 	 * Basic constructor, which initializes the additional fields.
@@ -215,6 +216,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		try {
 			CLASS_SOLUTION = this.getClassLoader().getClassAsClassFile("de.wwu.muli.Solution");
 			ENUM_EXECUTIONMODE = this.getClassLoader().getClassAsClassFile("de.wwu.muli.ExecutionMode");
+			CLASS_VMPROPERTIESWRAPPER = this.getClassLoader().getClassAsClassFile("de.wwu.muggl.vm.execution.nativeWrapping.VMPropertiesWrapper");
 		} catch (ClassFileException e) {
 			throw new RuntimeException(e);
 		}
@@ -511,9 +513,20 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			
 			
 		} else if (methodClassFile.getName().equals("sun.misc.VM") && method.getName().equals("initialize")) {
+			// TODO pull up to VirtualMachine and extract comments into somewhere else.
 			// skip and log
-			Globals.getInst().execLogger.trace("sun.misc.VM.initialize detected; skipped."); // TODO sensible?   
+			// Globals.getInst().execLogger.trace("sun.misc.VM.initialize detected; skipped."); // TODO sensible?
+			/* Well, I really don't know whether this is sensible. Actually, initialize should not be called at all. Can we mock this?
+			... last time, we avoided this problem by avoiding to instantiate Throwable.class. Maybe we can mock IntegerCache entirely. 
+			OR we mock VM.getSavedProperty (consequently, we'd need to mock VM! Maybe redirecting calls to outside VM.*/
+
+			// catch sun.misc.VM#initialize() and get a mock Properties (@see VMPropertiesWrapper) object into VM#savedProps
+			InitializedClass sunMiscVm = methodClassFile.getTheInitializedClass(frame.getVm());
+			Field savedProps = methodClassFile.getFieldByName("savedProps");
+			sunMiscVm.putField(savedProps, frame.getVm().getAnObjectref(CLASS_VMPROPERTIESWRAPPER));
+			
 		} else {
+
 			super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
 		}
 	}

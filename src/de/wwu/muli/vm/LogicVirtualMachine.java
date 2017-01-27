@@ -515,7 +515,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		} else if (methodClassFile.getName().equals("sun.misc.VM") && method.getName().equals("initialize")) {
 			// TODO pull up to VirtualMachine and extract comments into somewhere else.
 			// skip and log
-			// Globals.getInst().execLogger.trace("sun.misc.VM.initialize detected; skipped."); // TODO sensible?
+			// Globals.getInst().execLogger.trace("sun.misc.VM.initialize detected; skipped."); // TODO nope, see comment below!
 			/* Well, I really don't know whether this is sensible. Actually, initialize should not be called at all. Can we mock this?
 			... last time, we avoided this problem by avoiding to instantiate Throwable.class. Maybe we can mock IntegerCache entirely. 
 			OR we mock VM.getSavedProperty (consequently, we'd need to mock VM! Maybe redirecting calls to outside VM.*/
@@ -726,7 +726,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * @param constraintExpression The ConstraintExpression describing the choice a if it is
 	 *        conditional jump Instruction. May be null.
 
-	 * @throws LogicExecutionException If the instruction supplied is no conditional jump, no
+	 * @throws SymbolicExecutionException If the instruction supplied is no conditional jump, no
 	 *         load instruction or if an Exception is thrown during the choice point generation.
 	 */
 	public void generateNewChoicePoint(GeneralInstructionWithOtherBytes instruction,
@@ -754,7 +754,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * @param generator A variable Generator. May be null to indicate no custom variable generator
 	 *        is used.
 	 * @param type A String representation of the type.
-	 * @throws LogicExecutionException If the instruction supplied is no conditional jump, no
+	 * @throws SymbolicExecutionException If the instruction supplied is no conditional jump, no
 	 *         load instruction or if an Exception is thrown during the choice point generation.
 	 */
 	public void generateNewChoicePoint(GeneralInstructionWithOtherBytes instruction,
@@ -792,7 +792,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 *        comparison.
 	 * @param rightTerm The term of long variables and constants of the right hand side of the
 	 *        comparison.
-	 * @throws LogicExecutionException If an Exception is thrown during the choice point
+	 * @throws ExecutionException If an Exception is thrown during the choice point
 	 *         generation.
 	 */
 	public void generateNewChoicePoint(LCmp instruction, Term leftTerm, Term rightTerm)
@@ -817,7 +817,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 *        comparison.
 	 * @param rightTerm The term of long variables and constants of the right hand side of the
 	 *        comparison.
-	 * @throws LogicExecutionException If an Exception is thrown during the choice point
+	 * @throws ExecutionException If an Exception is thrown during the choice point
 	 *         generation.
 	 */
 	public void generateNewChoicePoint(CompareFp instruction, boolean less, Term leftTerm,
@@ -848,7 +848,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 *         targets or if there are no choices at all.
 	 * @throws NullPointerException If either of the specified arrays is null, or if the instruction
 	 *         is tableswitch and at least one of the boundaries is null.
-	 * @throws LogicExecutionException If an Exception is thrown during the choice point
+	 * @throws ExecutionException If an Exception is thrown during the choice point
 	 *         generation.
 	 */
 	public void generateNewChoicePoint(Switch instruction, Term termFromStack, IntConstant[] keys,
@@ -1226,8 +1226,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 *         number of arrays generated.
 	 */
 	public long[] getArrayGenerationInformation() {
-		long[] info = {this.arraysGeneratorsUsed, this.arraysGenerated};
-		return info;
+		return new long[]{this.arraysGeneratorsUsed, this.arraysGenerated};
 	}
 
 }

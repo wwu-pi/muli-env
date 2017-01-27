@@ -575,6 +575,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				// Note to future selves: "Parameters" are not "Variables" are not "Local Variables". Or sometimes they are.
 				// Anyway, do NOT trust method names of frame.method! Instead, we better determine the type ourselves.
 				String type = null;
+				assert localVariablesTableAttribute != null;
 				for (LocalVariableTable localVariable : localVariablesTableAttribute.getLocalVariableTable())
 				{
 					if (localVariable.getIndex() != freeVariableIndex) {
@@ -1050,14 +1051,13 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public long[] getExecutionTimeInformation() {
 		if (!this.measureExecutionTime) return new long[0];
-		long[] executionTime = {
+		return new long[]{
 				(this.timeExecutionInstruction - this.timeChoicePointGeneration) / NANOS_MILLIS,
 				this.timeLoopDetection / NANOS_MILLIS, this.timeCoverageChecking / NANOS_MILLIS,
 				(this.timeChoicePointGeneration - this.timeSolvingChoicePoints) / NANOS_MILLIS,
 				(this.timeSolvingChoicePoints + this.timeSolvingBacktracking) / NANOS_MILLIS,
 				(this.timeBacktracking - this.timeSolvingBacktracking) / NANOS_MILLIS,
 				this.timeSolutionGeneration / NANOS_MILLIS };
-		return executionTime;
 	}
 
 	/**
@@ -1067,11 +1067,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * @return An array of long elements with the times of the execution measurement.
 	 */
 	private long[] getNanoExecutionTimeInformation() {
-		long[] executionTime = { this.timeExecutionInstruction, this.timeLoopDetection,
+		return new long[]{ this.timeExecutionInstruction, this.timeLoopDetection,
 				this.timeCoverageChecking, this.timeChoicePointGeneration,
 				this.timeSolvingChoicePoints, this.timeSolvingBacktracking, this.timeBacktracking,
 				this.timeSolutionGeneration };
-		return executionTime;
 	}
 
 	/**

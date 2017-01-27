@@ -209,7 +209,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 * @param instruction The Instruction generating the ChoicePoint.
 	 * @param constraintExpression The ConstraintExpression describing the choice at this
 	 *        conditional jump Instruction.
-	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(LogicVirtualMachine,
 	 *      GeneralInstructionWithOtherBytes, ConstraintExpression)
 	 */
 	@Override
@@ -237,7 +237,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *        comparison.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
-	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(LogicVirtualMachine,
 	 *      LCmp, Term, Term)
 	 */
 	@Override
@@ -267,7 +267,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *        comparison.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
-	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(LogicVirtualMachine,
 	 *      CompareFp, boolean, Term, Term)
 	 */
 	@Override
@@ -303,7 +303,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 	 *         is tableswitch and at least one of the boundaries is null.
 	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
 	 *         generation.
-	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(SymbolicVirtualMachine,
+	 * @see de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm#generateNewChoicePoint(LogicVirtualMachine,
 	 *      Switch, Term, IntConstant[], int[], IntConstant, IntConstant)
 	 */
 	@Override

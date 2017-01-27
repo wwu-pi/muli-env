@@ -21,6 +21,7 @@ public class MuliRunner {
 
 	private static final String MAIN_METHOD_NAME = "main";
 	private static final String MAIN_METHOD_DESCRIPTOR = "([Ljava/lang/String;)V";
+	private static final int THREAD_SLEEP_TIME = 50;
 	private final Application app;
 	private boolean isRunning;
 
@@ -59,8 +60,7 @@ public class MuliRunner {
 				} else {
 					// Save the time sleeping started.
 					final long sleepStarted = System.currentTimeMillis();
-					int sleepFor = 50; // TODO make configurable (was:
-										// this.sleepFor)
+					int sleepFor = THREAD_SLEEP_TIME;
 					final int maximumSleepingSlice = Globals.SAFETY_SLEEP_DELAY;
 					// Continue to sleep until we slept long enough.
 					while (sleepFor > 0) {
@@ -91,12 +91,7 @@ public class MuliRunner {
 							// Sleeping was interrupted as the time to sleep
 							// was changed. Set it to the new time, but drop
 							// the time we slept already.
-							sleepFor = 50 - (int) (System.currentTimeMillis() - sleepStarted); // TODO
-																								// make
-																								// 50
-																								// configurable
-																								// (was:
-																								// this.sleepFor)
+							sleepFor = THREAD_SLEEP_TIME - (int) (System.currentTimeMillis() - sleepStarted);
 						}
 					}
 				}

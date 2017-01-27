@@ -17,25 +17,28 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 public interface LogicSearchAlgorithm extends SearchAlgorithm {
 	ChoicePoint getCurrentChoicePoint();
 
-	boolean trackBack(LogicVirtualMachine arg0);
+	boolean trackBack(LogicVirtualMachine vm);
 
-	void recoverState(LogicVirtualMachine arg0);
+	void recoverState(LogicVirtualMachine vm);
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, int arg1, Generator arg2)
+	void generateNewChoicePoint(LogicVirtualMachine vm, int localVariableIndex, Generator generator)
 			throws ConversionException, ExecutionException;
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, String arg1) throws ExecutionException;
+	void generateNewChoicePoint(LogicVirtualMachine vm, String type) throws ExecutionException;
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, GeneralInstructionWithOtherBytes arg1,
-			ConstraintExpression arg2);
+	void generateNewChoicePoint(LogicVirtualMachine vm, GeneralInstructionWithOtherBytes instruction,
+			ConstraintExpression constraintExpression);
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, LCmp arg1, Term arg2, Term arg3)
+	void generateNewChoicePoint(LogicVirtualMachine vm, LCmp instruction,
+								Term leftTerm, Term rightTerm)
 			throws ExecutionException;
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, CompareFp arg1, boolean arg2, Term arg3, Term arg4)
+	void generateNewChoicePoint(LogicVirtualMachine vm, CompareFp instruction,
+								boolean less, Term leftTerm, Term rightTerm)
 			throws ExecutionException;
 
-	void generateNewChoicePoint(LogicVirtualMachine arg0, Switch arg1, Term arg2, IntConstant[] arg3, int[] arg4,
-			IntConstant arg5, IntConstant arg6) throws ExecutionException;
+	void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
+								IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
+			throws ExecutionException;
 
 }

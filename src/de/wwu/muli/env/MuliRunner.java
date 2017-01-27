@@ -21,7 +21,7 @@ public class MuliRunner {
 
 	private static final String MAIN_METHOD_NAME = "main";
 	private static final String MAIN_METHOD_DESCRIPTOR = "([Ljava/lang/String;)V";
-	private Application app;
+	private final Application app;
 	private boolean isRunning;
 
 	public static void main(String[] args) {
@@ -33,21 +33,12 @@ public class MuliRunner {
 		
 		// The following is inspired by de.wwu.muggl.ui.gui.support.ExecutionRunner.run()
 		// Initialize the Application.
-		boolean initialized = true;
+
 		MuliRunner runner = null;
 		try {
 			runner = new MuliRunner(args);
-		} catch (ClassFileException e) {
-			// TODO Auto-generated catch block
+		} catch (ClassFileException | InitializationException e) {
 			e.printStackTrace();
-			initialized = false;
-		} catch (InitializationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			initialized = false;
-		}
-		
-		if (!initialized) {
 			return;
 		}
 		
@@ -134,11 +125,7 @@ public class MuliRunner {
 		} catch (InterruptedException e) {
 			// Just give out a message and then abort.
 			System.out.println("Error: InterruptedException");
-		} finally {
-			runner.finalize();
 		}
-			
-		
 
 	}
 
@@ -177,7 +164,7 @@ public class MuliRunner {
 		} else {
 			newArgs = new String[0];
 		}
-		// TODO: remove args that control VM instead of program.
+		// TODO: remove args that control (Muli/Muggl) VM instead of program.
 		
 		// Instantiate class loader
 		final MugglClassLoader classLoader = new MugglClassLoader(new String[]{"res"});
@@ -201,7 +188,7 @@ public class MuliRunner {
 			// Find out, if the execution has finished.
 			if (this.app.getExecutionFinished()) {
 				this.isRunning = false;
-			};
+			}
 		}
 		return false;
 	}
@@ -215,7 +202,7 @@ public class MuliRunner {
 			// Finalize and clean up the Application.
 			if (this.app != null) {
 				synchronized (this.app) {
-					boolean forceCleanup = false;
+					boolean forceCleanup;
 					try {
 						/*
 						 * Force cleanup if an error occurred. Some errors or special circumstances might
@@ -233,7 +220,6 @@ public class MuliRunner {
 						forceCleanup = true;
 					}
 					this.app.cleanUp(forceCleanup);
-					this.app = null;
 				}
 			}
 		} finally {

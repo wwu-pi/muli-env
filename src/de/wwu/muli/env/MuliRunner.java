@@ -26,8 +26,7 @@ public class MuliRunner {
 	private boolean isRunning;
 
 	public static void main(String[] args) {
-		assert (args != null);
-		if (args.length == 0) {
+		if (args == null || args.length == 0) {
 			printUsage();
 			return;
 		}

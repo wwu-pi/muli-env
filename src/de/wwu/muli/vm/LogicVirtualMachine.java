@@ -505,6 +505,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 					Options.getInst().symbolicMode = true;
 				} else if (parameters[0] == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"))) {
 					Options.getInst().symbolicMode = false;
+					//TODO clear up all choicepoints! no backtracking beyond this point.
 				}
 				break;
 			default:

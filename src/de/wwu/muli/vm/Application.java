@@ -6,6 +6,7 @@ import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
+import de.wwu.muli.env.MuliVMControl;
 
 /**
  * An Application is the top level element of any execution. it instantiates and holds the reference to the
@@ -32,6 +33,7 @@ public class Application extends de.wwu.muggl.vm.Application {
 		this.classLoader = classLoader;
 		ClassFile classFile = this.classLoader.getClassAsClassFile(initialClassName);
 		this.virtualMachine = new LogicVirtualMachine(this, this.classLoader, classFile, method);
+		MuliVMControl.initialiseAndRegister(this.classLoader);
 		Globals.getInst().logger.debug("Application set up for logic execution.");
 	}
 

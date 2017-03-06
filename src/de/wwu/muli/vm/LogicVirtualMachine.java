@@ -480,7 +480,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	/* (non-Javadoc)
 	 * @see de.wwu.muggl.vm.VirtualMachine#invokeNative(de.wwu.muggl.vm.Frame, de.wwu.muggl.vm.classfile.structures.Method, de.wwu.muggl.vm.classfile.ClassFile, java.lang.Object[], de.wwu.muggl.vm.initialization.Objectref)
 	 */
-	@Override
+	@Deprecated
+	// TODO remove  (should be fully replaced by de.wwu.muli.env.MuliVMControl)
 	public void invokeNative(Frame frame, Method method, ClassFile methodClassFile, Object[] parameters,
 			Objectref invokingObjectref) throws ForwardingUnsuccessfulException, VmRuntimeException {
 		// TODO have a look at "Invoke.invoke(...)", InvokeNative stuff is handled a little different everywhere. :(
@@ -528,7 +529,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			
 		} else {
 
-			super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
+			//super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
 		}
 	}
 

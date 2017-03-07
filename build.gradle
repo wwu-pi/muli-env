@@ -8,14 +8,13 @@ version '1.0-SNAPSHOT'
 repositories {
 	mavenLocal()
 	mavenCentral()
-	maven { url 'https://raw.githubusercontent.com/maven-eclipse/swt-repo/master/' }
 }
 
 dependencies {
 	compile 'de.wwu.muggl:muggl-core:0.3.+'
 	compile 'de.wwu.muggl:muggl-common:0.3.+'
     compile 'log4j:log4j:1.2.17'
-	compile 'de.wwu.muli:muli-classpath:+' // TODO maybe this needs to be duplicated into muggl? // actually: runtime only. but currently it is required to compile testfiles
+	compile 'de.wwu.muli:muli-classpath:+' // needed at compile time, as parts of CP are implemented in native providers
 }
 
 eclipse {

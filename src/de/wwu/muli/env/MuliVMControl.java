@@ -1,5 +1,6 @@
 package de.wwu.muli.env;
 
+import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
@@ -32,7 +33,7 @@ public class MuliVMControl extends NativeMethodProvider {
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "setVMExecutionMode",
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, ExecutionMode.class));
-        System.out.println("MuliVMControl native method handlers registered");
+        Globals.getInst().logger.debug("MuliVMControl native method handlers registered");
     }
 
     public static Object getVMExecutionMode(Frame frame) {

@@ -7,7 +7,6 @@ import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
 import de.wwu.muggl.vm.initialization.InitializedClass;
-import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
 
@@ -21,7 +20,7 @@ public class MuliVMControl extends NativeMethodProvider {
     private static ClassFile ENUM_EXECUTIONMODE = null;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
-        ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile("de.wwu.muli.ExecutionMode");
+        ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile(de.wwu.muli.ExecutionMode.class.getCanonicalName());
         registerNatives();
     }
 
@@ -40,9 +39,9 @@ public class MuliVMControl extends NativeMethodProvider {
         InitializedClass ic = ENUM_EXECUTIONMODE.getTheInitializedClass(frame.getVm());
 
         if (Options.getInst().symbolicMode) {
-            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName("SYMBOLIC"));
+            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.SYMBOLIC.toString()));
         } else {
-            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"));
+            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.NORMAL.toString()));
         }
 
     }
@@ -51,12 +50,13 @@ public class MuliVMControl extends NativeMethodProvider {
         InitializedClass ic = ENUM_EXECUTIONMODE.getTheInitializedClass(frame.getVm());
 
         // parse param and set mode accordingly
-        if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("SYMBOLIC"))) {
+        if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.SYMBOLIC.toString()))) {
             Options.getInst().symbolicMode = true;
-        } else if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"))) {
+        } else if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.NORMAL.toString()))) {
             Options.getInst().symbolicMode = false;
             //TODO clear up all choicepoints! no backtracking beyond this point.
             // TODO the preceding TODO is probably nonsense: Collection takes place manually now.
         }
+
     }
 }

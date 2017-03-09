@@ -17,7 +17,7 @@ import java.lang.invoke.MethodType;
  * Created by j_dage01 on 06.03.17.
  */
 public class MuliVMControl extends NativeMethodProvider {
-    private static final String handledClassFQ = "de.wwu.muli.Muli";
+    private static final String handledClassFQ = de.wwu.muli.Muli.class.getCanonicalName();
     private static ClassFile ENUM_EXECUTIONMODE = null;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {

@@ -29,7 +29,7 @@ public class MuliVMControl extends NativeMethodProvider {
         //TODO check types here: Object vs Objectref -- not quite sure how this works out.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "getVMExecutionMode",
                 MethodType.methodType(Object.class, Frame.class),
-                MethodType.methodType(Object.class));
+                MethodType.methodType(ExecutionMode.class));
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "setVMExecutionMode",
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, ExecutionMode.class));

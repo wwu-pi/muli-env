@@ -26,7 +26,6 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
-import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
@@ -37,10 +36,8 @@ import de.wwu.muggl.vm.classfile.structures.attributes.AttributeLocalVariableTab
 import de.wwu.muggl.vm.classfile.structures.attributes.elements.FreeVariable;
 import de.wwu.muggl.vm.classfile.structures.attributes.elements.LocalVariableTable;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
-import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
-import de.wwu.muggl.vm.execution.ForwardingUnsuccessfulException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
@@ -111,11 +108,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
 	// Constant.
 	private static final long		NANOS_MILLIS	= 1000000;
-
-	// Classes for Program-VM Communication
-	private final ClassFile CLASS_SOLUTION;
-	private final ClassFile ENUM_EXECUTIONMODE;
-	private final ClassFile CLASS_VMPROPERTIESWRAPPER;
 
 	/**
 	 * Basic constructor, which initializes the additional fields.
@@ -212,14 +204,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.abortionCriterionMatched = false;
 		this.maximumLoopsReached = false;
 		this.abortionCriterionMatchedMessage = null;
-		// Initialise class references
-		try {
-			CLASS_SOLUTION = this.getClassLoader().getClassAsClassFile("de.wwu.muli.Solution");
-			ENUM_EXECUTIONMODE = this.getClassLoader().getClassAsClassFile("de.wwu.muli.ExecutionMode");
-			CLASS_VMPROPERTIESWRAPPER = this.getClassLoader().getClassAsClassFile("de.wwu.muggl.vm.execution.nativeWrapping.VMPropertiesWrapper");
-		} catch (ClassFileException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	/**
@@ -474,63 +458,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 						.debug("Could not generate a Solution as a TimeoutException was thrown with the message: "
 								+ e.getMessage() + ".");
 		}*/
-	}
-
-	
-	/* (non-Javadoc)
-	 * @see de.wwu.muggl.vm.VirtualMachine#invokeNative(de.wwu.muggl.vm.Frame, de.wwu.muggl.vm.classfile.structures.Method, de.wwu.muggl.vm.classfile.ClassFile, java.lang.Object[], de.wwu.muggl.vm.initialization.Objectref)
-	 */
-	@Deprecated
-	// TODO remove  (should be fully replaced by de.wwu.muli.env.nativeimpl.MuliVMControl)
-	public void invokeNative(Frame frame, Method method, ClassFile methodClassFile, Object[] parameters,
-			Objectref invokingObjectref) throws ForwardingUnsuccessfulException, VmRuntimeException {
-		// TODO have a look at "Invoke.invoke(...)", InvokeNative stuff is handled a little different everywhere. :(
-		if (method.getClassFile().getPackageName().startsWith("de.wwu.muli") && methodClassFile.getName().equals("de.wwu.muli.Muli")) {
-			System.out.println("Asked to invoke: " + method.getFullNameWithParameterTypesAndNames());
-			String methodName = method.getName();
-			InitializedClass ic = ENUM_EXECUTIONMODE.getTheInitializedClass(this);
-			
-			switch (methodName) {
-			case "getVMExecutionMode":
-				Object em;
-				if (Options.getInst().symbolicMode) {
-					em = ic.getField(ENUM_EXECUTIONMODE.getFieldByName("SYMBOLIC"));
-				} else {
-					em = ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"));
-				}
-				frame.getOperandStack().push(em);
-				break;
-			case "setVMExecutionMode":
-				// parse param and set mode accordingly
-				if (parameters[0] == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("SYMBOLIC"))) {
-					Options.getInst().symbolicMode = true;
-				} else if (parameters[0] == ic.getField(ENUM_EXECUTIONMODE.getFieldByName("NORMAL"))) {
-					Options.getInst().symbolicMode = false;
-					//TODO clear up all choicepoints! no backtracking beyond this point.
-				}
-				break;
-			default:
-				throw new ForwardingUnsuccessfulException("Could not forward native method " + methodName);
-			}
-			
-			
-		} else if (methodClassFile.getName().equals("sun.misc.VM") && method.getName().equals("initialize")) {
-			// TODO pull up to VirtualMachine and extract comments into somewhere else.
-			// skip and log
-			// Globals.getInst().execLogger.trace("sun.misc.VM.initialize detected; skipped."); // TODO nope, see comment below!
-			/* Well, I really don't know whether this is sensible. Actually, initialize should not be called at all. Can we mock this?
-			... last time, we avoided this problem by avoiding to instantiate Throwable.class. Maybe we can mock IntegerCache entirely. 
-			OR we mock VM.getSavedProperty (consequently, we'd need to mock VM! Maybe redirecting calls to outside VM.*/
-
-			// catch sun.misc.VM#initialize() and get a mock Properties (@see VMPropertiesWrapper) object into VM#savedProps
-			InitializedClass sunMiscVm = methodClassFile.getTheInitializedClass(frame.getVm());
-			Field savedProps = methodClassFile.getFieldByName("savedProps");
-			sunMiscVm.putField(savedProps, frame.getVm().getAnObjectref(CLASS_VMPROPERTIESWRAPPER));
-			
-		} else {
-
-			//super.invokeNative(frame, method, methodClassFile, parameters, invokingObjectref);
-		}
 	}
 
 	/**

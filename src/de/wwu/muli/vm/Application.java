@@ -6,7 +6,7 @@ import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
-import de.wwu.muli.env.MuliVMControl;
+import de.wwu.muli.env.nativeimpl.MuliVMControl;
 
 /**
  * An Application is the top level element of any execution. it instantiates and holds the reference to the

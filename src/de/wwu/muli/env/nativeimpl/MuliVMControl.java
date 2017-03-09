@@ -1,4 +1,4 @@
-package de.wwu.muli.env;
+package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;

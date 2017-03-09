@@ -139,6 +139,8 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 		// Only track back if there ever was a ChoicePoint generated at all. Otherwise, no tracking back is possible.
 		if (this.currentChoicePoint == null) return false;
 
+		Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt backtracking.");
+
 		// Get the SolverManager.
 		SolverManager solverManager = vm.getSolverManager();
 
@@ -164,11 +166,10 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 			this.currentChoicePoint.changeToNextChoice();
 		} catch (MugglException e) {
 			if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-			if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-				Globals.getInst().symbolicExecLogger
-						.trace("Tracking back was successfull, but encountered an Exception when switching "
-								+ " to the next choice. Trying to track back further. The root cause it "
-								+ e.getClass().getName() + " (" + e.getMessage() + ")");
+			Globals.getInst().symbolicExecLogger
+					.trace("Tracking back was successful, but encountered an Exception when switching "
+							+ " to the next choice. Trying to track back further. The root cause it "
+							+ e.getClass().getName() + " (" + e.getMessage() + ")");
 
 			return trackBack(vm);
 		}

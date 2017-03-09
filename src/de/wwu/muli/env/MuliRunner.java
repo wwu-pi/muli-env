@@ -145,8 +145,8 @@ public class MuliRunner {
 		Options.getInst().actualCliPrinting = true;
 		
 		Globals.getInst().changeLogLevel(Level.TRACE);
-		Globals.getInst().execLogger.addAppender(new ConsoleAppender(new SimpleLayout(), "System.err"));
-		//Globals.getInst().logger.addAppender(new ConsoleAppender(new SimpleLayout()));
+		Globals.getInst().parserLogger.setLevel(Level.INFO);
+
 		
 		// Accept class
 		final String className = args[0];

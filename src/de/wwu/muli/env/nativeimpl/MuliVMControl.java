@@ -67,8 +67,6 @@ public class MuliVMControl extends NativeMethodProvider {
             Options.getInst().symbolicMode = true;
         } else if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.NORMAL.toString()))) {
             Options.getInst().symbolicMode = false;
-            //TODO clear up all choicepoints! no backtracking beyond this point.
-            // TODO the preceding TODO is probably nonsense: Collection takes place manually now.
         }
 
     }

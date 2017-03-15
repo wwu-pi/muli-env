@@ -10,11 +10,13 @@ import de.wwu.muggl.vm.execution.NativeWrapper;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
+import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
 
 /**
- * Created by j_dage01 on 06.03.17.
+ * Provider for native methods of muli-cp's de.wwu.muli.Muli
+ * @author Jan C. Dageförde
  */
 public class MuliVMControl extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.Muli.class.getCanonicalName();
@@ -26,13 +28,23 @@ public class MuliVMControl extends NativeMethodProvider {
     }
 
     public static void registerNatives() {
-        //TODO check types here: Object vs Objectref -- not quite sure how this works out.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "getVMExecutionMode",
                 MethodType.methodType(Object.class, Frame.class),
                 MethodType.methodType(ExecutionMode.class));
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "setVMExecutionMode",
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, ExecutionMode.class));
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "recordSolutionAndBacktrackVM",
+                MethodType.methodType(void.class, Frame.class, Object.class),
+                MethodType.methodType(void.class, Object.class));
+
+        // TODO public static native MuliFailException fail();
+
+        // TODO private static native void setVMSymbolicExecutionTreeRoot();
+        // TODO private static native void recordExceptionAndBacktrackVM(Throwable exception);
+
+        // TODO private static native Solution getVMRecordedSolutions();
+
         Globals.getInst().logger.debug("MuliVMControl native method handlers registered");
     }
 
@@ -59,5 +71,16 @@ public class MuliVMControl extends NativeMethodProvider {
             // TODO the preceding TODO is probably nonsense: Collection takes place manually now.
         }
 
+    }
+
+    public static void recordSolutionAndBacktrackVM(Frame frame, Object solutionObject) {
+        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+        // TODO record solution (possible types?)
+        Globals.getInst().symbolicExecLogger.debug("Found solution: " + solutionObject);
+        vm.saveSolution();
+
+        // backtracking
+        vm.getSearchAlgorithm().trackBack(vm);
+        // TODO consider special handling / loggin if result of trackBack is false
     }
 }

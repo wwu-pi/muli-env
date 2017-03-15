@@ -298,6 +298,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			
 			// Track back if desired and possible.
 			if (this.doNotTryToTrackBack || !this.searchAlgorithm.trackBack(this)) break;
+			// TODO safely remove backtracking and saving here!
 		}
 
 		/*
@@ -421,7 +422,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	/**
 	 * Since the execution came to an end, save the found solution.
 	 */
-	private void saveSolution() {
+    public void saveSolution() {
 		// Reset the instruction counter.
 		this.instructionsExecutedSinceLastSolution = 0;
 
@@ -890,15 +891,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public LogicSearchAlgorithm getSearchAlgorithm() {
 		return this.searchAlgorithm;
-	}
-
-	/**
-	 * Setter for the stack of this symbolic virtual machine.
-	 * 
-	 * @param stack The new stack.
-	 */
-	public void setStack(Stack<Object> stack) {
-		this.stack = stack;
 	}
 
 	/**

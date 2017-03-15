@@ -245,8 +245,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	protected void runMainLoop(Frame visualStartingFrame) throws ExecutionException,
 			InterruptedException, InvalidInstructionInitialisationException {
 		boolean firstRun = true;
-		// Symbolic loop - the end of the program flow is not necessarily the end of the execution.
-		while (true) {
+
 			try {
 				// Run the program.
 				if (firstRun) {
@@ -283,43 +282,9 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				throw e;
 			}
 
-			/*
-			 * If this point is reached, a new solution was found. Save it if it is supposed to be
-			 * saved.
-			 */
-			//if (this.solutionProcessor.getDoNotSaveTheNextSolution()) {
-			//	this.solutionProcessor.setDoNotSaveTheNextSolution(false);
-			//} else {
-			if (this.measureExecutionTime) this.timeSolutionGenerationTemp = System.nanoTime();
-			saveSolution();
-			if (this.measureExecutionTime)
-				this.timeSolutionGeneration += System.nanoTime()
-						- this.timeSolutionGenerationTemp;
-			
-			// Track back if desired and possible.
-			if (this.doNotTryToTrackBack || !this.searchAlgorithm.trackBack(this)) break;
-			// TODO safely remove backtracking and saving here!
-		}
 
-		/*
-		 * After finishing, process the solutions and generate test cases from them. However, only
-		 * do this if this virtual machine has not set not to process them. There might be
-		 * circumstances by that it becomes finalized before execution really is finished. In this
-		 * cases, not processing the solutions might be chosen. An example is the iterative
-		 * deepening depth first algorithm: If it increases the maximum search depth, a new symbolic
-		 * virtual machine is initialized and execution started from scratch. It will manually call
-		 * the finalize() method of this symbolic virtual machine. In this case, execution just has
-		 * to be finished here, and no generation of test cases is needed.
-		 */
-		if (!this.doNotProcessSolutions) {
-			/*
-			 * Mark that the actual execution has finished. Generating the test cases might take a
-			 * while. However, this is not part of the execution.
-			 */
-			this.application.executionHasFinished();
-			// Generate all solutions
-			// TODO generate solutions (OR remove this)
-		}
+		this.application.executionHasFinished();
+
 	}
 
 	/**

@@ -79,8 +79,11 @@ import de.wwu.muggl.solvers.expressions.Term;
  * The depth first search algorithm does not need any additional information
  * stored to perform. However, finding solutions might take a lot of time.
  *
+ * Modifications have been made in order to account for the fact that backtracking
+ * may occur anywhere, not just at the end of the program. -JD 15.03.17
+ *
  * @author Tim Majchrzak
- * @version 1.0.0, 2010-03-16
+ * @author Jan C. Dageförde
  */
 public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 	// Fields
@@ -146,6 +149,20 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 
 		// Since the jump is executed first, find the newest ChoicePoint thats non jumping branch was not visited yet. Restore states while doing so.
 		while (!this.currentChoicePoint.hasAnotherChoice()) {
+			// Muli: Backtracking is now possible anywhere, not just at the end of execution. Therefore, order
+			// of instructions have been changed. Otherwise, the last branch would have been executed twice.
+
+			// No further choice for this CP. Is there a parent? If so, we need to recover everything after this CP
+			// and continue at the parent. Otherwise, return false and continue!
+			if (this.currentChoicePoint.getParent() == null) {
+				// Went trough all branches.
+				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+				this.currentChoicePoint = null; // Remove last reference to this choice point
+				return trackBackFailed(vm);
+			}
+
+			// There is a parent, continue by recovering.
+
 			// First step: Use the trail of the last choice point to get back to the old state.
 			recoverState(vm);
 
@@ -154,11 +171,6 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 			
 			// Third step: Load its' parent. This will also free the memory of the current choice point.
 			this.currentChoicePoint = this.currentChoicePoint.getParent();
-			if (this.currentChoicePoint == null) {
-				// Went trough all branches.
-				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-				return trackBackFailed(vm);
-			}
 		}
 
 		// Change to the next choice.

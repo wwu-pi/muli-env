@@ -100,8 +100,10 @@ public class MuliRunner {
 			final long milliSecondsRun = System.currentTimeMillis() - timeStarted;
 			Globals.getInst().execLogger.info("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
 			
-			// If the application terminated with an exception, output it. 
-			if (runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
+			// Exit successfully, unless an exception occured
+			if (!runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
+				System.exit(0);
+			} else {
 				Object exception = runner.app.getVirtualMachine().getReturnedObject();
 				if (exception == null) {
 					throw new IllegalStateException("VM says that an uncaught exception was thrown, but no exception found. Terminating immediately.");
@@ -113,12 +115,14 @@ public class MuliRunner {
 					// print regular stack trace.
 					((Throwable)exception).printStackTrace();
 				}
+				System.exit(1);
 			}
 			
 
 		} catch (InterruptedException e) {
 			// Just give out a message and then abort.
-			System.out.println("Error: InterruptedException");
+			System.out.println("Muli Error: InterruptedException");
+			System.exit(1);
 		}
 
 	}
@@ -182,6 +186,7 @@ public class MuliRunner {
 			// Find out, if the execution has finished.
 			if (this.app.getExecutionFinished()) {
 				this.isRunning = false;
+				return true;
 			}
 		}
 		return false;

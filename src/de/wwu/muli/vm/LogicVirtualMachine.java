@@ -246,44 +246,41 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			InterruptedException, InvalidInstructionInitialisationException {
 		boolean firstRun = true;
 
-			try {
-				// Run the program.
-				if (firstRun) {
-					super.runMainLoop(visualStartingFrame);
-					firstRun = false;
-				} else {
-					super.runMainLoop(this.currentFrame);
-				}
-			} catch (NoExceptionHandlerFoundException e) {
-				/*
-				 * The only exception reaching this point and not halting the virtual machine is the
-				 * NoExceptionHandlerFoundException. It indicates that an Exception was thrown by
-				 * the executed program which would stop the execution of it. At this point is means
-				 * that a set of parameters was found that will result in the application throwing
-				 * an uncaught Exception. This forms a solution!
-				 */
-				this.threwAnUncaughtException = true;
-				// The return object is used to store the NoExceptionHandlerFoundException
-				// containing the uncaught throwable as there is no returned value anyway.
-				this.returnedObject = e;
-				// TODO maybe throw this? would skip saveSolution() stuff (which is probably not needed anyway...)
-			} catch (InterruptedException e) {
-				// Mark that the actual execution has finished.
-				this.application.executionHasFinished();
-
-				// Logging.
-				if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.INFO))
-					Globals.getInst().symbolicExecLogger
-							.info("The virtual machine was halted with an InterruptionException. "
-									+ e);
-
-
-				// Rethrow.
-				throw e;
+		try {
+			// Run the program.
+			if (firstRun) {
+				super.runMainLoop(visualStartingFrame);
+				firstRun = false;
+			} else {
+				super.runMainLoop(this.currentFrame);
 			}
+		} catch (NoExceptionHandlerFoundException e) {
+			/*
+			 * The only exception reaching this point and not halting the virtual machine is the
+			 * NoExceptionHandlerFoundException. It indicates that an Exception was thrown by
+			 * the executed program which would stop the execution of it. At this point is means
+			 * that a set of parameters was found that will result in the application throwing
+			 * an uncaught Exception. This forms a solution!
+			 */
+			this.threwAnUncaughtException = true;
+			// The return object is used to store the NoExceptionHandlerFoundException
+			// containing the uncaught throwable as there is no returned value anyway.
+			this.returnedObject = e;
+			// TODO maybe throw this? would skip saveSolution() stuff (which is probably not needed anyway...)
+		} catch (InterruptedException e) {
+			// Mark that the actual execution has finished.
+			this.application.executionHasFinished();
+
+			// Logging.
+			if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.INFO))
+				Globals.getInst().symbolicExecLogger
+						.info("The virtual machine was halted with an InterruptionException. "
+								+ e);
 
 
-		this.application.executionHasFinished();
+			// Rethrow.
+			throw e;
+		}
 
 	}
 

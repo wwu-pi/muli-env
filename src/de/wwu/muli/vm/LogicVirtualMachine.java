@@ -333,7 +333,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				this.abortionCriterionMatched = true;
 				this.abortionCriterionMatchedMessage = "No new solution was found after executing "
 						+ this.maximumInstructionsBeforeFindingANewSolution + " instructions.";
-//				this.solutionProcessor.setDoNotSaveTheNextSolution(true);
 				this.returnFromCurrentExecution = true;
 				this.stack.clear();
 				this.doNotTryToTrackBack = true;
@@ -373,7 +372,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				Globals.getInst().symbolicExecLogger
 						.debug("Aborted execution as the maximum loop limit was reached. Trying to track back...");
 			this.maximumLoopsReached = true;
-//			this.solutionProcessor.setDoNotSaveTheNextSolution(true);
 			this.returnFromCurrentExecution = true;
 			this.stack.clear();
 		}
@@ -407,20 +405,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
 			// Commit the coverage of control flow edges and def-use chains.
 //			this.coverage.commitAllchanges();
-/*		} catch (SolverUnableToDecideException e) {
-			// This should not happen as the Constraints already were solvable.
-			if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-				Globals.getInst().symbolicExecLogger
-						.warn("Could not generate a Solution as a SolverUnableToDecideException was thrown with the message: "
-								+ e.getMessage()
-								+ ".\n\nThis should not happen, please check the corresponding source code.");
-		} catch (TimeoutException e) {
-			// Log that.
-			if (Globals.getInst().symbolicExecLogger.isDebugEnabled())
-				Globals.getInst().symbolicExecLogger
-						.debug("Could not generate a Solution as a TimeoutException was thrown with the message: "
-								+ e.getMessage() + ".");
-		}*/
 	}
 
 	/**
@@ -862,7 +846,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.returnFromCurrentExecution = true;
 		this.nextFrameIsAlreadyLoaded = false;
 		this.stack.clear();
-		//this.solutionProcessor.setDoNotSaveTheNextSolution(true);
 	}
 
 	/**
@@ -873,17 +856,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	public void interrupt() {
 		if (!isInterrupted()) {
-			// Interrupt the test case generation if it has been already started.
-//			if (this.solutionProcessor.hasTestCaseGenerationStarted()) {
-				/*
-				 * TODO: need an extra option to decide whether test cases are generated after
-				 * abortion, or not. At the moment, it will usually be desired to do so. Abortion is
-				 * usually done when reaching the maixmum execution time and we definitely want to
-				 * get test cases after reaching it.
-				 */
-				//this.solutionProcessor.interrupt();
-			//}
-
 			// Invoke the interruption implementation of java.lang.Thread.
 			super.interrupt();
 		}

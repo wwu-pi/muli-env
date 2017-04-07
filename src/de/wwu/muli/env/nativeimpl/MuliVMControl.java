@@ -10,14 +10,17 @@ import de.wwu.muggl.vm.execution.NativeWrapper;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
+import de.wwu.muli.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.Muli
  * @author Jan C. Dageförde
  */
+@SuppressWarnings({"WeakerAccess", "unused"}) // All methods will be called through the NativeWrapper, but static analysis doesn't know this.
 public class MuliVMControl extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.Muli.class.getCanonicalName();
     private static ClassFile ENUM_EXECUTIONMODE = null;
@@ -37,6 +40,12 @@ public class MuliVMControl extends NativeMethodProvider {
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "recordSolutionAndBacktrackVM",
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, Object.class));
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "recordExceptionAndBacktrackVM",
+                MethodType.methodType(void.class, Frame.class, Throwable.class),
+                MethodType.methodType(void.class, Throwable.class));
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "getVMRecordedSolutions",
+                MethodType.methodType(Solution[].class, Frame.class),
+                MethodType.methodType(Solution[].class));
 
         // TODO public static native MuliFailException fail();
 
@@ -73,12 +82,22 @@ public class MuliVMControl extends NativeMethodProvider {
 
     public static void recordSolutionAndBacktrackVM(Frame frame, Object solutionObject) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        // TODO record solution (possible types?)
         Globals.getInst().symbolicExecLogger.debug("Found solution: " + solutionObject);
         vm.saveSolution();
 
         // backtracking
         vm.getSearchAlgorithm().trackBack(vm);
-        // TODO consider special handling / loggin if result of trackBack is false
+        // TODO consider special handling / logging if result of trackBack is false
+    }
+
+    public static void recordExceptionAndBacktrackVM(Frame frame, Throwable solutionException) {
+        // Actually, vm's `saveSolution` is currently well capable of handling exceptions as well!
+        // Let's not duplicate code.
+        recordSolutionAndBacktrackVM(frame, solutionException);
+    }
+
+    public static Solution[] getVMRecordedSolutions(Frame frame) {
+        ArrayList<Solution> solutions = ((LogicVirtualMachine)frame.getVm()).getSolutions();
+        return (Solution[]) solutions.toArray();
     }
 }

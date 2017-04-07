@@ -1,8 +1,9 @@
 package de.wwu.muli.vm;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Stack;
 
+import de.wwu.muli.Solution;
 import org.apache.log4j.Level;
 
 import de.wwu.muggl.configuration.Globals;
@@ -70,7 +71,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	private boolean					doNotTryToTrackBack;
 
 	// Solution related fields.
-	private boolean					doNotProcessSolutions;
+	private ArrayList<Solution> solutions;
 
 	// Fields for the execution time measured.
 	private boolean					measureExecutionTime;
@@ -85,7 +86,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// Temporary fields for the time measuring.
 	private long					timeExecutionInstructionTemp;
 	private long					timeLoopDetectionTemp;
-	private long					timeSolutionGenerationTemp;
 
 	// Fields for counting the instructions executed since the last solution was found.
 	private int						maximumInstructionsBeforeFindingANewSolution;
@@ -142,6 +142,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				.getClassFile(), succeededSVM.getInitialMethod(), searchAlgorithm);
 		
 		// Import outcomes of the former execution.
+		this.solutions = succeededSVM.solutions;
 		this.executedFrames = succeededSVM.getExecutedFrames();
 		this.executedInstructions = succeededSVM.getExecutedInstructions();
 		if (Options.getInst().measureSymbolicExecutionTime) {
@@ -185,8 +186,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		}
 		this.searchAlgorithm = searchAlgorithm;
 		this.stack = new StackToTrail(true, this.searchAlgorithm);
+		this.solutions = new ArrayList<>();
 		this.doNotTryToTrackBack = false;
-		this.doNotProcessSolutions = false;
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
 		this.timeExecutionInstruction = 0;
 		this.timeLoopDetection = 0;
@@ -380,31 +381,29 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	}
 
 	/**
-	 * Since the execution came to an end, save the found solution.
+	 * Since execution reached a backtracking point, store the found solution for later retrieval.
 	 */
     public void saveSolution() {
-		// Reset the instruction counter.
+		// Reset the instruction-between-solutions counter.
 		this.instructionsExecutedSinceLastSolution = 0;
 
-		// Generate an expression from the solutions.
-//		try {
-			// Check if there would be a return value.
-			Object returnValue;
-			if (this.hasAReturnValue || this.threwAnUncaughtException) {
-				returnValue = this.returnedObject;
-			} else {
-				returnValue = new UndefinedValue();
-			}
+		// Retrieve the found solution
+		Object returnValue;
+		if (this.hasAReturnValue || this.threwAnUncaughtException) {
+			returnValue = this.returnedObject;
+		} else {
+			returnValue = new UndefinedValue();
+		}
 			
-			//TODO use return value! -> Store into returned solutions
+		// Add the solution.
+		this.solutions.add(new Solution(returnValue, this.threwAnUncaughtException));
+	}
 
-			// Add the solutions.
-//			this.solutionProcessor.addSolution(this.solverManager.getSolution(), returnValue,
-//					this.threwAnUncaughtException, this.coverage.getCFCoverageMap(), this.coverage
-//							.getDUCoverageAsBoolean());
-
-			// Commit the coverage of control flow edges and def-use chains.
-//			this.coverage.commitAllchanges();
+	/**
+	 * Retrieves solutions that were found and stored during execution.
+	 */
+	public ArrayList<Solution> getSolutions() {
+		return this.solutions;
 	}
 
 	/**
@@ -1052,13 +1051,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		super.changeCurrentFrame(frame);
 	}
 
-	/**
-	 * Mark that the solutions found by this symbolic virtual machine will no be processed.
-	 */
-	public void doNotProcessSolutions() {
-		this.doNotProcessSolutions = true;
-	}
-	
 	/**
 	 * Report that another array generator is used.
 	 */

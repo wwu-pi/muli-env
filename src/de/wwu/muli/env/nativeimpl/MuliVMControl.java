@@ -23,10 +23,12 @@ import java.util.ArrayList;
 @SuppressWarnings({"WeakerAccess", "unused"}) // All methods will be called through the NativeWrapper, but static analysis doesn't know this.
 public class MuliVMControl extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.Muli.class.getCanonicalName();
+    private static ClassFile CLASS_SOLUTION = null;
     private static ClassFile ENUM_EXECUTIONMODE = null;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile(de.wwu.muli.ExecutionMode.class.getCanonicalName());
+        CLASS_SOLUTION = classLoader.getClassAsClassFile(de.wwu.muli.Solution.class.getCanonicalName());
         registerNatives();
     }
 
@@ -97,6 +99,10 @@ public class MuliVMControl extends NativeMethodProvider {
     }
 
     public static Solution[] getVMRecordedSolutions(Frame frame) {
+        // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
+        CLASS_SOLUTION.getTheInitializedClass(frame.getVm());
+
+        // Retrieve solutions from VM and pack them into an array.
         final ArrayList<Solution> solutions = ((LogicVirtualMachine)frame.getVm()).getSolutions();
         Solution[] result = new Solution[solutions.size()];
         return solutions.toArray(result);

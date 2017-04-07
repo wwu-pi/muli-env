@@ -135,9 +135,6 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 				LogicVirtualMachine vmNew = new LogicVirtualMachine(this, vm);
 				vmNew.setStepByStepMode(vm.getStepByStepMode());
 
-				// Tell the vm not to process the solutions found.
-				vm.doNotProcessSolutions();
-
 				// Set the new vm.
 				vm.getApplication().setVirtualMachine(vmNew);
 			} catch (InitializationException e) {

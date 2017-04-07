@@ -97,7 +97,8 @@ public class MuliVMControl extends NativeMethodProvider {
     }
 
     public static Solution[] getVMRecordedSolutions(Frame frame) {
-        ArrayList<Solution> solutions = ((LogicVirtualMachine)frame.getVm()).getSolutions();
-        return (Solution[]) solutions.toArray();
+        final ArrayList<Solution> solutions = ((LogicVirtualMachine)frame.getVm()).getSolutions();
+        Solution[] result = new Solution[solutions.size()];
+        return solutions.toArray(result);
     }
 }

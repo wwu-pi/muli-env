@@ -84,8 +84,8 @@ public class MuliVMControl extends NativeMethodProvider {
 
     public static void recordSolutionAndBacktrackVM(Frame frame, Object solutionObject) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().symbolicExecLogger.debug("Found solution: " + solutionObject);
-        vm.saveSolution();
+        Globals.getInst().symbolicExecLogger.debug("Record solution: Result " + solutionObject);
+        vm.saveSolutionObject(solutionObject);
 
         // backtracking
         vm.getSearchAlgorithm().trackBack(vm);
@@ -93,9 +93,13 @@ public class MuliVMControl extends NativeMethodProvider {
     }
 
     public static void recordExceptionAndBacktrackVM(Frame frame, Throwable solutionException) {
-        // Actually, vm's `saveSolution` is currently well capable of handling exceptions as well!
-        // Let's not duplicate code.
-        recordSolutionAndBacktrackVM(frame, solutionException);
+        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+        Globals.getInst().symbolicExecLogger.debug("Record Solution: Exception " + solutionException);
+        vm.saveSolutionException(solutionException);
+
+        // backtracking
+        vm.getSearchAlgorithm().trackBack(vm);
+        // TODO consider special handling / logging if result of trackBack is false
     }
 
     public static Solution[] getVMRecordedSolutions(Frame frame) {

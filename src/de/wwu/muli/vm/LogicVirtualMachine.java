@@ -31,7 +31,6 @@ import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
-import de.wwu.muggl.vm.classfile.structures.UndefinedValue;
 import de.wwu.muggl.vm.classfile.structures.attributes.AttributeFreeVariables;
 import de.wwu.muggl.vm.classfile.structures.attributes.AttributeLocalVariableTable;
 import de.wwu.muggl.vm.classfile.structures.attributes.elements.FreeVariable;
@@ -267,7 +266,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			// The return object is used to store the NoExceptionHandlerFoundException
 			// containing the uncaught throwable as there is no returned value anyway.
 			this.returnedObject = e;
-			// TODO maybe throw this? would skip saveSolution() stuff (which is probably not needed anyway...)
 		} catch (InterruptedException e) {
 			// Mark that the actual execution has finished.
 			this.application.executionHasFinished();
@@ -383,20 +381,23 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	/**
 	 * Since execution reached a backtracking point, store the found solution for later retrieval.
 	 */
-    public void saveSolution() {
+	public void saveSolutionObject(Object solution) {
 		// Reset the instruction-between-solutions counter.
 		this.instructionsExecutedSinceLastSolution = 0;
 
-		// Retrieve the found solution
-		Object returnValue;
-		if (this.hasAReturnValue || this.threwAnUncaughtException) {
-			returnValue = this.returnedObject;
-		} else {
-			returnValue = new UndefinedValue();
-		}
-			
 		// Add the solution.
-		this.solutions.add(new Solution(returnValue, this.threwAnUncaughtException));
+		this.solutions.add(new Solution(solution, false));
+	}
+
+	/**
+	 * Since execution reached a backtracking point, store the found exception for later retrieval.
+	 */
+	public void saveSolutionException(Throwable solution) {
+		// Reset the instruction-between-solutions counter.
+		this.instructionsExecutedSinceLastSolution = 0;
+
+		// Add the solution.
+		this.solutions.add(new Solution(solution, true));
 	}
 
 	/**

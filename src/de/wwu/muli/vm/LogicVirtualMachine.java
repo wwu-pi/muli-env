@@ -392,7 +392,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	/**
 	 * Since execution reached a backtracking point, store the found exception for later retrieval.
 	 */
-	public void saveSolutionException(Throwable solution) {
+	public void saveSolutionException(Object solution) {
 		// Reset the instruction-between-solutions counter.
 		this.instructionsExecutedSinceLastSolution = 0;
 

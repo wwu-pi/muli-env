@@ -3,6 +3,7 @@ package de.wwu.muli.vm;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
 import de.wwu.muli.Solution;
 import org.apache.log4j.Level;
 
@@ -1050,6 +1051,24 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
 		// Invoke the super implementation to change the frame.
 		super.changeCurrentFrame(frame);
+	}
+
+	/**
+	 * Change the pc at the current Frame and put information about the previous pc onto the
+	 * trail, if there is any.
+	 *
+	 * @param pc the next pc
+	 */
+	@Override
+	public void changeCurrentPC(int pc) {
+		// Create a PCChange trail element?
+		ChoicePoint choicePoint = this.searchAlgorithm.getCurrentChoicePoint();
+		if (choicePoint != null && choicePoint.hasTrail()) {
+			// Add a PCChange trail element.
+			choicePoint.addToTrail(new PCChange(this.pc));
+		}
+
+		super.setPC(pc);
 	}
 
 	/**

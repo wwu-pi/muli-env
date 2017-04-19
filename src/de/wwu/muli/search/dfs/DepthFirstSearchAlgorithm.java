@@ -2,6 +2,7 @@ package de.wwu.muli.search.dfs;
 
 import java.util.Stack;
 
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
 import org.apache.log4j.Level;
 
 import de.wwu.muggl.configuration.Globals;
@@ -29,18 +30,6 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.longComparison.LongComparis
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.LookupswitchChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.SwitchingChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.TableswitchChoicePoint;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.ArrayRestore;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FieldPut;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChange;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.InstanceFieldPut;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Pop;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PopFromFrame;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Push;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Restore;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.StaticFieldPut;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.TrailElement;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPop;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPush;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
@@ -293,6 +282,12 @@ public class DepthFirstSearchAlgorithm implements LogicSearchAlgorithm {
 					operandStack = (StackToTrail) frameChange.getFrame().getOperandStack();
 					// Enable restoring mode for it.
 					operandStack.setRestoringMode(true);
+				} else if (object instanceof PCChange) {
+					PCChange pcChange = (PCChange) object;
+					// There was an explicit PC jump, e.g. due to exception handling.
+					// Restore the former PC value.
+					vm.setPC(pcChange.getPC());
+					vm.getCurrentFrame().setPc(pcChange.getPC());
 				} else if (object instanceof Push) {
 					vm.getCurrentFrame().getOperandStack().push(((Push) object).getObject());
 				} else if (object instanceof Pop) {

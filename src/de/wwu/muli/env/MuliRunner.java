@@ -148,8 +148,9 @@ public class MuliRunner {
 		Options.getInst().logicMode = true;
 		Options.getInst().actualCliPrinting = true;
 		
-		Globals.getInst().changeLogLevel(Level.TRACE);
-		Globals.getInst().parserLogger.setLevel(Level.INFO);
+		Globals.getInst().changeLogLevel(Level.INFO);// DEV: DEBUG
+		Globals.getInst().execLogger.setLevel(Level.ERROR); // DEV: comment this line
+		Globals.getInst().parserLogger.setLevel(Level.WARN); // DEV: INFO
 
 		
 		// Accept class

@@ -1,3 +1,10 @@
 [submodule "examples"]
 	path = examples
 	url = git@wiwi-gitlab.uni-muenster.de:j_dage01/muli-examples.git
+[submodule "lib/muggl"]
+	path = lib/muggl
+	url = https://github.com/wwu-pi/muggl
+	branch = muli-env
+[submodule "lib/muli-classpath"]
+	path = lib/muli-classpath
+	url = https://github.com/wwu-pi/muli-classpath

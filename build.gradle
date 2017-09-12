@@ -15,7 +15,7 @@ dependencies {
 	compile 'de.wwu.muggl:muggl-core:0.3.2+'
 	compile 'de.wwu.muggl:muggl-common:0.3.+'
     compile 'log4j:log4j:1.2.17'
-	compile 'de.wwu.muli:muli-classpath:1.2+' // needed at compile time, as parts of CP are implemented in native providers
+	compile 'de.wwu.muli:muli-classpath:1.3+' // needed at compile time, as parts of CP are implemented in native providers
 }
 
 eclipse {

@@ -58,6 +58,11 @@ public class MuliVMControl extends NativeMethodProvider {
                 MethodType.methodType(void.class, Frame.class),
                 MethodType.methodType(MuliFailException.class));
 
+        // `label' operator
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "label",
+                MethodType.methodType(void.class, Frame.class),
+                MethodType.methodType(void.class));
+
         Globals.getInst().logger.debug("MuliVMControl native method handlers registered");
     }
 
@@ -121,5 +126,14 @@ public class MuliVMControl extends NativeMethodProvider {
         // backtracking
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
+    }
+    public static void label(Frame frame) {
+        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+        try {
+            vm.getSolverManager().getSolution();
+        } catch (Exception e) {
+            Globals.getInst().solverLogger.error("Labeling exception: " + e.getMessage());
+        }
+
     }
 }

@@ -387,7 +387,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.instructionsExecutedSinceLastSolution = 0;
 
 		// Add the solution.
-		this.solutions.add(new Solution(solution, false));
+		this.solutions.add(new Solution(solution));
 	}
 
 	/**
@@ -398,7 +398,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.instructionsExecutedSinceLastSolution = 0;
 
 		// Add the solution.
-		this.solutions.add(new Solution(solution, true));
+		this.solutions.add(new Solution((Throwable)solution));
 	}
 
 	/**

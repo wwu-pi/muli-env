@@ -166,7 +166,7 @@ public class MuliRunner {
 		// TODO: remove args that control (Muli/Muggl) VM instead of program.
 		
 		// Instantiate class loader
-		final MugglClassLoader classLoader = new MugglClassLoader(new String[]{"examples"});
+		final MugglClassLoader classLoader = new MugglClassLoader(new String[]{ "./system-classes/", "./examples/"});
 		// TODO: Remove fake cp; Enable more classpaths from -cp arg
 		
 		// Find main method

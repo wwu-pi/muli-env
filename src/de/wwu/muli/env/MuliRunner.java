@@ -172,9 +172,9 @@ public class MuliRunner {
 		// Find main method
 		final ClassFile classFile = classLoader.getClassAsClassFile(className);
 		final Method mainMethod = classFile.getMethodByNameAndDescriptor(MAIN_METHOD_NAME, MAIN_METHOD_DESCRIPTOR);
-		// TODO pass newArgs to invoked main method
 
-
+		// Pass newArgs to invoked main method.
+		mainMethod.setPredefinedParameters(new Object[] { newArgs });
 		app = new Application(classLoader, className, mainMethod);
 		
 		this.isRunning = false;

@@ -148,9 +148,9 @@ public class MuliRunner {
 		Options.getInst().logicMode = true;
 		Options.getInst().actualCliPrinting = true;
 		
-		Globals.getInst().changeLogLevel(Level.INFO);// DEV: DEBUG
-		Globals.getInst().execLogger.setLevel(Level.ERROR); // DEV: comment this line
-		Globals.getInst().parserLogger.setLevel(Level.WARN); // DEV: INFO
+		Globals.getInst().changeLogLevel(Level.INFO);// DEV: DEBUG // PROD: INFO
+		Globals.getInst().execLogger.setLevel(Level.ERROR); // DEV: comment this line // PROD: remove comment
+		Globals.getInst().parserLogger.setLevel(Level.WARN); // DEV: INFO // PROD: WARN
 
 		
 		// Accept class

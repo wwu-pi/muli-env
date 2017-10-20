@@ -93,6 +93,7 @@ public class MuliVMControl extends NativeMethodProvider {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution: Result " + solutionObject);
         vm.saveSolutionObject(solutionObject);
+        //System.out.println("solution, " + System.nanoTime());
 
         // backtracking
         vm.getSearchAlgorithm().trackBack(vm);

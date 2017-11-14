@@ -38,8 +38,7 @@ public class MuliRunner {
 		try {
 			runner = new MuliRunner(args);
 		} catch (ClassFileException | InitializationException e) {
-			e.printStackTrace();
-			return;
+			throw new RuntimeException(e);
 		}
 		
 		// Enter the main execution loop.
@@ -101,9 +100,7 @@ public class MuliRunner {
 			Globals.getInst().execLogger.info("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
 			
 			// Exit successfully, unless an exception occured
-			if (!runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
-				System.exit(0);
-			} else {
+			if (runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
 				Object exception = runner.app.getVirtualMachine().getReturnedObject();
 				if (exception == null) {
 					throw new IllegalStateException("VM says that an uncaught exception was thrown, but no exception found. Terminating immediately.");
@@ -112,17 +109,15 @@ public class MuliRunner {
 					String[] uncaught = ((NoExceptionHandlerFoundException)exception).getUncaughtThrowableNameAndMessage();
 					System.err.println("Unhandled exception: " + uncaught[0] + "; Message: " + uncaught[1]);
 				} else if (exception instanceof Throwable) {
-					// print regular stack trace.
-					((Throwable)exception).printStackTrace();
+					throw new RuntimeException((Throwable)exception);
 				}
-				System.exit(1);
 			}
 			
 
 		} catch (InterruptedException e) {
 			// Just give out a message and then abort.
 			System.out.println("Muli Error: InterruptedException");
-			System.exit(1);
+			throw new RuntimeException(e);
 		}
 
 	}

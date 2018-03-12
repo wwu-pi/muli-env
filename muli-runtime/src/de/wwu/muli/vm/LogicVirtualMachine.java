@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
+import de.wwu.muli.ExceptionSolution;
 import de.wwu.muli.Solution;
 import org.apache.log4j.Level;
 
@@ -76,7 +77,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// Fields for the execution time measured.
 	private boolean					measureExecutionTime;
 	private long					timeExecutionInstruction;
-	private long					timeLoopDetection;
 	private long					timeCoverageChecking;
 	private long					timeChoicePointGeneration;
 	private long					timeBacktracking;
@@ -148,7 +148,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		if (Options.getInst().measureSymbolicExecutionTime) {
 			long[] executionTimes = succeededSVM.getNanoExecutionTimeInformation();
 			this.timeExecutionInstruction = executionTimes[0];
-			this.timeLoopDetection = executionTimes[1];
 			this.timeCoverageChecking = executionTimes[2];
 			this.timeChoicePointGeneration = executionTimes[3];
 			this.timeBacktracking = executionTimes[4];
@@ -190,7 +189,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.doNotTryToTrackBack = false;
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
 		this.timeExecutionInstruction = 0;
-		this.timeLoopDetection = 0;
 		this.timeCoverageChecking = 0;
 		this.timeChoicePointGeneration = 0;
 		this.timeBacktracking = 0;
@@ -285,31 +283,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	}
 
 	/**
-	 * Execute the current frame. It is first checked for loops, then the super implementation is
-	 * invoked.
-	 * 
-	 * @param allowStepping If set to false there will not be no stepping even if step by step mode
-	 *        is enabled. This is used to skip static initializers.
-	 * @throws ExecutionException An ExecutionExeption is thrown on any fatal errors during
-	 *         execution.
-	 * @throws InterruptedException Thrown to signal the manual end of the step by step execution.
-	 * @throws InvalidInstructionInitialisationException Any fatal problems with the parsing and the
-	 *         initialization will lead to this exception.
-	 */
-	@Override
-	protected void executeFrame(boolean allowStepping) throws ExecutionException,
-			InterruptedException, InvalidInstructionInitialisationException {
-		// Check this frame for loops.
-		if (this.measureExecutionTime) this.timeLoopDetectionTemp = System.nanoTime();
-		detectLoops();
-		if (this.measureExecutionTime)
-			this.timeLoopDetection += System.nanoTime() - this.timeLoopDetectionTemp;
-
-		// Invoke the super implementation.
-		super.executeFrame(allowStepping);
-	}
-
-	/**
 	 * This concrete method executes the given instruction symbolically.
 	 * 
 	 * @param instruction The instruction that is to be executed.
@@ -359,24 +332,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		if (this.measureExecutionTime)
 			this.timeExecutionInstruction += System.nanoTime() - this.timeExecutionInstructionTemp;
 
-
-		// Check for loops.
-		if (this.measureExecutionTime) this.timeLoopDetectionTemp = System.nanoTime();
-		if (options.maximumLoopsToTake != -1 && !checkForLoops(instruction, oldpc)) {
-			// TODO: partially disabled if this.doNotTryToTrackBack is set to true? There must not
-			// be an endless looping after it is that, however, there must be no hard abortion
-			// either.
-
-			// Abort the current execution.
-			if (Globals.getInst().symbolicExecLogger.isDebugEnabled())
-				Globals.getInst().symbolicExecLogger
-						.debug("Aborted execution as the maximum loop limit was reached. Trying to track back...");
-			this.maximumLoopsReached = true;
-			this.returnFromCurrentExecution = true;
-			this.stack.clear();
-		}
-		if (this.measureExecutionTime)
-			this.timeLoopDetection += System.nanoTime() - this.timeLoopDetectionTemp;
 	}
 
 	/**
@@ -398,7 +353,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.instructionsExecutedSinceLastSolution = 0;
 
 		// Add the solution.
-		this.solutions.add(new Solution((Throwable)solution));
+		this.solutions.add(new ExceptionSolution(solution));
 	}
 
 	/**
@@ -512,54 +467,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		}
 		// Return it.
 		return frame;
-	}
-
-	/**
-	 * Detect the loops in the currently executed frame. A loop is always constructed by a
-	 * conditional jump (a unconditional jump would lead to an infinite loop). Due to the nature of
-	 * the graphs, loops are always jumps into the backward direction. (The only other possibility
-	 * would be to jump unconditionally backwards, and then have a conditional forward jump to leave
-	 * the loop. This is not used.)
-	 * 
-	 * When a conditional jump has been detected, its target is checked. If it is a backward jump,
-	 * its destination and target instructions are saved for the current SymbolicFrame.
-	 * 
-	 * @throws InvalidInstructionInitialisationException Any fatal problems with the parsing and the
-	 *         initialization will lead to this exception.
-	 */
-	private void detectLoops() throws InvalidInstructionInitialisationException {
-		// Only check for loops if this has not been done already and if there should be an abortion
-		// after a number of loops at all.
-		if (Options.getInst().maximumLoopsToTake != -1
-				&& !((LogicFrame) this.currentFrame).getLoopsHaveBeenChecked()) {
-			// Get the instructions.
-			Instruction[] instructions = this.currentFrame.getMethod()
-					.getInstructionsAndOtherBytes();
-			// Work through the exceptions.
-			for (int a = 0; a < instructions.length; a++) {
-				// Check if it is a conditional jump.
-				if (instructions[a] instanceof JumpConditional) {
-					// Loops are characterized by the fact, that the jump is done in backward
-					// direction.
-					int jumpTarget = ((JumpConditional) instructions[a]).getJumpTarget();
-					// Jump target beyond bounds?
-					if (jumpTarget >= Limitations.MAX_CODE_LENGTH) {
-						jumpTarget -= Limitations.MAX_CODE_LENGTH;
-					}
-					// Was it a backward jump?
-					if (a > jumpTarget) {
-						Loop loop = new Loop(a, jumpTarget);
-						((LogicFrame) this.currentFrame).getLoops().add(loop);
-					}
-				}
-
-				// Increase a by the number of other bytes to get to the next instruction.
-				a += instructions[a].getNumberOfOtherBytes();
-			}
-
-			// Mark that loops have been checked.
-			((LogicFrame) this.currentFrame).setLoopsHaveBeenChecked();
-		}
 	}
 
 	/**
@@ -909,7 +816,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		if (!this.measureExecutionTime) return new long[0];
 		return new long[]{
 				(this.timeExecutionInstruction - this.timeChoicePointGeneration) / NANOS_MILLIS,
-				this.timeLoopDetection / NANOS_MILLIS, this.timeCoverageChecking / NANOS_MILLIS,
+				0, this.timeCoverageChecking / NANOS_MILLIS,
 				(this.timeChoicePointGeneration - this.timeSolvingChoicePoints) / NANOS_MILLIS,
 				(this.timeSolvingChoicePoints + this.timeSolvingBacktracking) / NANOS_MILLIS,
 				(this.timeBacktracking - this.timeSolvingBacktracking) / NANOS_MILLIS,
@@ -923,7 +830,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * @return An array of long elements with the times of the execution measurement.
 	 */
 	private long[] getNanoExecutionTimeInformation() {
-		return new long[]{ this.timeExecutionInstruction, this.timeLoopDetection,
+		return new long[]{ this.timeExecutionInstruction, 0,
 				this.timeCoverageChecking, this.timeChoicePointGeneration,
 				this.timeSolvingChoicePoints, this.timeSolvingBacktracking, this.timeBacktracking,
 				this.timeSolutionGeneration };

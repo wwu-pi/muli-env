@@ -5,9 +5,13 @@ import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
+import de.wwu.muggl.vm.execution.ConversionException;
+import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
+import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.InitializedClass;
+import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
 import de.wwu.muli.MuliFailException;
@@ -50,7 +54,7 @@ public class MuliVMControl extends NativeMethodProvider {
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, Throwable.class));
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "getVMRecordedSolutions",
-                MethodType.methodType(Solution[].class, Frame.class),
+                MethodType.methodType(Arrayref.class, Frame.class),
                 MethodType.methodType(Solution[].class));
 
         // `fail' construct
@@ -111,14 +115,24 @@ public class MuliVMControl extends NativeMethodProvider {
         // TODO consider special handling / logging if result of trackBack is false
     }
 
-    public static Solution[] getVMRecordedSolutions(Frame frame) {
+    public static Arrayref getVMRecordedSolutions(Frame frame) {
         // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
         CLASS_SOLUTION.getTheInitializedClass(frame.getVm());
+        Objectref objectref = frame.getVm().getAnObjectref(CLASS_SOLUTION);
 
-        // Retrieve solutions from VM and pack them into an array.
+        // Retrieve solutions from VM and pack them into an array(ref).
         final ArrayList<Solution> solutions = ((LogicVirtualMachine)frame.getVm()).getSolutions();
-        Solution[] result = new Solution[solutions.size()];
-        return solutions.toArray(result);
+        final int solutioncount = solutions.size();
+        final Arrayref returnvalue = new Arrayref(objectref, solutioncount);
+        final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());
+        for (int i = 0; i < solutioncount; i++) {
+            try {
+                returnvalue.putElement(i, conversion.toMuggl(solutions.get(i), false));
+            } catch (ConversionException e) {
+                throw new RuntimeException("Could not create Muggl VM object from Java object", e);
+            }
+        }
+        return returnvalue;
     }
 
     public static void fail(Frame frame) {

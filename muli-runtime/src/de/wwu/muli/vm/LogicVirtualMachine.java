@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
-import de.wwu.muli.ExceptionSolution;
-import de.wwu.muli.Solution;
+import de.wwu.muli.solution.ExceptionSolution;
+import de.wwu.muli.solution.Solution;
 import org.apache.log4j.Level;
 
 import de.wwu.muggl.configuration.Globals;

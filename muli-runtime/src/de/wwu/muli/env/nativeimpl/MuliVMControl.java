@@ -14,8 +14,8 @@ import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
-import de.wwu.muli.MuliFailException;
-import de.wwu.muli.Solution;
+import de.wwu.muli.solution.MuliFailException;
+import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
@@ -32,8 +32,8 @@ public class MuliVMControl extends NativeMethodProvider {
     private static ClassFile ENUM_EXECUTIONMODE = null;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
-        ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile(de.wwu.muli.ExecutionMode.class.getCanonicalName());
-        CLASS_SOLUTION = classLoader.getClassAsClassFile(de.wwu.muli.Solution.class.getCanonicalName());
+        ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile(ExecutionMode.class.getCanonicalName());
+        CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
         registerNatives();
     }
 
@@ -74,9 +74,9 @@ public class MuliVMControl extends NativeMethodProvider {
         InitializedClass ic = ENUM_EXECUTIONMODE.getTheInitializedClass(frame.getVm());
 
         if (Options.getInst().symbolicMode) {
-            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.SYMBOLIC.toString()));
+            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName(ExecutionMode.SYMBOLIC.toString()));
         } else {
-            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.NORMAL.toString()));
+            return ic.getField(ENUM_EXECUTIONMODE.getFieldByName(ExecutionMode.NORMAL.toString()));
         }
 
     }
@@ -85,9 +85,9 @@ public class MuliVMControl extends NativeMethodProvider {
         InitializedClass ic = ENUM_EXECUTIONMODE.getTheInitializedClass(frame.getVm());
 
         // parse param and set mode accordingly
-        if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.SYMBOLIC.toString()))) {
+        if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(ExecutionMode.SYMBOLIC.toString()))) {
             Options.getInst().symbolicMode = true;
-        } else if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(de.wwu.muli.ExecutionMode.NORMAL.toString()))) {
+        } else if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(ExecutionMode.NORMAL.toString()))) {
             Options.getInst().symbolicMode = false;
         }
 

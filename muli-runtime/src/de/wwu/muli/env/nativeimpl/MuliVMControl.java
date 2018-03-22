@@ -141,6 +141,7 @@ public class MuliVMControl extends NativeMethodProvider {
         // backtracking
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
+        // TODO is behaviour different in streams?
     }
     public static void label(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();

@@ -356,6 +356,14 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.solutions.add(new ExceptionSolution(solution));
 	}
 
+    /**
+     * SolutionIterator recorded and returned a solution, so reset the counter.
+     */
+    public void resetInstructionsExecutedSinceLastSolution() {
+        // Reset the instruction-between-solutions counter.
+        this.instructionsExecutedSinceLastSolution = 0;
+    }
+
 	/**
 	 * Retrieves solutions that were found and stored during execution.
 	 */

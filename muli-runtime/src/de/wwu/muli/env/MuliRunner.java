@@ -195,28 +195,10 @@ public class MuliRunner {
 	public void finalize() {
 		try {
 			// Finalize and clean up the Application.
-			if (this.app != null) {
-				synchronized (this.app) {
-					boolean forceCleanup;
-					try {
-						/*
-						 * Force cleanup if an error occurred. Some errors or special circumstances might
-						 * have the finalizer of the Application instance run and hence the cleanup
-						 * invoked. This might be done too early, though, leaving much memory occupied.
-						 * Running the clean up again will have great effect in that cases.
-						 */
-						forceCleanup = this.app.getVirtualMachine().errorOccured();
-					} catch (NullPointerException e) {
-						/*
-						 * There is no virtual machine present any more. This means that the
-						 * finalizer has been run already or there as another serious problem.
-						 * It hence is a good idea to run cleanup again.
-						 */
-						forceCleanup = true;
-					}
-					this.app.cleanUp(forceCleanup);
-				}
-			}
+			//if (this.app != null) {
+			//	this.app.finalizeApplication();
+			//	this.app.finalize();
+			//}
 		} finally {
 			try {
 				super.finalize();

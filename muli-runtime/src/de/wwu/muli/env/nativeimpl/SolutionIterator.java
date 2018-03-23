@@ -62,7 +62,7 @@ public class SolutionIterator extends NativeMethodProvider {
         }
 
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().symbolicExecLogger.debug("Record solution: Result " + solutionObject);
+        Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
         vm.resetInstructionsExecutedSinceLastSolution();
         Objectref returnValue;
         try {
@@ -91,7 +91,7 @@ public class SolutionIterator extends NativeMethodProvider {
 
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().symbolicExecLogger.debug("Record Solution: Exception " + solutionException);
+        Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
         vm.resetInstructionsExecutedSinceLastSolution();
         Objectref returnValue;
         try {

@@ -107,7 +107,7 @@ public class MuliVMControl extends NativeMethodProvider {
     public static void recordExceptionAndBacktrackVM(Frame frame, Object solutionException) {
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().symbolicExecLogger.debug("Record Solution: Exception " + solutionException);
+        Globals.getInst().symbolicExecLogger.debug("Record solution: Exception " + solutionException);
         vm.saveSolutionException(solutionException);
 
         // backtracking

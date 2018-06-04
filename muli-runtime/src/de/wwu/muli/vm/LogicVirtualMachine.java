@@ -1,13 +1,5 @@
 package de.wwu.muli.vm;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
-import de.wwu.muli.solution.ExceptionSolution;
-import de.wwu.muli.solution.Solution;
-import org.apache.log4j.Level;
-
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
@@ -20,9 +12,11 @@ import de.wwu.muggl.instructions.general.Switch;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.solvers.SolverManager;
+import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChange;
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
 import de.wwu.muggl.symbolic.structures.Loop;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
@@ -45,15 +39,16 @@ import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
-import de.wwu.muggl.solvers.expressions.BooleanVariable;
-import de.wwu.muggl.solvers.expressions.ConstraintExpression;
-import de.wwu.muggl.solvers.expressions.Expression;
-import de.wwu.muggl.solvers.expressions.IntConstant;
-import de.wwu.muggl.solvers.expressions.NumericVariable;
-import de.wwu.muggl.solvers.expressions.Term;
-import de.wwu.muli.search.LogicSearchAlgorithm;
-import de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm;
+import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
+import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.search.dfs.StackToTrail;
+import de.wwu.muli.solution.ExceptionSolution;
+import de.wwu.muli.solution.Solution;
+import org.apache.log4j.Level;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * This concrete class represents a virtual machine for the logic execution of java bytecode. It
@@ -67,8 +62,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// The Solver Manager.
 	private SolverManager			solverManager;
 
-	// The search algorithm.
-	private final LogicSearchAlgorithm	searchAlgorithm;
 	private boolean					doNotTryToTrackBack;
 
 	// Solution related fields.
@@ -93,12 +86,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	private int						instructionsExecutedSinceLastSolution;
 
 	/*
-	 * Field for statistical information on generation.
-	 */
-	private long 					arraysGeneratorsUsed;
-	private long					arraysGenerated;
-	
-	/*
 	 * Fields to indicate if and if yes, why the execution did not finish without matching an
 	 * abortion criterion.
 	 */
@@ -109,20 +96,12 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// Constant.
 	private static final long		NANOS_MILLIS	= 1000000;
 
-	/**
-	 * Basic constructor, which initializes the additional fields.
-	 * 
-	 * @param application The application this virtual machine is used by.
-	 * @param classLoader The main ClassLoader to use.
-	 * @param classFile The classFile to start execution with.
-	 * @param initialMethod The Method to start execution with. This Method has to be a method of
-	 *        the supplied classFile.
-	 * @throws InitializationException If initialization of auxiliary classes fails.
-	 */
-	public LogicVirtualMachine(Application application, MugglClassLoader classLoader,
-			ClassFile classFile, Method initialMethod) throws InitializationException {
-		this(application, classLoader, classFile, initialMethod, selectSearchAlgorithm());
-	}
+	// Map search region instantiations (i.e. their iterators) to their respective search strategies (each strategy maintaining its choice points).
+	// Actual type: HashMap<SolutionIterator, SearchStrategy>.
+    private HashMap<Objectref, LogicIteratorSearchAlgorithm> searchStrategies;
+
+    // At most one search region instantiation, i.e. the corresponding iterator, is active in the VM at the same time. Store which one.
+    private Objectref currentSearchRegion = null;
 
 	/**
 	 * Special constructor, which sets the search algorithm and initializes the other fields. It is
@@ -131,15 +110,13 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * and old statistical records are imported. If also the measuring of execution time is enabled,
 	 * the old execution times are imported.
 	 * 
-	 * @param searchAlgorithm The search algorithm used.
 	 * @param succeededSVM The SymbolicalVirtualMachine that is succeeded by this one.
 	 * @throws InitializationException If initialization of auxiliary classes fails.
 	 * @throws NullPointerException If succeededSVM is null.
 	 */
-	public LogicVirtualMachine(LogicSearchAlgorithm searchAlgorithm,
-			LogicVirtualMachine succeededSVM) throws InitializationException {
+	public LogicVirtualMachine(LogicVirtualMachine succeededSVM) throws InitializationException {
 		this(succeededSVM.getApplication(), succeededSVM.getClassLoader(), succeededSVM
-				.getClassFile(), succeededSVM.getInitialMethod(), searchAlgorithm);
+				.getClassFile(), succeededSVM.getInitialMethod());
 		
 		// Import outcomes of the former execution.
 		this.solutions = succeededSVM.solutions;
@@ -155,6 +132,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			this.timeSolvingBacktracking = executionTimes[6];
 			this.timeSolutionGeneration = executionTimes[7];
 		}
+		this.searchStrategies = succeededSVM.searchStrategies;
+		this.currentSearchRegion = succeededSVM.currentSearchRegion;
 	}
 
 	/**
@@ -166,11 +145,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * @param classFile The classFile to start execution with.
 	 * @param initialMethod The Method to start execution with. This Method has to be a method of
 	 *        the supplied classFile.
-	 * @param searchAlgorithm The search algorithm used.
 	 * @throws InitializationException If initialization of auxiliary classes fails.
 	 */
-	private LogicVirtualMachine(Application application, MugglClassLoader classLoader,
-			ClassFile classFile, Method initialMethod, LogicSearchAlgorithm searchAlgorithm)
+	public LogicVirtualMachine(Application application, MugglClassLoader classLoader,
+			ClassFile classFile, Method initialMethod)
 			throws InitializationException {
 		super(application, classLoader, classFile, initialMethod);
 		Options options = Options.getInst();
@@ -183,8 +161,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		} catch (ClassNotFoundException e) {
 			throw new InitializationException("Solver manager of class " + options.solverManager + " does not exist.");
 		}
-		this.searchAlgorithm = searchAlgorithm;
-		this.stack = new StackToTrail(true, this.searchAlgorithm);
+		this.stack = new StackToTrail(true, this::getCurrentChoicePoint);
 		this.solutions = new ArrayList<>();
 		this.doNotTryToTrackBack = false;
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
@@ -196,31 +173,12 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.timeSolvingBacktracking = 0;
 		this.timeSolutionGeneration = 0;
 		this.instructionsExecutedSinceLastSolution = 0;
-		this.arraysGeneratorsUsed = 0L;
-		this.arraysGenerated = 0L;
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.abortionCriterionMatched = false;
 		this.maximumLoopsReached = false;
 		this.abortionCriterionMatchedMessage = null;
-	}
-
-	/**
-	 * Select the supply the search algorithm based on the current setting.
-	 * 
-	 * @return An instance of SearchAlgorithm.
-	 */
-	private static LogicSearchAlgorithm selectSearchAlgorithm() {
-		LogicSearchAlgorithm searchAlgorithm;
-		// TODO let this depend on the search area's respective search algorithm!
-		searchAlgorithm = new DepthFirstSearchAlgorithm();/*new IterativeDeepeningSearchAlgorithm(
-				Options.getInst().iterativeDeepeningStartingDepth,
-				Options.getInst().iterativeDeepeningDeepnessIncrement);*/
-
-		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-			Globals.getInst().symbolicExecLogger.trace("Using search algorithm: "
-					+ searchAlgorithm.getName());
-		return searchAlgorithm;
+		this.searchStrategies = new HashMap<>();
 	}
 
 	/**
@@ -386,7 +344,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	protected Frame createFrame(Frame invokedBy, Method method, Object[] arguments) throws ExecutionException {
 		LogicFrame frame = new LogicFrame(invokedBy, this, method, method.getClassFile()
 				.getConstantPool(), arguments);
-		frame.setOperandStack(new StackToTrail(false, this.searchAlgorithm));
+		frame.setOperandStack(new StackToTrail(false, this::getCurrentChoicePoint));
 
 		/*
 		 * Check which local variables are annotated and replace undefined local variables by logic
@@ -525,6 +483,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	public void generateNewChoicePoint(GeneralInstructionWithOtherBytes instruction,
 			ConstraintExpression constraintExpression)
 			throws SymbolicExecutionException {
+        if (this.getSearchAlgorithm() == null) {
+            throw new IllegalStateException("unexpected state: Trying to add a choicepoint, but no search algorithm initialised.");
+        }
+
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -533,7 +495,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
 		// Check if it is a suitable instruction.
 		if (instruction instanceof JumpConditional) { // Conditional jump found.
-			this.searchAlgorithm.generateNewChoicePoint(this, instruction, constraintExpression);
+			this.getSearchAlgorithm().generateNewChoicePoint(this, instruction, constraintExpression);
 		} else {
 			throw new SymbolicExecutionException(
 					"Only conditional jump instructions might attempt to generate a choice point using this method.");
@@ -553,6 +515,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	public void generateNewChoicePoint(GeneralInstructionWithOtherBytes instruction,
 			Generator generator, String type)
 			throws ExecutionException {
+        if (this.getSearchAlgorithm() == null) {
+            throw new IllegalStateException("unexpected state: Trying to add a choicepoint, but no search algorithm initialised.");
+        }
+
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -562,7 +528,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		// Check if it is a suitable instruction.
 		if (instruction instanceof Load) {
 			try {
-				this.searchAlgorithm.generateNewChoicePoint(this, ((Load) instruction)
+				this.getSearchAlgorithm().generateNewChoicePoint(this, ((Load) instruction)
 						.getLocalVariableIndex(), generator);
 			} catch (ConversionException e) {
 				throw new SymbolicExecutionException(
@@ -570,7 +536,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 								+ e.getClass().getName() + " (" + e.getMessage() + ")");
 			}
 		} else if (instruction instanceof Newarray) {
-			this.searchAlgorithm.generateNewChoicePoint(this, type);
+			this.getSearchAlgorithm().generateNewChoicePoint(this, type);
 		} else {
 			throw new SymbolicExecutionException(
 					"Only loading instructions or newarray might attempt to generate a choice point using this method.");
@@ -590,6 +556,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public void generateNewChoicePoint(LCmp instruction, Term leftTerm, Term rightTerm)
 			throws ExecutionException {
+        if (this.getSearchAlgorithm() == null) {
+            throw new IllegalStateException("unexpected state: Trying to add a choicepoint, but no search algorithm initialised.");
+        }
+
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -597,7 +567,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		}
 
 		// Create the choice point.
-		this.searchAlgorithm.generateNewChoicePoint(this, instruction, leftTerm, rightTerm);
+		this.getSearchAlgorithm().generateNewChoicePoint(this, instruction, leftTerm, rightTerm);
 	}
 
 	/**
@@ -615,6 +585,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public void generateNewChoicePoint(CompareFp instruction, boolean less, Term leftTerm,
 			Term rightTerm) throws ExecutionException {
+        if (this.getSearchAlgorithm() == null) {
+            throw new IllegalStateException("unexpected state: Trying to add a choicepoint, but no search algorithm initialised.");
+        }
+
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -622,7 +596,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		}
 
 		// Create the choice point.
-		this.searchAlgorithm.generateNewChoicePoint(this, instruction, less, leftTerm, rightTerm);
+		this.getSearchAlgorithm().generateNewChoicePoint(this, instruction, less, leftTerm, rightTerm);
 	}
 
 	/**
@@ -646,6 +620,9 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public void generateNewChoicePoint(Switch instruction, Term termFromStack, IntConstant[] keys,
 			int[] pcs, IntConstant low, IntConstant high) throws ExecutionException {
+	    if (this.getSearchAlgorithm() == null) {
+	        throw new IllegalStateException("unexpected state: Trying to add a choicepoint, but no search algorithm initialised.");
+        }
 		// Counting the instructions before a new solution is found?
 		if (this.maximumInstructionsBeforeFindingANewSolution != -1) {
 			if (this.onlyCountChoicePointGeneratingInstructions)
@@ -653,7 +630,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		}
 
 		// Create the choice point.
-		this.searchAlgorithm.generateNewChoicePoint(this, instruction, termFromStack, keys, pcs,
+		this.getSearchAlgorithm().generateNewChoicePoint(this, instruction, termFromStack, keys, pcs,
 				low, high);
 	}
 	
@@ -744,15 +721,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	public void setNextFrameIsAlreadyLoaded() {
 		this.nextFrameIsAlreadyLoaded = true;
-	}
-
-	/**
-	 * Getter for the search algorithm implemented in this symbolic virtual machine.
-	 * 
-	 * @return The SearchAlgorithm.
-	 */
-	public LogicSearchAlgorithm getSearchAlgorithm() {
-		return this.searchAlgorithm;
 	}
 
 	/**
@@ -958,7 +926,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	public void changeCurrentFrame(Frame frame) {
 		// Create a FrameChange trail element?
-		ChoicePoint choicePoint = this.searchAlgorithm.getCurrentChoicePoint();
+		ChoicePoint choicePoint = this.getCurrentChoicePoint();
 		if (choicePoint != null && choicePoint.hasTrail()) {
 			// Add a FrameChange trail element.
 			choicePoint.addToTrail(new FrameChange(this.currentFrame));
@@ -977,7 +945,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	public void changeCurrentPC(int pc) {
 		// Create a PCChange trail element?
-		ChoicePoint choicePoint = this.searchAlgorithm.getCurrentChoicePoint();
+		ChoicePoint choicePoint = this.getCurrentChoicePoint();
 		if (choicePoint != null && choicePoint.hasTrail()) {
 			// Add a PCChange trail element.
 			choicePoint.addToTrail(new PCChange(this.pc));
@@ -986,28 +954,42 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		super.setPC(pc);
 	}
 
-	/**
-	 * Report that another array generator is used.
-	 */
-	public void reportArrayGenerator() {
-		this.arraysGeneratorsUsed++;
-	}
-	
-	/**
-	 * Report that another array was generated.
-	 */
-	public void reportGeneratedArray() {
-		this.arraysGenerated++;
-	}
+    public void setSearchStrategy(Objectref iterator, LogicIteratorSearchAlgorithm searchStrategy) {
+        this.searchStrategies.put(iterator, searchStrategy);
+    }
 
-	/**
-	 * Get information on array generation.
-	 * 
-	 * @return An array of type long containing data on the number of array generators used and the
-	 *         number of arrays generated.
-	 */
-	public long[] getArrayGenerationInformation() {
-		return new long[]{this.arraysGeneratorsUsed, this.arraysGenerated};
-	}
+    public LogicIteratorSearchAlgorithm getSearchStrategyForIterator(Objectref iterator) {
+        return searchStrategies.get(iterator);
+    }
 
+    /**
+     * Get the search algorithm corresponding to the currently active search region.
+     *
+     * @return The SearchAlgorithm, or null if there is no current search algorithm (i.e. no active search region).
+     */
+    public LogicIteratorSearchAlgorithm getSearchAlgorithm() {
+        if (this.currentSearchRegion == null) {
+            return NoSearchAlgorithm.getInstance();
+        }
+        return this.getSearchStrategyForIterator(this.currentSearchRegion);
+    }
+    /**
+     * Get the current choicepoint, i.e. the most recent choicepoint in the currently active search region.
+     * @return
+     */
+    public ChoicePoint getCurrentChoicePoint() {
+        LogicIteratorSearchAlgorithm algorithm = searchStrategies.get(currentSearchRegion);
+        if (algorithm == null) {
+            return null;
+        }
+        return algorithm.getCurrentChoicePoint();
+    }
+
+    public Objectref getCurrentSearchRegion() {
+        return currentSearchRegion;
+    }
+
+    public void setCurrentSearchRegion(Objectref currentSearchRegion) {
+        this.currentSearchRegion = currentSearchRegion;
+    }
 }

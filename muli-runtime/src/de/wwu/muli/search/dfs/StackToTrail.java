@@ -1,13 +1,13 @@
 package de.wwu.muli.search.dfs;
 
-import java.util.Stack;
-
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Pop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Push;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPush;
-import de.wwu.muli.search.LogicSearchAlgorithm;
+
+import java.util.Stack;
+import java.util.function.Supplier;
 
 /**
  * The StackToTrail extends the java.util.Stack. Is overrides the functionality for push and pop. In
@@ -26,20 +26,20 @@ public class StackToTrail extends Stack<Object> {
 	private static final long serialVersionUID = 1507257881851151819L;
 	// Fields.
 	private boolean isVmStack;
-	private LogicSearchAlgorithm searchAlgorithm;
 	private boolean restoringMode;
+	private Supplier<ChoicePoint> choicePointFromVMSupplier;
 
-	/**
-	 * Initialize a new StackToTrail.
-	 * @param isVmStack If set to true, this StackToTrail should be used as a virtual machine stack. It should be used as a operand stack otherwise.
-	 * @param searchAlgorithm The currently used search algorithm.
-	 */
-	public StackToTrail(boolean isVmStack, LogicSearchAlgorithm searchAlgorithm) {
-		super();
-		this.isVmStack = isVmStack;
-		this.searchAlgorithm = searchAlgorithm;
-		this.restoringMode = false;
-	}
+    /**
+     * Initialize a new StackToTrail.
+     * @param isVmStack If set to true, this StackToTrail should be used as a virtual machine stack. It should be used as a operand stack otherwise.
+     * @param choicePointSupplier Supplier that gets the current active choicepoint from the VM.
+     */
+    public StackToTrail(boolean isVmStack, Supplier<ChoicePoint> choicePointSupplier) {
+        super();
+        this.isVmStack = isVmStack;
+        this.choicePointFromVMSupplier = choicePointSupplier;
+        this.restoringMode = false;
+    }
 
 	/**
 	 * Push an item onto the stack. If there is a ChoicePoint set and this StackToTrail
@@ -50,7 +50,7 @@ public class StackToTrail extends Stack<Object> {
 	@Override
 	public Object push(Object item) {
 		if (!this.restoringMode) {
-			ChoicePoint choicePoint = this.searchAlgorithm.getCurrentChoicePoint();
+			ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
 			if (choicePoint != null && choicePoint.hasTrail()) {
 				if (this.isVmStack) {
 					choicePoint.addToTrail(new VmPop());
@@ -72,7 +72,7 @@ public class StackToTrail extends Stack<Object> {
 	public synchronized Object pop() {
 		Object item = super.pop();
 		if (!this.restoringMode) {
-			ChoicePoint choicePoint = this.searchAlgorithm.getCurrentChoicePoint();
+			ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
 			if (choicePoint != null && choicePoint.hasTrail()) {
 				if (this.isVmStack) {
 					choicePoint.addToTrail(new VmPush(item));
@@ -97,7 +97,7 @@ public class StackToTrail extends Stack<Object> {
 	 * Indicates whether some other object is equal to this one.
 	 *
 	 * @param obj The object to check equality with.
-	 * @return true, if the three fields for the StackToTrail are equal and if the inherited stack
+	 * @return true, if the two value fields for the StackToTrail are equal and if the inherited stack
 	 *         is equal; false otherwise.
 	 * @see java.util.Vector#equals(java.lang.Object)
 	 */
@@ -105,7 +105,7 @@ public class StackToTrail extends Stack<Object> {
 	public synchronized boolean equals(Object obj) {
 		if (obj instanceof StackToTrail) {
 			StackToTrail stack = (StackToTrail) obj;
-			if (stack.isVmStack == this.isVmStack && stack.searchAlgorithm == this.searchAlgorithm && stack.restoringMode == this.restoringMode) {
+			if (stack.isVmStack == this.isVmStack && stack.restoringMode == this.restoringMode) {
 				return super.equals(obj);
 			}
 		}

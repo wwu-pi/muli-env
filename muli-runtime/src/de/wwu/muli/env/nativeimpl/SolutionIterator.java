@@ -8,7 +8,6 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
-import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.solution.ExceptionSolution;
@@ -16,7 +15,6 @@ import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.search.SolutionIterator
@@ -41,6 +39,14 @@ public class SolutionIterator extends NativeMethodProvider {
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
                 MethodType.methodType(Objectref.class, Frame.class, Object.class),
                 MethodType.methodType(Solution.class, Throwable.class));
+
+        // Active search region / corresponding iterator.
+        NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
+                MethodType.methodType(Object.class, Frame.class),
+                MethodType.methodType(de.wwu.muli.search.SolutionIterator.class));
+        NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "setVMActiveIterator",
+                MethodType.methodType(void.class, Frame.class, Object.class),
+                MethodType.methodType(void.class, de.wwu.muli.search.SolutionIterator.class));
 
         // Choice point navigation.
         /*NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "choicePointHasAdditionalChoiceVM",
@@ -107,6 +113,14 @@ public class SolutionIterator extends NativeMethodProvider {
         // TODO consider special handling / logging if result of trackBack is false
 
         return returnValue;
+    }
+
+    public static Object getVMActiveIterator(Frame frame) {
+        return ((LogicVirtualMachine)frame.getVm()).getCurrentSearchRegion();
+    }
+
+    public static void setVMActiveIterator(Frame frame, Object activeIterator) {
+        ((LogicVirtualMachine)frame.getVm()).setCurrentSearchRegion((Objectref)activeIterator);
     }
 
 }

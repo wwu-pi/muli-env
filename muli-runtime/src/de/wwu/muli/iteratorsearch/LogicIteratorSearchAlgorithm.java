@@ -15,7 +15,7 @@ import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
-	ChoicePoint getCurrentChoicePoint();
+    ChoicePoint getCurrentChoicePoint();
 
 	boolean trackBack(LogicVirtualMachine vm);
 

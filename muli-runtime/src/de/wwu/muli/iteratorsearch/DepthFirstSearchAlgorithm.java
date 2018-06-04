@@ -1,0 +1,650 @@
+package de.wwu.muli.iteratorsearch;
+
+import de.wwu.muggl.configuration.Globals;
+import de.wwu.muggl.configuration.MugglException;
+import de.wwu.muggl.configuration.Options;
+import de.wwu.muggl.instructions.bytecode.LCmp;
+import de.wwu.muggl.instructions.bytecode.Lookupswitch;
+import de.wwu.muggl.instructions.general.CompareDouble;
+import de.wwu.muggl.instructions.general.CompareFp;
+import de.wwu.muggl.instructions.general.GeneralInstructionWithOtherBytes;
+import de.wwu.muggl.instructions.general.Switch;
+import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
+import de.wwu.muggl.solvers.SolverManager;
+import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
+import de.wwu.muggl.solvers.exceptions.TimeoutException;
+import de.wwu.muggl.solvers.expressions.ConstraintExpression;
+import de.wwu.muggl.solvers.expressions.IntConstant;
+import de.wwu.muggl.solvers.expressions.Term;
+import de.wwu.muggl.symbolic.flow.coverage.CGCoverageTrailElement;
+import de.wwu.muggl.symbolic.flow.coverage.DUCoverageTrailElement;
+import de.wwu.muggl.symbolic.generating.Generator;
+import de.wwu.muggl.symbolic.generating.GeneratorChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.EquationViolationException;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.SolvingException;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.array.ArrayInitializationChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.fpComparison.DoubleComparisonChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.fpComparison.FloatComparisonChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.longComparison.LongComparisonChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.LookupswitchChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.SwitchingChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.TableswitchChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
+import de.wwu.muggl.vm.execution.ConversionException;
+import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
+import de.wwu.muli.search.dfs.ConditionalJumpChoicePointDepthFirst;
+import de.wwu.muli.search.dfs.StackToTrail;
+import de.wwu.muli.vm.LogicFrame;
+import de.wwu.muli.vm.LogicVirtualMachine;
+import org.apache.log4j.Level;
+
+import java.util.Stack;
+
+/**
+ * This class implements the depth first search algorithm.<br />
+ * <br />
+ * The depth first algorithm always takes one path through the search tree until
+ * a point with no further branching is reached; this most likely is the end of
+ * the current program. In this application, the first path to take is always
+ * the jumping path. This means, when a conditional jump is encountered, a
+ * ChoicePoint is generated and the execution continues at the jump offset.<br />
+ * <br />
+ * When and leaf of the search tree has been reached and the possibly found
+ * solution has been saved, tracking back starts. The algorithm will go back
+ * to the last ChoicePoint and check whether its non jumping branch has been
+ * visited already already. If it has not yet been visited, execution can be
+ * continued at that branch. From this point on, on any further conditional
+ * jumps the jumping branch will again be executed first.<br />
+ * <br />
+ * If tracking back and a ChoicePoint is reached thats non-jumping branch also
+ * has been visited, the application tracks back to the parent ChoicePoint,
+ * checking if the non-jumping branch has been visited for that ChoicePoint.
+ * The algorithm recursively continues in that way. It stops when the topmost
+ * ChoicePoint (the ChoicePoint that has no parent) has been reached and it
+ * indicates that its non-jumping branch has already been visited.<br />
+ * <br />
+ * The depth first search algorithm does not need any additional information
+ * stored to perform. However, finding solutions might take a lot of time.
+ *
+ * Modifications have been made in order to account for the fact that backtracking
+ * may occur anywhere, not just at the end of the program. -JD 15.03.17
+ *
+ * TODO rephrase description to account for new mechanism of iterator-based search.
+ *
+ * @author Jan C. Dageförde, based on work of Tim Majchrzak
+ */
+public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
+	// Fields
+	/**
+	 * The choice point the search algorithm last branched at.
+	 */
+	protected ChoicePoint currentChoicePoint;
+	/**
+	 * The total number o9f branches visited so far.
+	 */
+	protected long numberOfVisitedBranches;
+	/**
+	 * Flag to determine if the execution time should be measured.
+	 */
+	protected boolean measureExecutionTime;
+	/**
+	 * Temporary field to measure choice point generation time.
+	 */
+	protected long timeChoicePointGenerationTemp;
+	/**
+	 * Temporary field to measure backtracking time.
+	 */
+	protected long timeBacktrackingTemp;
+	/**
+	 * Temporary field to measure solving time.
+	 */
+	protected long timeSolvingTemp;
+
+	/**
+	 * Instantiate the depth first search algorithm.
+	 */
+	public DepthFirstSearchAlgorithm() {
+		this.numberOfVisitedBranches = 0;
+		this.measureExecutionTime = Options.getInst().measureSymbolicExecutionTime;
+	}
+
+    /**
+     * Get the current ChoicePoint of this search algorithm. It reflects the
+     * last node in the searching tree visited.
+     * @return The current choice point.
+     */
+    public ChoicePoint getCurrentChoicePoint() {
+        return this.currentChoicePoint;
+    }
+
+	/**
+	 * Try to track back to the last ChoicePoint thats non jumping branch was not yet visited.
+	 *
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @return true, if tracking back was successful and the execution can be continued, false, if
+	 *         there was no possibility for tracking back and then execution should hence be
+	 *         stopped.
+	 */
+	public boolean trackBack(LogicVirtualMachine vm) {
+		if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
+		// Only track back if there ever was a ChoicePoint generated at all. Otherwise, no tracking back is possible.
+		if (this.currentChoicePoint == null) return false;
+
+		Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt backtracking for current search region.");
+
+		// Get the SolverManager.
+		SolverManager solverManager = vm.getSolverManager();
+
+		// Since the jump is executed first, find the newest ChoicePoint thats non jumping branch was not visited yet. Restore states while doing so.
+		while (!this.currentChoicePoint.hasAnotherChoice()) {
+			// Muli: Backtracking is now possible anywhere, not just at the end of execution. Therefore, order
+			// of instructions have been changed. Otherwise, the last branch would have been executed twice.
+
+			// No further choice for this CP. Is there a parent? If so, we need to recover everything after this CP
+			// and continue at the parent. Otherwise, return false and continue!
+			if (this.currentChoicePoint.getParent() == null) {
+				// Went trough all branches.
+				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+				this.currentChoicePoint = null; // Remove last reference to this choice point
+				return trackBackFailed(vm);
+			}
+
+			// There is a parent, continue by recovering.
+
+			// First step: Use the trail of the last choice point to get back to the old state.
+			recoverState(vm);
+
+			// Second step: If one has been set, remove the ConstraintExpression from the ConstraintStack of the SolverManager.
+			if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
+			
+			// Third step: Load its' parent. This will also free the memory of the current choice point.
+			this.currentChoicePoint = this.currentChoicePoint.getParent();
+		}
+
+		// Change to the next choice.
+		try {
+			this.currentChoicePoint.changeToNextChoice();
+		} catch (MugglException e) {
+			if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+			Globals.getInst().symbolicExecLogger
+					.trace("Tracking back was successful, but encountered an Exception when switching "
+							+ " to the next choice. Trying to track back further. The root cause it "
+							+ e.getClass().getName() + " (" + e.getMessage() + ")");
+
+			return trackBack(vm);
+		}
+
+		// Count up for the non-jumping branch.
+		this.numberOfVisitedBranches++;
+
+		// Perform operations specific to the constraint system.
+		if (this.currentChoicePoint.changesTheConstraintSystem()) {
+			// Remove the Constraint and get the new one.
+			solverManager.removeConstraint();
+			solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
+
+			// Check if the new branch can be visited at all, or if it causes an equation violation.
+			try {
+				// Try to solve the expression.
+				if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
+				if (!solverManager.hasSolution()) {
+					if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
+					if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+					return trackBack(vm);
+				}
+				if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
+			} catch (SolverUnableToDecideException e) {
+				if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+					Globals.getInst().symbolicExecLogger.trace("Solving lead to a SolverUnableToDecideException with message: " + e.getMessage());
+				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+				return trackBack(vm);
+			} catch (TimeoutException e) {
+				if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+					Globals.getInst().symbolicExecLogger.trace("Solving lead to a TimeoutException with message: " + e.getMessage());
+				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+				return trackBack(vm);
+			}
+		}
+
+		// Found the choice point to continue, recover the state of it.
+		recoverState(vm);
+
+		// Does the choice point require any state specific changes beside those already done?
+		if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
+
+		// Tracking back was successful.
+		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+			Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
+		if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+		return true;
+	}
+
+	/**
+	 * This method is called when tracking back failed. It will not change a thing, and just
+	 * log that the execution ends here, then return false. This method is intended to be overridden
+	 * by inheriting algorithms.
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @return false in any case.
+	 */
+	protected boolean trackBackFailed(LogicVirtualMachine vm) {
+		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+			Globals.getInst().symbolicExecLogger.trace("No more tracking back is possible. Visited " + this.numberOfVisitedBranches + " branches in total.");
+		return false;
+	}
+
+	/**
+	 * Recover that state at the ChoicePoint currentChoicePoint.
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 */
+	public void recoverState(LogicVirtualMachine vm) {
+		// Get the current stacks.
+		StackToTrail operandStack = (StackToTrail) vm.getCurrentFrame().getOperandStack();
+		StackToTrail vmStack = (StackToTrail) vm.getStack();
+
+		// Set the StackToTrail instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+		operandStack.setRestoringMode(true);
+		vmStack.setRestoringMode(true);
+
+		// If the choice point has a trail, use it to recover the state.
+		if (this.currentChoicePoint.hasTrail()) {
+			Stack<TrailElement> trail = this.currentChoicePoint.getTrail();
+			// Empty the trail.
+			while (!trail.empty()) {
+				Object object = trail.pop();
+				// Decide about the action by checking the trail element's type.
+				if (object instanceof VmPush) {
+					VmPush vmPush = (VmPush) object;
+					object = vmPush.getObject();
+					vmStack.push(object);
+					if (vmPush.restoreStates()) {
+						// Restore states of the frame.
+						LogicFrame frame = (LogicFrame) object;
+						frame.setPc(vmPush.getPc());
+						frame.setMonitor(vmPush.getMonitor());
+					}
+				} else if (object instanceof VmPop) {
+					if (vm.getStack().isEmpty()) {
+						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+									+ "pop an element from the empty VM stack. It will be ignored and skipped. "
+									+ "However, this hints to a serious problem and should be checked.");
+					} else {
+						vm.getStack().pop();
+					}
+				} else if (object instanceof FrameChange) {
+					FrameChange frameChange = (FrameChange) object;
+					// There was a change in the frame. Put it as the (temporary) current Frame.
+					vm.setCurrentFrame(frameChange.getFrame());
+					// Disable the restoring mode for the last Frame's operand stack.
+					operandStack.setRestoringMode(false);
+					// Set the current operand stack accordingly.
+					operandStack = (StackToTrail) frameChange.getFrame().getOperandStack();
+					// Enable restoring mode for it.
+					operandStack.setRestoringMode(true);
+				} else if (object instanceof PCChange) {
+					PCChange pcChange = (PCChange) object;
+					// There was an explicit PC jump, e.g. due to exception handling.
+					// Restore the former PC value.
+					vm.setPC(pcChange.getPC());
+					vm.getCurrentFrame().setPc(pcChange.getPC());
+				} else if (object instanceof Push) {
+					vm.getCurrentFrame().getOperandStack().push(((Push) object).getObject());
+				} else if (object instanceof Pop) {
+					if (vm.getCurrentFrame().getOperandStack().isEmpty()) {
+						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+									+ "pop an element from an empty operand stack. It will be ignored and skipped. "
+									+ "However, this hints to a serious problem and should be checked.");
+					} else {
+						vm.getCurrentFrame().getOperandStack().pop();
+					}
+				} else if (object instanceof PopFromFrame) {
+					if (((PopFromFrame) object).getFrame().getOperandStack().isEmpty()) {
+						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+									+ "pop an element from an empty operand stack. It will be ignored and skipped. "
+									+ "However, this hints to a serious problem and should be checked.");
+					} else {
+						((PopFromFrame) object).getFrame().getOperandStack().pop();
+					}
+				} else if (object instanceof ArrayRestore) {
+					((ArrayRestore) object).restore();
+				} else if (object instanceof Restore) {
+					((Restore) object).restore(vm.getCurrentFrame());
+				} else if (object instanceof InstanceFieldPut) {
+					((InstanceFieldPut) object).restoreField();
+				} else if (object instanceof StaticFieldPut) {
+					((StaticFieldPut) object).restoreField();
+				} else if (object instanceof DUCoverageTrailElement) {
+					((DUCoverageTrailElement) object).restore();
+				} else if (object instanceof CGCoverageTrailElement) {
+					((CGCoverageTrailElement) object).restore();
+				} else {
+					if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+						Globals.getInst().symbolicExecLogger.warn(
+								"Found an unrecognized object on the trail when trying to restore"
+									+ "an old state. It will be ignored and skipped.");
+				}
+			}
+		}
+
+		// Set the correct Frame to be the current Frame.
+		vm.setCurrentFrame(this.currentChoicePoint.getFrame());
+
+		// If the frame was set to have finished the execution normally, reset that.
+		((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+		// Set the pc!
+		vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());
+
+		// Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
+		vm.setNextFrameIsAlreadyLoaded();
+		// If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
+		vm.setReturnFromCurrentExecution(true);
+
+		// Disable the restoring mode.
+		operandStack.setRestoringMode(false);
+		vmStack.setRestoringMode(false);
+	}
+
+	/**
+	 * Generate a new GeneratorChoicePoint or ArrayInitializationChoicePoint for a local variable.
+	 * Set it as the current choice point.
+	 * 
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @param localVariableIndex The index into the local variable table to store the generated
+	 *        array at.
+	 * @param generator A variable Generator. May be null to indicate no custom variable generator
+	 *        is used.
+	 * @throws ConversionException If converting the first provided object failed.
+	 * @throws SymbolicExecutionException If a type is encountered that no array can be created for.
+	 */
+	public void generateNewChoicePoint(
+			LogicVirtualMachine vm, int localVariableIndex, Generator generator
+			) throws ConversionException, SymbolicExecutionException {
+		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
+		// If a custom generator is present, generate a GeneratorChoicePoint.
+		if (generator != null) {
+			this.currentChoicePoint = new GeneratorChoicePoint(
+					generator,
+					vm.getCurrentFrame(),
+					localVariableIndex,
+					vm.getPc(),
+					this.currentChoicePoint
+					);
+		} else {
+			/*
+			 * The only reason to invoke this method without a custom variable generator provided is
+			 * the request for a ArrayInitializationChoicePoint that uses the built-in array generator.
+			 */
+			this.currentChoicePoint = new ArrayInitializationChoicePoint(vm.getCurrentFrame(),
+					localVariableIndex, vm.getPc(), this.currentChoicePoint);
+		}
+
+		// Apply the first value.
+		this.currentChoicePoint.applyStateChanges();
+
+		// Count up for the jumping branch.
+		this.numberOfVisitedBranches++;
+		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+	}
+	
+	/**
+	 * Generate a new  ArrayInitializationChoicePoint for instruction
+	 * <code>anewarray</code>. Set it as the current choice point and mark that the jumping branch
+	 * has been visited already (since execution just continues there.)
+	 * 
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @param type A String representation of the type.
+	 * 
+	 * @throws SymbolicExecutionException If a type is encountered that no array can be created for.
+	 */
+	public void generateNewChoicePoint(LogicVirtualMachine vm, String type)
+			throws ExecutionException {
+		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();	
+		this.currentChoicePoint = new ArrayInitializationChoicePoint(vm.getCurrentFrame(), vm
+				.getPc(), type, this.currentChoicePoint);
+
+
+		// Apply the first value.
+		this.currentChoicePoint.applyStateChanges();
+
+		// Count up for the jumping branch.
+		this.numberOfVisitedBranches++;
+		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+	}
+	
+
+	/**
+	 * Generate a new ConditionalJumpChoicePoint. Set it as the current choice point and mark that
+	 * the jumping branch has been visited already (since execution just continues there.)
+	 *
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @param instruction The Instruction generating the ChoicePoint.
+	 * @param constraintExpression The ConstraintExpression describing the choice at this
+	 *        conditional jump Instruction.
+	 */
+	public void generateNewChoicePoint(LogicVirtualMachine vm,
+			GeneralInstructionWithOtherBytes instruction, ConstraintExpression constraintExpression) {
+		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
+		try {
+			this.currentChoicePoint = new ConditionalJumpChoicePointDepthFirst(
+					vm.getCurrentFrame(),
+					vm.getPc(),
+					vm.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+					((JumpConditional) instruction).getJumpTarget(),
+					constraintExpression,
+					this.currentChoicePoint);
+
+			// Count up for the jumping branch.
+			this.numberOfVisitedBranches++;
+			if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+		} catch (EquationViolationException e) {
+			if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+			// Track back to the last choice point and try its non-jumping branch.
+			trackBack(vm);
+		} catch (SolvingException e) {
+			// Track back to the last choice point and try its non-jumping branch.
+			trackBack(vm);
+		}
+	}
+
+	/**
+	 * Generate a new LongComparisonChoicePoint. Set it as the current choice point.
+	 *
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @param instruction The Instruction generating the ChoicePoint.
+	 * @param leftTerm The term of long variables and constants of the left hand side of the comparison.
+	 * @param rightTerm The term of long variables and constants of the right hand side of the comparison.
+	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point generation.
+	 */
+	public void generateNewChoicePoint(LogicVirtualMachine vm, LCmp instruction,
+			Term leftTerm, Term rightTerm) throws ExecutionException {
+		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
+		this.currentChoicePoint = new LongComparisonChoicePoint(
+				vm.getCurrentFrame(),
+				vm.getPc(),
+				vm.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+				leftTerm,
+				rightTerm,
+				this.currentChoicePoint);
+
+		// Apply the first value.
+		this.currentChoicePoint.applyStateChanges();
+
+		// Count up for the jumping branch.
+		this.numberOfVisitedBranches++;
+		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+	}
+
+	/**
+	 * Generate a new FpComparisonChoicePoint. Set it as the current choice point.
+	 *
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @param instruction The Instruction generating the ChoicePoint.
+	 * @param less If set to true, the choice point will have the behaviour of dcmpl / fcmpl;
+	 *        otherwise, it will behave like dcmpg / fcmpg.
+	 * @param leftTerm The term of long variables and constants of the left hand side of the
+	 *        comparison.
+	 * @param rightTerm The term of long variables and constants of the right hand side of the
+	 *        comparison.
+	 * @throws SymbolicExecutionException If an Exception is thrown during the choice point
+	 *         generation.
+	 */
+	public void generateNewChoicePoint(LogicVirtualMachine vm, CompareFp instruction,
+			boolean less, Term leftTerm, Term rightTerm) throws ExecutionException {
+		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
+
+		if (instruction instanceof CompareDouble) {
+			this.currentChoicePoint = new DoubleComparisonChoicePoint(
+					vm.getCurrentFrame(),
+					vm.getPc(),
+					vm.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+					less,
+					leftTerm,
+					rightTerm,
+					this.currentChoicePoint);
+		} else {
+			this.currentChoicePoint = new FloatComparisonChoicePoint(
+					vm.getCurrentFrame(),
+					vm.getPc(),
+					vm.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+					less,
+					leftTerm,
+					rightTerm,
+					this.currentChoicePoint);
+		}
+
+		// Apply the first value.
+		this.currentChoicePoint.applyStateChanges();
+
+		// Count up for the jumping branch.
+		this.numberOfVisitedBranches++;
+		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+	}
+
+	/**
+	 * Generate a new SwitchingComparisonChoicePoint. Set it as the current choice point.
+	 *
+	 * @param vm The currently executing SymbolicalVirtualMachine.
+	 * @param instruction The Instruction generating the ChoicePoint.
+	 * @param termFromStack The term term that was on top of the stack. Using the non symbolic
+	 *        execution, this would be the key for the switch.
+	 * @param keys The possible keys.
+	 * @param pcs The possible jump targets.
+	 * @param low The "low" boundary of the tableswitch instruction; or null, if the choice point is
+	 *        generated for a lookupswitch instruction.
+	 * @param high The "high" boundary of the tableswitch instruction; or null, if the choice point
+	 *        is generated for a lookupswitch instruction.
+	 * @throws IllegalArgumentException If the number of keys is not equal to the number of jump
+	 *         targets or if there are no choices at all.
+	 * @throws NullPointerException If either of the specified arrays is null, or if the instruction
+	 *         is tableswitch and at least one of the boundaries is null.
+	 * @throws ExecutionException If an Exception is thrown during the choice point
+	 *         generation.
+	 */
+	public void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
+			IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
+			throws ExecutionException {
+		if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
+
+		if (instruction instanceof Lookupswitch) {
+			this.currentChoicePoint = new LookupswitchChoicePoint(
+					vm.getCurrentFrame(),
+					vm.getPc(),
+					vm.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+					termFromStack,
+					keys,
+					pcs,
+					this.currentChoicePoint);
+		} else {
+			this.currentChoicePoint = new TableswitchChoicePoint(
+					vm.getCurrentFrame(),
+					vm.getPc(),
+					vm.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+					termFromStack,
+					keys,
+					pcs,
+					low,
+					high,
+					this.currentChoicePoint);
+		}
+		// execute side effects that formerly resided in the constructor  
+		((SwitchingChoicePoint)this.currentChoicePoint).init(); 
+
+		// Apply the first value.
+		this.currentChoicePoint.applyStateChanges();
+
+		// Count up for the jumping branch.
+		this.numberOfVisitedBranches++;
+		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+	}
+
+	/**
+	 * Return a String representation of this search algorithms name.
+	 * @return A String representation of this search algorithms name.
+	 */
+	public String getName() {
+		return "depth first";
+	}
+
+	/**
+	 * Get the information whether this search algorithm requires a field
+	 * value to be stored (at this exakt moment of execution).
+	 * @return true, if a choice point has been already generated, false otherwise.
+	 */
+	public boolean savingFieldValues() {
+		if (this.currentChoicePoint == null) return false;
+		return true;
+	}
+
+	/**
+	 * Store a field value for use by the seach algorithm's tracking back
+	 * functionality.
+	 * @param valueRepresentation Either a InstanceFieldPut or a StaticfieldPut object.
+	 */
+	public void saveFieldValue(FieldPut valueRepresentation) {
+		if (this.currentChoicePoint != null) this.currentChoicePoint.addToTrail(valueRepresentation);
+	}
+
+	/**
+	 * Get the information whether this search algorithm requires a local
+	 * variable value to be stored (at this exakt moment of execution).
+	 * @return true, if a choice point has been already generated, false otherwise.
+	 */
+	public boolean savingLocalVariableValues() {
+		if (this.currentChoicePoint == null) return false;
+		return true;
+	}
+
+	/**
+	 * Store a local varable value for use by the seach algorithm's tracking back
+	 * functionality.
+	 * @param valueRepresentation A Restore object.
+	 */
+	public void saveLocalVariableValue(Restore valueRepresentation) {
+		if (this.currentChoicePoint != null) this.currentChoicePoint.addToTrail(valueRepresentation);
+	}
+
+	/**
+	 * Get the information whether this search algorithm requires an array
+	 * value to be stored (at this exakt moment of execution).
+	 * @return true, if a choice point has been already generated, false otherwise.
+	 */
+	public boolean savingArrayValues() {
+		if (this.currentChoicePoint == null) return false;
+		return true;
+	}
+
+	/**
+	 * Store a array value for use by the seach algorithm's tracking back
+	 * functionality.
+	 * @param valueRepresentation An ArrayRestore object.
+	 */
+	public void saveArrayValue(ArrayRestore valueRepresentation) {
+		if (this.currentChoicePoint != null) this.currentChoicePoint.addToTrail(valueRepresentation);
+	}
+
+}

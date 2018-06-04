@@ -1,7 +1,5 @@
 package de.wwu.muli.vm;
 
-import java.util.ArrayList;
-
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PopFromFrame;
 import de.wwu.muggl.symbolic.structures.Loop;
@@ -10,6 +8,8 @@ import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.search.dfs.StackToTrail;
+
+import java.util.ArrayList;
 
 /**
  * The LogicFrame inherits the functionality of a "normal" Frame. It also offers some
@@ -100,8 +100,7 @@ public class LogicFrame extends Frame {
 			// Enable restoring mode.
 			operandStack.setRestoringMode(false);
 			// Add this item manually to the trail.
-			ChoicePoint choicePoint = ((LogicVirtualMachine) this.vm).getSearchAlgorithm()
-					.getCurrentChoicePoint();
+			ChoicePoint choicePoint = ((LogicVirtualMachine) this.vm).getCurrentChoicePoint();
 			if (choicePoint != null && choicePoint.hasTrail())
 				choicePoint.addToTrail(new PopFromFrame(this.invokedBy));
 		} else {

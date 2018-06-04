@@ -14,6 +14,8 @@ import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
+import de.wwu.muli.SearchStrategy;
+import de.wwu.muli.iteratorsearch.DepthFirstSearchAlgorithm;
 import de.wwu.muli.solution.MuliFailException;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -30,15 +32,17 @@ public class MuliVMControl extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.Muli.class.getCanonicalName();
     private static ClassFile CLASS_SOLUTION = null;
     private static ClassFile ENUM_EXECUTIONMODE = null;
+    private static ClassFile ENUM_SEARCH_STRATEGY = null;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile(ExecutionMode.class.getCanonicalName());
+        ENUM_SEARCH_STRATEGY = classLoader.getClassAsClassFile(SearchStrategy.class.getCanonicalName());
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
         registerNatives();
     }
 
     public static void registerNatives() {
-        // Execution mode
+        // Execution mode.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "getVMExecutionMode",
                 MethodType.methodType(Object.class, Frame.class),
                 MethodType.methodType(ExecutionMode.class));
@@ -46,7 +50,12 @@ public class MuliVMControl extends NativeMethodProvider {
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, ExecutionMode.class));
 
-        // Solutions - store and retrieve
+        // Search region iterator registration.
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "setSearchStrategyVM",
+                MethodType.methodType(void.class, Frame.class, Object.class, Object.class),
+                MethodType.methodType(void.class, de.wwu.muli.search.SolutionIterator.class, SearchStrategy.class));
+
+        // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "recordSolutionAndBacktrackVM",
                 MethodType.methodType(void.class, Frame.class, Object.class),
                 MethodType.methodType(void.class, Object.class));
@@ -57,12 +66,12 @@ public class MuliVMControl extends NativeMethodProvider {
                 MethodType.methodType(Arrayref.class, Frame.class),
                 MethodType.methodType(Solution[].class));
 
-        // `fail' construct
+        // `fail' operation.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "fail",
                 MethodType.methodType(void.class, Frame.class),
                 MethodType.methodType(MuliFailException.class));
 
-        // `label' operator
+        // `label' operation.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "label",
                 MethodType.methodType(void.class, Frame.class),
                 MethodType.methodType(void.class));
@@ -90,6 +99,20 @@ public class MuliVMControl extends NativeMethodProvider {
         } else if (executionMode == ic.getField(ENUM_EXECUTIONMODE.getFieldByName(ExecutionMode.NORMAL.toString()))) {
             Options.getInst().symbolicMode = false;
         }
+
+    }
+
+    public static void setSearchStrategyVM(Frame frame, Object iterator, Object searchStrategy) {
+        LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
+        InitializedClass ic = ENUM_SEARCH_STRATEGY.getTheInitializedClass(vm);
+
+        // parse param and set mode accordingly
+        if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.IterativeDeepening.toString()))) {
+            vm.setSearchStrategy((Objectref)iterator, new DepthFirstSearchAlgorithm());
+        }
+        // TODO handle further strategies (== search algorithms)
+
+        Globals.getInst().symbolicExecLogger.debug("Registered search strategy successfully.");
 
     }
 

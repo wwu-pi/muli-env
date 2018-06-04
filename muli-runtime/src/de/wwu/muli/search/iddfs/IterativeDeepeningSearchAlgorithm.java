@@ -5,17 +5,16 @@ import de.wwu.muggl.instructions.bytecode.LCmp;
 import de.wwu.muggl.instructions.general.CompareFp;
 import de.wwu.muggl.instructions.general.GeneralInstructionWithOtherBytes;
 import de.wwu.muggl.instructions.general.Switch;
+import de.wwu.muggl.solvers.expressions.ConstraintExpression;
+import de.wwu.muggl.solvers.expressions.IntConstant;
+import de.wwu.muggl.solvers.expressions.Term;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
-import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muli.search.dfs.DepthFirstSearchAlgorithm;
 import de.wwu.muli.vm.LogicVirtualMachine;
-import de.wwu.muggl.solvers.expressions.ConstraintExpression;
-import de.wwu.muggl.solvers.expressions.IntConstant;
-import de.wwu.muggl.solvers.expressions.Term;
 
 /**
  * This class implements the iterative deepening depth first algorithm.<br />
@@ -132,7 +131,7 @@ public class IterativeDeepeningSearchAlgorithm extends DepthFirstSearchAlgorithm
 		     *  and the runtime stack of this application is not increasing with each start.
 		     */
 			try {
-				LogicVirtualMachine vmNew = new LogicVirtualMachine(this, vm);
+				LogicVirtualMachine vmNew = new LogicVirtualMachine(vm);
 				vmNew.setStepByStepMode(vm.getStepByStepMode());
 
 				// Set the new vm.

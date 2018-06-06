@@ -1,10 +1,11 @@
-package de.wwu.muli.search.dfs;
-
-import java.util.Stack;
+package de.wwu.muli.iteratorsearch.structures;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.solvers.SolverManager;
+import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
+import de.wwu.muggl.solvers.exceptions.TimeoutException;
+import de.wwu.muggl.solvers.expressions.ConstraintExpression;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.EquationViolationException;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.SolvingException;
@@ -12,10 +13,8 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.conditionalJump.Conditional
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.TrailElement;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
-import de.wwu.muggl.vm.impl.symbolic.SymbolicVirtualMachine;
-import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
-import de.wwu.muggl.solvers.exceptions.TimeoutException;
-import de.wwu.muggl.solvers.expressions.ConstraintExpression;
+
+import java.util.Stack;
 
 /**
  * A ConditionalJumpChoicePointDepthFirst is a ChoicePoint for the depth first
@@ -39,6 +38,7 @@ public class ConditionalJumpChoicePointDepthFirst extends ConditionalJumpChoiceP
 	 * Temporary field for time measuring.
 	 */
 	protected long timeSolvingTemp;
+
 
 	/**
 	 * Create the initial ChoicePoint of an application.

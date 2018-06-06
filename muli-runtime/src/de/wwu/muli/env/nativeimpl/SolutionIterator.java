@@ -79,8 +79,7 @@ public class SolutionIterator extends NativeMethodProvider {
         }
         //System.out.println("solution, " + System.nanoTime());
 
-        // backtracking
-        //        // TODO augment!
+        // Backtracking.
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
 
@@ -107,8 +106,7 @@ public class SolutionIterator extends NativeMethodProvider {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
         }
 
-        // backtracking
-        // TODO augment!
+        // Backtracking.
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
 

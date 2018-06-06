@@ -1,4 +1,4 @@
-package de.wwu.muli.search.dfs;
+package de.wwu.muli.iteratorsearch.structures;
 
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Pop;

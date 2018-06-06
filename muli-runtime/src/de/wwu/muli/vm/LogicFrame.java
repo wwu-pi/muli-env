@@ -7,7 +7,7 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.ExecutionException;
-import de.wwu.muli.search.dfs.StackToTrail;
+import de.wwu.muli.iteratorsearch.structures.StackToTrail;
 
 import java.util.ArrayList;
 

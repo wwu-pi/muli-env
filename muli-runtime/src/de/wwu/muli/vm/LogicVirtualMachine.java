@@ -41,7 +41,7 @@ import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
-import de.wwu.muli.search.dfs.StackToTrail;
+import de.wwu.muli.iteratorsearch.structures.StackToTrail;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import org.apache.log4j.Level;
@@ -296,6 +296,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * Since execution reached a backtracking point, store the found solution for later retrieval.
 	 */
 	public void saveSolutionObject(Object solution) {
+        // TODO maybe remove from VM.
 		// Reset the instruction-between-solutions counter.
 		this.instructionsExecutedSinceLastSolution = 0;
 
@@ -307,6 +308,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * Since execution reached a backtracking point, store the found exception for later retrieval.
 	 */
 	public void saveSolutionException(Object solution) {
+        // TODO maybe remove from VM.
 		// Reset the instruction-between-solutions counter.
 		this.instructionsExecutedSinceLastSolution = 0;
 

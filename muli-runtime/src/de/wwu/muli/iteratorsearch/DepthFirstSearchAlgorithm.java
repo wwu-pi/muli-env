@@ -119,107 +119,110 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         return this.currentChoicePoint;
     }
 
-	/**
-	 * Try to track back to the last ChoicePoint thats non jumping branch was not yet visited.
-	 *
-	 * @param vm The currently executing SymbolicalVirtualMachine.
-	 * @return true, if tracking back was successful and the execution can be continued, false, if
-	 *         there was no possibility for tracking back and then execution should hence be
-	 *         stopped.
-	 */
-	public boolean trackBack(LogicVirtualMachine vm) {
-		if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
-		// Only track back if there ever was a ChoicePoint generated at all. Otherwise, no tracking back is possible.
-		if (this.currentChoicePoint == null) return false;
+    /**
+     * Try to track back to the last ChoicePoint thats non jumping branch was not yet visited,
+     * and then track back to the root of the symbolic execution tree while recording changes
+     * to the inverse trail.
+     *
+     * @param vm The currently executing LogicVirtualMachine.
+     * @return true, if tracking back was successful and the execution can be continued, false, if
+     *         there was no possibility for tracking back and then execution should hence be
+     *         stopped.
+     */
+    public boolean trackBack(LogicVirtualMachine vm) {
+        if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
+        // Only track back if there ever was a ChoicePoint generated at all. Otherwise, no tracking back is possible.
+        if (this.currentChoicePoint == null) return false;
 
-		Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt backtracking for current search region.");
+        Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt full backtracking for current search region.");
 
-		// Get the SolverManager.
-		SolverManager solverManager = vm.getSolverManager();
+        // Get the SolverManager.
+        SolverManager solverManager = vm.getSolverManager();
 
-		// Since the jump is executed first, find the newest ChoicePoint thats non jumping branch was not visited yet. Restore states while doing so.
-		while (!this.currentChoicePoint.hasAnotherChoice()) {
-			// Muli: Backtracking is now possible anywhere, not just at the end of execution. Therefore, order
-			// of instructions have been changed. Otherwise, the last branch would have been executed twice.
+        // Since the jump is executed first, find the newest ChoicePoint thats non jumping branch was not visited yet. Restore previous state while doing so.
+        // All of this does not need to go on the inverse trail, because this branch will not be executed again. We care about the next one(s).
+        while (!this.currentChoicePoint.hasAnotherChoice()) {
+            // No further choice for this CP. Is there a parent? If so, we need to recover everything after this CP
+            // and continue at the parent. Otherwise, return false and continue!
+            if (this.currentChoicePoint.getParent() == null) {
+                // Went trough all branches. Backtrack one last time to get rid of changes of this CP.
+                recoverState(vm);
+                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+                this.currentChoicePoint = null; // Remove last reference to this choice point
+                return trackBackFailed(vm);
+            }
 
-			// No further choice for this CP. Is there a parent? If so, we need to recover everything after this CP
-			// and continue at the parent. Otherwise, return false and continue!
-			if (this.currentChoicePoint.getParent() == null) {
-				// Went trough all branches.
-				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-				this.currentChoicePoint = null; // Remove last reference to this choice point
-				return trackBackFailed(vm);
-			}
+            // There is a parent, continue by recovering. Does not need to push to the inverse trail, because this branch
+            // will not be executed again. We only care about subsequent one(s).
 
-			// There is a parent, continue by recovering.
+            // First step: Use the trail of the last choice point to get back to the old state.
+            recoverState(vm);
 
-			// First step: Use the trail of the last choice point to get back to the old state.
-			recoverState(vm);
+            // Second step: If one has been set, remove the ConstraintExpression from the ConstraintStack of the SolverManager.
+            if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
 
-			// Second step: If one has been set, remove the ConstraintExpression from the ConstraintStack of the SolverManager.
-			if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
-			
-			// Third step: Load its' parent. This will also free the memory of the current choice point.
-			this.currentChoicePoint = this.currentChoicePoint.getParent();
-		}
+            // Third step: Load its parent. This will also free the memory of the current choice point.
+            this.currentChoicePoint = this.currentChoicePoint.getParent();
+        }
 
-		// Change to the next choice.
-		try {
-			this.currentChoicePoint.changeToNextChoice();
-		} catch (MugglException e) {
-			if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-			Globals.getInst().symbolicExecLogger
-					.trace("Tracking back was successful, but encountered an Exception when switching "
-							+ " to the next choice. Trying to track back further. The root cause it "
-							+ e.getClass().getName() + " (" + e.getMessage() + ")");
+        // Old implementation now changed to the next choice. Instead, keep on backtracking to the root -- but make sure, that next time this next choice is chosen!
+        // Change to the next choice.
+        try {
+            this.currentChoicePoint.changeToNextChoice();
+        } catch (MugglException e) {
+            if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+            Globals.getInst().symbolicExecLogger
+                    .trace("Tracking back was successful, but encountered an Exception when switching "
+                            + " to the next choice. Trying to track back further. The root cause it "
+                            + e.getClass().getName() + " (" + e.getMessage() + ")");
 
-			return trackBack(vm);
-		}
+            return trackBack(vm);
+        }
 
-		// Count up for the non-jumping branch.
-		this.numberOfVisitedBranches++;
+        // Count up for the non-jumping branch.
+        this.numberOfVisitedBranches++;
 
-		// Perform operations specific to the constraint system.
-		if (this.currentChoicePoint.changesTheConstraintSystem()) {
-			// Remove the Constraint and get the new one.
-			solverManager.removeConstraint();
-			solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
+        // Perform operations specific to the constraint system.
+        if (this.currentChoicePoint.changesTheConstraintSystem()) {
+            // Remove the Constraint and get the new one.
+            solverManager.removeConstraint();
+            solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
 
-			// Check if the new branch can be visited at all, or if it causes an equation violation.
-			try {
-				// Try to solve the expression.
-				if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
-				if (!solverManager.hasSolution()) {
-					if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
-					if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-					return trackBack(vm);
-				}
-				if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
-			} catch (SolverUnableToDecideException e) {
-				if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-					Globals.getInst().symbolicExecLogger.trace("Solving lead to a SolverUnableToDecideException with message: " + e.getMessage());
-				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-				return trackBack(vm);
-			} catch (TimeoutException e) {
-				if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-					Globals.getInst().symbolicExecLogger.trace("Solving lead to a TimeoutException with message: " + e.getMessage());
-				if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-				return trackBack(vm);
-			}
-		}
+            // Check if the new branch can be visited at all, or if it causes an equation violation.
+            try {
+                // Try to solve the expression.
+                if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
+                if (!solverManager.hasSolution()) {
+                    if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
+                    if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+                    return trackBack(vm);
+                }
+                if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
+            } catch (SolverUnableToDecideException e) {
+                if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+                    Globals.getInst().symbolicExecLogger.trace("Solving lead to a SolverUnableToDecideException with message: " + e.getMessage());
+                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+                return trackBack(vm);
+            } catch (TimeoutException e) {
+                if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+                    Globals.getInst().symbolicExecLogger.trace("Solving lead to a TimeoutException with message: " + e.getMessage());
+                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+                return trackBack(vm);
+            }
+        }
 
-		// Found the choice point to continue, recover the state of it.
-		recoverState(vm);
+        // Found the choice point to continue, recover the state of it.
+        recoverState(vm);
 
-		// Does the choice point require any state specific changes beside those already done?
-		if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
+        // Does the choice point require any state specific changes beside those already done?
+        if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
 
-		// Tracking back was successful.
-		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-			Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
-		if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-		return true;
-	}
+        // Tracking back was successful.
+        if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+            Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
+        if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+        return true;
+    }
 
 	/**
 	 * This method is called when tracking back failed. It will not change a thing, and just

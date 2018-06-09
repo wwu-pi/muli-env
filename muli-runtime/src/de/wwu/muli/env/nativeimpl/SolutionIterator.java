@@ -10,6 +10,8 @@ import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
+import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
+import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -51,11 +53,11 @@ public class SolutionIterator extends NativeMethodProvider {
         // Choice point navigation.
         /*NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "choicePointHasAdditionalChoiceVM",
                 MethodType.methodType(Boolean.class, Frame.class, Object.class),
-                MethodType.methodType(Boolean.class, SolutionIterator.class));
-        NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "restoreChoicePointStateNextChoiceVM",
-                MethodType.methodType(Boolean.class, Frame.class, Object.class),
-                MethodType.methodType(Boolean.class, SolutionIterator.class));
-*/
+                MethodType.methodType(Boolean.class, SolutionIterator.class));*/
+        NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "replayInverseTrailForNextChoiceVM",
+                MethodType.methodType(Boolean.class, Frame.class),
+                MethodType.methodType(Boolean.class));
+
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
@@ -119,6 +121,15 @@ public class SolutionIterator extends NativeMethodProvider {
 
     public static void setVMActiveIterator(Frame frame, Object activeIterator) {
         ((LogicVirtualMachine)frame.getVm()).setCurrentSearchRegion((Objectref)activeIterator);
+    }
+
+    public static boolean replayInverseTrailForNextChoiceVM(Frame frame) {
+        LogicIteratorSearchAlgorithm currentIteratorSearchAlgorithm = ((LogicVirtualMachine) frame.getVm()).getSearchAlgorithm();
+        if (currentIteratorSearchAlgorithm instanceof NoSearchAlgorithm) {
+            throw new IllegalStateException("Must be inside an active search region, set by setVMActiveIterator.");
+        }
+        return currentIteratorSearchAlgorithm.changeToNextChoice(((LogicVirtualMachine) frame.getVm()));
+        // TODO consider special handling / logging if result of changeToNextChoice is false
     }
 
 }

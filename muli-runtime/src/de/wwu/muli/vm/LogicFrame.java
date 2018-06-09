@@ -7,7 +7,7 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.ExecutionException;
-import de.wwu.muli.iteratorsearch.structures.StackToTrail;
+import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 
 import java.util.ArrayList;
 
@@ -92,7 +92,7 @@ public class LogicFrame extends Frame {
 	public void returnFromMethod(Object value) {
 		this.executionFinishedNormally = true;
 		if (this.invokedBy != null) {
-			StackToTrail operandStack = (StackToTrail) this.invokedBy.getOperandStack();
+			StackToTrailWithInverse operandStack = (StackToTrailWithInverse) this.invokedBy.getOperandStack();
 			// Enable restoring mode to the pushed item will not be added as a pop trail element to the trail.
 			operandStack.setRestoringMode(true);
 			// Push the return value.

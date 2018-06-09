@@ -35,7 +35,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muli.iteratorsearch.structures.ConditionalJumpChoicePointDepthFirst;
-import de.wwu.muli.iteratorsearch.structures.StackToTrail;
+import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import org.apache.log4j.Level;
@@ -82,7 +82,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	 */
 	protected ChoicePoint currentChoicePoint;
 	/**
-	 * The total number o9f branches visited so far.
+	 * The total number of branches visited so far.
 	 */
 	protected long numberOfVisitedBranches;
 	/**
@@ -101,6 +101,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	 * Temporary field to measure solving time.
 	 */
 	protected long timeSolvingTemp;
+    /**
+     * Inverse choice point stack.
+     */
+    final protected Stack<ChoicePoint> inverseChoicePointStack;
 
 	/**
 	 * Instantiate the depth first search algorithm.
@@ -108,6 +112,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	public DepthFirstSearchAlgorithm() {
 		this.numberOfVisitedBranches = 0;
 		this.measureExecutionTime = Options.getInst().measureSymbolicExecutionTime;
+		this.inverseChoicePointStack = new Stack<>();
 	}
 
     /**
@@ -149,7 +154,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
                 recoverState(vm);
                 if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
                 this.currentChoicePoint = null; // Remove last reference to this choice point
-                return trackBackFailed(vm);
+                return trackBackFinishedNoMoreChoices(vm);
             }
 
             // There is a parent, continue by recovering. Does not need to push to the inverse trail, because this branch
@@ -165,7 +170,62 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             this.currentChoicePoint = this.currentChoicePoint.getParent();
         }
 
-        // Old implementation now changed to the next choice. Instead, keep on backtracking to the root -- but make sure, that next time this next choice is chosen!
+        // Old implementation now would have changed to the next choice. Instead, keep on backtracking to the root.
+
+        // For the current choice point, also reset its state and remove its constraint from the constraint stack.
+        // Its trail is also not required anymore; it will be changed to its next choice next time!
+        recoverState(vm);
+        if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
+
+        this.inverseChoicePointStack.push(this.currentChoicePoint);
+
+        while (this.currentChoicePoint.getParent() != null) {
+            this.currentChoicePoint = this.currentChoicePoint.getParent();
+            // Get back to its original state, and remove the constraint.
+            recoverState(vm); // TODO ...while adding to the inverse trail.
+            if (this.currentChoicePoint.changesTheConstraintSystem()) {
+                // No need for an inverse constraint stack, because we will always be able to get the constraint from the choice point.
+                solverManager.removeConstraint();
+            }
+            this.inverseChoicePointStack.push(this.currentChoicePoint);
+        }
+
+        // Does the choice point require any state specific changes beside those already done?
+        if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
+
+        // Tracking back was successful.
+        if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
+            Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
+        if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+        return true;
+    }
+
+    public boolean changeToNextChoice(LogicVirtualMachine vm) {
+        Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt replaying the inverse trail for current search region, and selecting the next choice.");
+
+        // If inverse trail is empty, it is the first execution => nothing to replay here.
+        if (this.inverseChoicePointStack.isEmpty()) {
+            return true;
+        }
+
+        // Get the SolverManager.
+        SolverManager solverManager = vm.getSolverManager();
+
+        // Replay the inverse trail.
+        ChoicePoint nextChoicePoint;
+        while (null != (nextChoicePoint = this.inverseChoicePointStack.pop())) {
+            this.currentChoicePoint = nextChoicePoint;
+
+            if (this.currentChoicePoint.changesTheConstraintSystem()) {
+                // No need for an inverse constraint stack, because we will always be able to get the constraint from the choice point.
+                solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
+            }
+
+            // Apply its state value.
+            this.currentChoicePoint.applyStateChanges();
+            // TODO Replay its inverse trail before proceeding to the next choice point.
+        }
+
         // Change to the next choice.
         try {
             this.currentChoicePoint.changeToNextChoice();
@@ -176,15 +236,12 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
                             + " to the next choice. Trying to track back further. The root cause it "
                             + e.getClass().getName() + " (" + e.getMessage() + ")");
 
-            return trackBack(vm);
+            return trackBack(vm); // TODO don't return; rather trackBack as far as required and evaluate next choice then.
         }
 
-        // Count up for the non-jumping branch.
-        this.numberOfVisitedBranches++;
-
-        // Perform operations specific to the constraint system.
+        // Check if the constraint system still has a solution.
         if (this.currentChoicePoint.changesTheConstraintSystem()) {
-            // Remove the Constraint and get the new one.
+            // Remove the constraint added during replay and add the new one.
             solverManager.removeConstraint();
             solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
 
@@ -211,16 +268,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             }
         }
 
-        // Found the choice point to continue, recover the state of it.
-        recoverState(vm);
+        // Count up for the next branch (first branches have been counted on CP generation).
+        this.numberOfVisitedBranches++;
 
-        // Does the choice point require any state specific changes beside those already done?
-        if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
-
-        // Tracking back was successful.
-        if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-            Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
-        if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
+        // Success, continue execution!
         return true;
     }
 
@@ -231,7 +282,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	 * @param vm The currently executing SymbolicalVirtualMachine.
 	 * @return false in any case.
 	 */
-	protected boolean trackBackFailed(LogicVirtualMachine vm) {
+	protected boolean trackBackFinishedNoMoreChoices(LogicVirtualMachine vm) {
 		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
 			Globals.getInst().symbolicExecLogger.trace("No more tracking back is possible. Visited " + this.numberOfVisitedBranches + " branches in total.");
 		return false;
@@ -243,10 +294,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	 */
 	public void recoverState(LogicVirtualMachine vm) {
 		// Get the current stacks.
-		StackToTrail operandStack = (StackToTrail) vm.getCurrentFrame().getOperandStack();
-		StackToTrail vmStack = (StackToTrail) vm.getStack();
+		StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+		StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
 
-		// Set the StackToTrail instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+		// Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
 		operandStack.setRestoringMode(true);
 		vmStack.setRestoringMode(true);
 
@@ -283,7 +334,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 					// Disable the restoring mode for the last Frame's operand stack.
 					operandStack.setRestoringMode(false);
 					// Set the current operand stack accordingly.
-					operandStack = (StackToTrail) frameChange.getFrame().getOperandStack();
+					operandStack = (StackToTrailWithInverse) frameChange.getFrame().getOperandStack();
 					// Enable restoring mode for it.
 					operandStack.setRestoringMode(true);
 				} else if (object instanceof PCChange) {

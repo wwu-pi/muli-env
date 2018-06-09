@@ -17,9 +17,9 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
     ChoicePoint getCurrentChoicePoint();
 
-	boolean trackBack(LogicVirtualMachine vm);
+    boolean trackBack(LogicVirtualMachine vm);
 
-	void recoverState(LogicVirtualMachine vm);
+    boolean changeToNextChoice(LogicVirtualMachine vm);
 
 	void generateNewChoicePoint(LogicVirtualMachine vm, int localVariableIndex, Generator generator)
 			throws ConversionException, ExecutionException;

@@ -10,7 +10,7 @@ import java.util.Stack;
 import java.util.function.Supplier;
 
 /**
- * The StackToTrail extends the java.util.Stack. Is overrides the functionality for push and pop. In
+ * The StackToTrailWithInverse extends the java.util.Stack. Is overrides the functionality for push and pop. In
  * general, it will invoke the super method whenever the methods push() and pop() are invoked. If it
  * is not set to restoring mode, it will also add information to the trail of the current
  * ChoicePoint.<br />
@@ -22,19 +22,19 @@ import java.util.function.Supplier;
  * @author Jan C. Dageförde
  * @version 1.0.0, 2010-03-10
  */
-public class StackToTrail extends Stack<Object> {
-	private static final long serialVersionUID = 1507257881851151819L;
+public class StackToTrailWithInverse extends Stack<Object> {
+	private static final long serialVersionUID = 2507257891851151819L;
 	// Fields.
 	private boolean isVmStack;
-	private boolean restoringMode;
-	private Supplier<ChoicePoint> choicePointFromVMSupplier;
+    private boolean restoringMode;
+    private Supplier<ChoicePoint> choicePointFromVMSupplier;
 
     /**
-     * Initialize a new StackToTrail.
-     * @param isVmStack If set to true, this StackToTrail should be used as a virtual machine stack. It should be used as a operand stack otherwise.
+     * Initialize a new StackToTrailWithInverse.
+     * @param isVmStack If set to true, this StackToTrailWithInverse should be used as a virtual machine stack. It should be used as a operand stack otherwise.
      * @param choicePointSupplier Supplier that gets the current active choicepoint from the VM.
      */
-    public StackToTrail(boolean isVmStack, Supplier<ChoicePoint> choicePointSupplier) {
+    public StackToTrailWithInverse(boolean isVmStack, Supplier<ChoicePoint> choicePointSupplier) {
         super();
         this.isVmStack = isVmStack;
         this.choicePointFromVMSupplier = choicePointSupplier;
@@ -42,7 +42,7 @@ public class StackToTrail extends Stack<Object> {
     }
 
 	/**
-	 * Push an item onto the stack. If there is a ChoicePoint set and this StackToTrail
+	 * Push an item onto the stack. If there is a ChoicePoint set and this StackToTrailWithInverse
 	 * is not in restoring mode, add the command to pop to the trail.
 	 * @param item The item to push onto the stack.
 	 * @return The supplied item.
@@ -64,7 +64,7 @@ public class StackToTrail extends Stack<Object> {
 	}
 
 	/**
-	 * Pop an item from the stack. If there is a ChoicePoint set and this StackToTrail
+	 * Pop an item from the stack. If there is a ChoicePoint set and this StackToTrailWithInverse
 	 * is not in restoring mode, add the command to push this item to the trail.
 	 * @return The popped item.
 	 */
@@ -97,14 +97,14 @@ public class StackToTrail extends Stack<Object> {
 	 * Indicates whether some other object is equal to this one.
 	 *
 	 * @param obj The object to check equality with.
-	 * @return true, if the two value fields for the StackToTrail are equal and if the inherited stack
+	 * @return true, if the two value fields for the StackToTrailWithInverse are equal and if the inherited stack
 	 *         is equal; false otherwise.
 	 * @see java.util.Vector#equals(java.lang.Object)
 	 */
 	@Override
 	public synchronized boolean equals(Object obj) {
-		if (obj instanceof StackToTrail) {
-			StackToTrail stack = (StackToTrail) obj;
+		if (obj instanceof StackToTrailWithInverse) {
+			StackToTrailWithInverse stack = (StackToTrailWithInverse) obj;
 			if (stack.isVmStack == this.isVmStack && stack.restoringMode == this.restoringMode) {
 				return super.equals(obj);
 			}

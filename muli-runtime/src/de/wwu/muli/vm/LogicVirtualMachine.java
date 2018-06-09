@@ -41,7 +41,7 @@ import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
-import de.wwu.muli.iteratorsearch.structures.StackToTrail;
+import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import org.apache.log4j.Level;
@@ -161,7 +161,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		} catch (ClassNotFoundException e) {
 			throw new InitializationException("Solver manager of class " + options.solverManager + " does not exist.");
 		}
-		this.stack = new StackToTrail(true, this::getCurrentChoicePoint);
+		this.stack = new StackToTrailWithInverse(true, this::getCurrentChoicePoint);
 		this.solutions = new ArrayList<>();
 		this.doNotTryToTrackBack = false;
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
@@ -346,7 +346,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	protected Frame createFrame(Frame invokedBy, Method method, Object[] arguments) throws ExecutionException {
 		LogicFrame frame = new LogicFrame(invokedBy, this, method, method.getClassFile()
 				.getConstantPool(), arguments);
-		frame.setOperandStack(new StackToTrail(false, this::getCurrentChoicePoint));
+		frame.setOperandStack(new StackToTrailWithInverse(false, this::getCurrentChoicePoint));
 
 		/*
 		 * Check which local variables are annotated and replace undefined local variables by logic

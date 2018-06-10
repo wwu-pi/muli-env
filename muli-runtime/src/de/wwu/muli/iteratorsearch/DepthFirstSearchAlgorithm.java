@@ -195,7 +195,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         }
 
         // Found the choice point to continue, recover the state of it.
-        recoverState(vm);
+        recoverState(vm, RestoreMode.SimpleRestore);
 
         // Does the choice point require any state specific changes beside those already done?
         if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
@@ -236,7 +236,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
         // For the current choice point, also reset its state and remove its constraint from the constraint stack.
         // Its trail is also not required anymore; it will be changed to its next choice next time!
-        recoverState(vm);
+        recoverState(vm, RestoreMode.SimpleRestore);
         if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
 
         this.inverseChoicePointStack.push(this.currentChoicePoint);
@@ -244,7 +244,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         while (this.currentChoicePoint.getParent() != null) {
             this.currentChoicePoint = this.currentChoicePoint.getParent();
             // Get back to its original state, and remove the constraint.
-            recoverState(vm); // TODO ...while adding to the inverse trail.
+            recoverState(vm, RestoreMode.TrailToInverse);
             if (this.currentChoicePoint.changesTheConstraintSystem()) {
                 // No need for an inverse constraint stack, because we will always be able to get the constraint from the choice point.
                 solverManager.removeConstraint();
@@ -275,7 +275,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             // will not be executed again. We only care about subsequent one(s).
 
             // First step: Use the trail of the last choice point to get back to the old state.
-            recoverState(vm);
+            recoverState(vm, RestoreMode.SimpleRestore);
 
             // Second step: If one has been set, remove the ConstraintExpression from the ConstraintStack of the SolverManager.
             if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
@@ -316,7 +316,9 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
             // Apply its state value.
             this.currentChoicePoint.applyStateChanges();
-            // TODO Replay its inverse trail before proceeding to the next choice point.
+
+            // Replay its inverse trail before proceeding to the next choice point.
+            recoverState(vm, RestoreMode.InverseToTrail);
         }
 
         // Change to the next choice.
@@ -385,7 +387,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	 * Recover that state at the ChoicePoint currentChoicePoint.
 	 * @param vm The currently executing SymbolicalVirtualMachine.
 	 */
-	private void recoverState(LogicVirtualMachine vm) {
+	private void recoverState(LogicVirtualMachine vm, RestoreMode mode) {
 		// Get the current stacks.
 		StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
 		StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
@@ -396,7 +398,18 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
 		// If the choice point has a trail, use it to recover the state.
 		if (this.currentChoicePoint.hasTrail()) {
-			Stack<TrailElement> trail = this.currentChoicePoint.getTrail();
+            Stack<TrailElement> trail;
+            Stack<TrailElement> respectiveInverse = null;
+            if (mode == RestoreMode.SimpleRestore) { // No inverse stack used.
+                trail = this.currentChoicePoint.getTrail();
+            } else if (mode == RestoreMode.TrailToInverse) { // Use regular trail; populate inverse trail.
+                trail = this.currentChoicePoint.getTrail();
+                respectiveInverse = this.currentChoicePoint.getInverseTrail();
+            } else { // Use inverse trail; re-populate regular trail
+                trail = this.currentChoicePoint.getInverseTrail();
+                respectiveInverse = this.currentChoicePoint.getTrail();
+            }
+
 			// Empty the trail.
 			while (!trail.empty()) {
 				Object object = trail.pop();
@@ -411,14 +424,16 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 						frame.setPc(vmPush.getPc());
 						frame.setMonitor(vmPush.getMonitor());
 					}
+                    if (respectiveInverse != null) respectiveInverse.push(new VmPop());
 				} else if (object instanceof VmPop) {
-					if (vm.getStack().isEmpty()) {
+					if (vmStack.isEmpty()) {
 						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
 							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
 									+ "pop an element from the empty VM stack. It will be ignored and skipped. "
 									+ "However, this hints to a serious problem and should be checked.");
 					} else {
-						vm.getStack().pop();
+						Object fromVm = vmStack.pop();
+                        if (respectiveInverse != null) respectiveInverse.push(new VmPush(fromVm));
 					}
 				} else if (object instanceof FrameChange) {
 					FrameChange frameChange = (FrameChange) object;

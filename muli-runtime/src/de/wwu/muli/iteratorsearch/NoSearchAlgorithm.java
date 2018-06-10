@@ -33,8 +33,13 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     @Override
-    public void recoverState(LogicVirtualMachine vm) {
-        throw new IllegalStateException("unexpected state: Trying to recover state, but no search algorithm initialised.");
+    public boolean trackBackLocallyNextChoice(LogicVirtualMachine vm) {
+        return false;
+    }
+
+    @Override
+    public boolean changeToNextChoice(LogicVirtualMachine vm) {
+        throw new IllegalStateException("unexpected state: Trying to change to next choice, but no search algorithm initialised.");
     }
 
     @Override

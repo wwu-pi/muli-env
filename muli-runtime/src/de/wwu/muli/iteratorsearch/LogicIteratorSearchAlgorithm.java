@@ -17,6 +17,8 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
     ChoicePoint getCurrentChoicePoint();
 
+    boolean trackBackLocallyNextChoice(LogicVirtualMachine vm);
+
     boolean trackBack(LogicVirtualMachine vm);
 
     boolean changeToNextChoice(LogicVirtualMachine vm);
@@ -40,5 +42,4 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 	void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
                                 IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
 			throws ExecutionException;
-
 }

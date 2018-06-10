@@ -161,11 +161,11 @@ public class MuliVMControl extends NativeMethodProvider {
     public static void fail(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
 
-        // backtracking
-        vm.getSearchAlgorithm().trackBack(vm);
-        // TODO consider special handling / logging if result of trackBack is false
-        // TODO is behaviour different in streams?
+        // Backtracking, and proceed to next choice/branch immediately.
+        vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);
+        // TODO needs special handling if result of trackBackLocallyNextChoice is false (i.e. no more choices left)
     }
+
     public static void label(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         try {

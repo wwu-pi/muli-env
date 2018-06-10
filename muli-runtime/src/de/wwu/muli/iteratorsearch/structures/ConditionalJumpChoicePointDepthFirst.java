@@ -29,7 +29,8 @@ import java.util.Stack;
 public class ConditionalJumpChoicePointDepthFirst extends ConditionalJumpChoicePoint {
 	// Fields.
 	private boolean alreadyVisitedNonJumpingBranch = false;
-	private Stack<TrailElement> trail = new Stack<TrailElement>();
+    private Stack<TrailElement> trail = new Stack<TrailElement>();
+    private Stack<TrailElement> inverseTrail = new Stack<TrailElement>();
 	/**
 	 * Flag to determine if the execution time should be measured.
 	 */
@@ -153,12 +154,28 @@ public class ConditionalJumpChoicePointDepthFirst extends ConditionalJumpChoiceP
 		this.trail.push(element);
 	}
 
+    /**
+     * Add an object to the inverse trail of this ChoicePoint.
+     * @param element The TrailElement to be added to the trail.
+     */
+    public void addToInverseTrail(TrailElement element) {
+        this.inverseTrail.push(element);
+    }
+
+    /**
+     * Getter for the trail.
+     * @return The trail.
+     */
+    public Stack<TrailElement> getTrail() {
+        return this.trail;
+    }
+
 	/**
 	 * Getter for the trail.
 	 * @return The trail.
 	 */
-	public Stack<TrailElement> getTrail() {
-		return this.trail;
+	public Stack<TrailElement> getInverseTrail() {
+		return this.inverseTrail;
 	}
 
 	/**

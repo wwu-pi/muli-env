@@ -55,8 +55,8 @@ public class SolutionIterator extends NativeMethodProvider {
                 MethodType.methodType(Boolean.class, Frame.class, Object.class),
                 MethodType.methodType(Boolean.class, SolutionIterator.class));*/
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "replayInverseTrailForNextChoiceVM",
-                MethodType.methodType(Boolean.class, Frame.class),
-                MethodType.methodType(Boolean.class));
+                MethodType.methodType(boolean.class, Frame.class),
+                MethodType.methodType(boolean.class));
 
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }

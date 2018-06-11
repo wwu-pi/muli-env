@@ -1,6 +1,7 @@
 package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
+import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
@@ -82,8 +83,18 @@ public class SolutionIterator extends NativeMethodProvider {
         //System.out.println("solution, " + System.nanoTime());
 
         // Backtracking.
+        int pcBeforeBacktracking = vm.getPc();
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
+
+        // Make sure next frame (which is the reincarnation of tryAdvance) will continue at the same PC as we left of (instead of at the root choice point).
+        int nextPc;
+        try {
+            nextPc = pcBeforeBacktracking + 1 + vm.getCurrentFrame().getMethod().getInstructionsAndOtherBytes()[pcBeforeBacktracking].getNumberOfOtherBytes();
+        } catch (InvalidInstructionInitialisationException e) {
+            throw new RuntimeException(e);
+        }
+        vm.getCurrentFrame().setPc(nextPc);
 
         return returnValue;
     }
@@ -109,8 +120,19 @@ public class SolutionIterator extends NativeMethodProvider {
         }
 
         // Backtracking.
+        int pcBeforeBacktracking = vm.getPc();
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
+
+        // Make sure next frame (which is the reincarnation of tryAdvance) will continue at the same PC as we left of (instead of at the root choice point).
+        int nextPc;
+        try {
+            nextPc = pcBeforeBacktracking + 1 + vm.getCurrentFrame().getMethod().getInstructionsAndOtherBytes()[pcBeforeBacktracking].getNumberOfOtherBytes();
+        } catch (InvalidInstructionInitialisationException e) {
+            throw new RuntimeException(e);
+        }
+        vm.getCurrentFrame().setPc(nextPc);
+
 
         return returnValue;
     }
@@ -128,8 +150,8 @@ public class SolutionIterator extends NativeMethodProvider {
         if (currentIteratorSearchAlgorithm instanceof NoSearchAlgorithm) {
             throw new IllegalStateException("Must be inside an active search region, set by setVMActiveIterator.");
         }
-        return currentIteratorSearchAlgorithm.changeToNextChoice(((LogicVirtualMachine) frame.getVm()));
+        boolean hasAnotherChoice = currentIteratorSearchAlgorithm.changeToNextChoice(((LogicVirtualMachine) frame.getVm()));
         // TODO consider special handling / logging if result of changeToNextChoice is false
+        return hasAnotherChoice;
     }
-
 }

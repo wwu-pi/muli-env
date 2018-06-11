@@ -85,13 +85,20 @@ public class StackToTrailWithInverse extends Stack<Object> {
 		return item;
 	}
 
-	/**
-	 * Setter for the restoring mode.
-	 * @param restoringMode true enables restoring mode, false disables it.
-	 */
-	public void setRestoringMode(boolean restoringMode) {
-		this.restoringMode = restoringMode;
-	}
+    /**
+     * Setter for the restoring mode.
+     * @param restoringMode true enables restoring mode, false disables it.
+     */
+    public void setRestoringMode(boolean restoringMode) {
+        this.restoringMode = restoringMode;
+    }
+
+    /**
+     * Getter for the restoring mode.
+     */
+    public boolean getRestoringMode() {
+        return this.restoringMode;
+    }
 
 	/**
 	 * Indicates whether some other object is equal to this one.

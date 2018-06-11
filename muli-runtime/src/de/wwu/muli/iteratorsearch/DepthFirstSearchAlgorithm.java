@@ -31,10 +31,12 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.LookupswitchChoic
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.SwitchingChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.switching.TableswitchChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
+import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muli.iteratorsearch.structures.ConditionalJumpChoicePointDepthFirst;
+import de.wwu.muli.iteratorsearch.structures.RootChoicePoint;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -297,17 +299,22 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt replaying the inverse trail for current search region, and selecting the next choice.");
 
         // If inverse trail is empty, it is the first execution => nothing to replay here.
+        // Instead, generate a dummy choice point that marks the root.
         if (this.inverseChoicePointStack.isEmpty()) {
+            this.generateRootChoicePoint(vm);
             return true;
+        }
+        // Sanity check.
+        if (!vm.getCurrentFrame().toString().equals("Frame for de.wwu.muli.search.SolutionIterator.tryAdvance(java.util.function.Consumer consumer) at pc 0.")) {
+            throw new IllegalStateException("Only expected to be called from within SolutionIterator!!");
         }
 
         // Get the SolverManager.
         SolverManager solverManager = vm.getSolverManager();
 
         // Replay the inverse trail.
-        ChoicePoint nextChoicePoint;
-        while (null != (nextChoicePoint = this.inverseChoicePointStack.pop())) {
-            this.currentChoicePoint = nextChoicePoint;
+        while (!this.inverseChoicePointStack.isEmpty()) {
+            this.currentChoicePoint = this.inverseChoicePointStack.pop();
 
             if (this.currentChoicePoint.changesTheConstraintSystem()) {
                 // No need for an inverse constraint stack, because we will always be able to get the constraint from the choice point.
@@ -396,6 +403,16 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 		operandStack.setRestoringMode(true);
 		vmStack.setRestoringMode(true);
 
+        // All this needs to done before the other procedures iff InverseToTrail;
+        // otherwise, in regular backtracking, do it after replaying from the inverse trail.
+        if (mode == RestoreMode.InverseToTrail) {
+            // Set the correct Frame to be the current Frame.
+            vm.setCurrentFrame(this.currentChoicePoint.getFrame());
+
+            // Set the pc!
+            vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());
+        }
+
 		// If the choice point has a trail, use it to recover the state.
 		if (this.currentChoicePoint.hasTrail()) {
             Stack<TrailElement> trail;
@@ -424,19 +441,22 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 						frame.setPc(vmPush.getPc());
 						frame.setMonitor(vmPush.getMonitor());
 					}
+					// Create inverse trail element and push it.
                     if (respectiveInverse != null) respectiveInverse.push(new VmPop());
 				} else if (object instanceof VmPop) {
 					if (vmStack.isEmpty()) {
 						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+							Globals.getInst().symbolicExecLogger.warn("(OP2) Processing the trail lead to a request to "
 									+ "pop an element from the empty VM stack. It will be ignored and skipped. "
 									+ "However, this hints to a serious problem and should be checked.");
 					} else {
 						Object fromVm = vmStack.pop();
+                        // Create inverse trail element and push it.
                         if (respectiveInverse != null) respectiveInverse.push(new VmPush(fromVm));
 					}
 				} else if (object instanceof FrameChange) {
-					FrameChange frameChange = (FrameChange) object;
+                    Frame formerFrame = vm.getCurrentFrame();                    // TODO consider (because frames might be stored in pc 0, which is not quite correct.) formerFrame.setPc(vm.getPc());
+                    FrameChange frameChange = (FrameChange) object;
 					// There was a change in the frame. Put it as the (temporary) current Frame.
 					vm.setCurrentFrame(frameChange.getFrame());
 					// Disable the restoring mode for the last Frame's operand stack.
@@ -445,44 +465,80 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 					operandStack = (StackToTrailWithInverse) frameChange.getFrame().getOperandStack();
 					// Enable restoring mode for it.
 					operandStack.setRestoringMode(true);
-				} else if (object instanceof PCChange) {
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(new FrameChange(formerFrame));
+                } else if (object instanceof PCChange) {
+				    int formerPC = vm.getPc();
 					PCChange pcChange = (PCChange) object;
 					// There was an explicit PC jump, e.g. due to exception handling.
 					// Restore the former PC value.
 					vm.setPC(pcChange.getPC());
 					vm.getCurrentFrame().setPc(pcChange.getPC());
-				} else if (object instanceof Push) {
-					vm.getCurrentFrame().getOperandStack().push(((Push) object).getObject());
-				} else if (object instanceof Pop) {
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(new PCChange(formerPC));
+                } else if (object instanceof Push) {
+                    Push push = (Push) object;
+                    vm.getCurrentFrame().getOperandStack().push(push.getObject());
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(new Pop());
+                } else if (object instanceof Pop) {
 					if (vm.getCurrentFrame().getOperandStack().isEmpty()) {
 						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+							Globals.getInst().symbolicExecLogger.warn("(OP1) Processing the trail lead to a request to "
 									+ "pop an element from an empty operand stack. It will be ignored and skipped. "
 									+ "However, this hints to a serious problem and should be checked.");
 					} else {
-						vm.getCurrentFrame().getOperandStack().pop();
+                        Object fromStack = vm.getCurrentFrame().getOperandStack().pop();
+                        // Create inverse trail element and push it.
+                        if (respectiveInverse != null) respectiveInverse.push(new Push(fromStack));
 					}
 				} else if (object instanceof PopFromFrame) {
-					if (((PopFromFrame) object).getFrame().getOperandStack().isEmpty()) {
-						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-							Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
-									+ "pop an element from an empty operand stack. It will be ignored and skipped. "
-									+ "However, this hints to a serious problem and should be checked.");
-					} else {
-						((PopFromFrame) object).getFrame().getOperandStack().pop();
-					}
-				} else if (object instanceof ArrayRestore) {
+                    StackToTrailWithInverse otherOperandStack = (StackToTrailWithInverse) ((PopFromFrame) object).getFrame().getOperandStack();
+                    if (otherOperandStack.isEmpty()) {
+                        if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+                            Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+                                    + "pop an element from an empty operand stack. It will be ignored and skipped. "
+                                    + "However, this hints to a serious problem and should be checked.");
+                    } else {
+                        boolean previousRestoringMode = otherOperandStack.getRestoringMode();
+                        otherOperandStack.setRestoringMode(true); // Prevent (bogus) trail elements from being pushed.
+                        Object formerValue = otherOperandStack.pop();
+                        otherOperandStack.setRestoringMode(previousRestoringMode);
+                        // Create inverse trail element and push it.
+                        if (respectiveInverse != null) respectiveInverse.push(new PushToFrame(((PopFromFrame) object).getFrame(), formerValue));
+                    }
+                } else if (object instanceof PushToFrame) {
+                    StackToTrailWithInverse otherOperandStack = (StackToTrailWithInverse) ((PushToFrame) object).getFrame().getOperandStack();
+                    boolean previousRestoringMode = otherOperandStack.getRestoringMode();
+                    otherOperandStack.setRestoringMode(true); // Prevent (bogus) trail elements from being pushed.
+                    otherOperandStack.push(((PushToFrame) object).getValue());
+                    otherOperandStack.setRestoringMode(previousRestoringMode);
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(new PopFromFrame(((PushToFrame) object).getFrame()));
+                } else if (object instanceof ArrayRestore) {
 					((ArrayRestore) object).restore();
+                    // TODO Create inverse trail element and push it.
+                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of ArrayRestore not implemented");
 				} else if (object instanceof Restore) {
 					((Restore) object).restore(vm.getCurrentFrame());
+                    // TODO Create inverse trail element and push it.
+                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of Restore not implemented");
 				} else if (object instanceof InstanceFieldPut) {
 					((InstanceFieldPut) object).restoreField();
+                    // TODO Create inverse trail element and push it.
+                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of InstanceFieldPut not implemented");
 				} else if (object instanceof StaticFieldPut) {
 					((StaticFieldPut) object).restoreField();
+                    // TODO Create inverse trail element and push it.
+                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of StaticFieldPut not implemented");
 				} else if (object instanceof DUCoverageTrailElement) {
 					((DUCoverageTrailElement) object).restore();
+                    // TODO Create inverse trail element and push it.
+                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of DUCoverageTrailElement not implemented");
 				} else if (object instanceof CGCoverageTrailElement) {
 					((CGCoverageTrailElement) object).restore();
+                    // TODO Create inverse trail element and push it.
+                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of CGCoverageTrailElement not implemented");
 				} else {
 					if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
 						Globals.getInst().symbolicExecLogger.warn(
@@ -492,17 +548,22 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 			}
 		}
 
-		// Set the correct Frame to be the current Frame.
-		vm.setCurrentFrame(this.currentChoicePoint.getFrame());
 
-		// If the frame was set to have finished the execution normally, reset that.
-		((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+		// All this needs to done before the other procedures iff InverseToTrail;
+        // otherwise, in regular backtracking, do it now.
+        if (mode != RestoreMode.InverseToTrail) {
+            // Set the correct Frame to be the current Frame.
+            vm.setCurrentFrame(this.currentChoicePoint.getFrame());
 
-		// Set the pc!
-		vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());
+            // If the frame was set to have finished the execution normally, reset that.
+            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+            // Set the pc!
+            vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());
+        }
 
 		// Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
-		vm.setNextFrameIsAlreadyLoaded();
+		vm.setNextFrameIsAlreadyLoaded(true);
 		// If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
 		vm.setReturnFromCurrentExecution(true);
 
@@ -743,6 +804,21 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 		this.numberOfVisitedBranches++;
 		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
 	}
+
+    /**
+     * Generate a new  ArrayInitializationChoicePoint for instruction
+     * <code>anewarray</code>. Set it as the current choice point and mark that the jumping branch
+     * has been visited already (since execution just continues there.)
+     *
+     * @param vm The currently executing LogicVirtualMachine.
+     *
+     */
+    private void generateRootChoicePoint(LogicVirtualMachine vm) {
+        if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
+        this.currentChoicePoint = new RootChoicePoint(vm.getCurrentFrame(), vm.getPc(), this.currentChoicePoint);
+
+        if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
+    }
 
 	/**
 	 * Return a String representation of this search algorithms name.

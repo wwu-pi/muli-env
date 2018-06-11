@@ -720,9 +720,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	
 	/**
 	 * Sets nextFrameIsAlreadyLoaded to true.
-	 */
-	public void setNextFrameIsAlreadyLoaded() {
-		this.nextFrameIsAlreadyLoaded = true;
+     * @param nextFrameIsAlreadyLoaded Whether `currentFrame` is ready for execution right away.
+     */
+	public void setNextFrameIsAlreadyLoaded(boolean nextFrameIsAlreadyLoaded) {
+		this.nextFrameIsAlreadyLoaded = nextFrameIsAlreadyLoaded;
 	}
 
 	/**

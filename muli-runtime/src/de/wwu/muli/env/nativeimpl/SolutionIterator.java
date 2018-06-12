@@ -2,9 +2,13 @@ package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
+import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
+import de.wwu.muggl.solvers.exceptions.TimeoutException;
+import de.wwu.muggl.solvers.expressions.Term;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
+import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
@@ -18,6 +22,9 @@ import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.search.SolutionIterator
@@ -73,6 +80,24 @@ public class SolutionIterator extends NativeMethodProvider {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
         vm.resetInstructionsExecutedSinceLastSolution();
+
+        // Label found solution.
+        de.wwu.muggl.solvers.Solution solution;
+        try {
+            solution = vm.getSolverManager().getSolution();
+            if (solutionObject instanceof Objectref) {
+                HashMap<Field, Object> fields = ((Objectref) solutionObject).getFields();
+                fields.entrySet().forEach((entry) -> {
+                    if (entry.getValue() instanceof Term) {
+                        Term value = (Term) entry.getValue();
+                        fields.put(entry.getKey(), value.insert(solution, false));
+                    }
+                });
+            }
+        } catch (TimeoutException | SolverUnableToDecideException e) {
+            throw new RuntimeException(e);
+        }
+        // Wrap and return.
         Objectref returnValue;
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());

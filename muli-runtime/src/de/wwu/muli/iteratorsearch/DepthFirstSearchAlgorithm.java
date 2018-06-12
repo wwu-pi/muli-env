@@ -516,17 +516,24 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
                     // Create inverse trail element and push it.
                     if (respectiveInverse != null) respectiveInverse.push(new PopFromFrame(((PushToFrame) object).getFrame()));
                 } else if (object instanceof ArrayRestore) {
-					((ArrayRestore) object).restore();
-                    // TODO Create inverse trail element and push it.
-                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of ArrayRestore not implemented");
+                    ArrayRestore ar = ((ArrayRestore) object);
+                    ArrayRestore arInverse = ar.createInverse();
+                    ar.restore();
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(arInverse);
 				} else if (object instanceof Restore) {
-					((Restore) object).restore(vm.getCurrentFrame());
-                    // TODO Create inverse trail element and push it.
-                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of Restore not implemented");
+				    Restore restore = ((Restore) object);
+				    int restoreTo = restore.getIndex();
+                    Object formerValue = vm.getCurrentFrame().getLocalVariables()[restoreTo];
+					restore.restore(vm.getCurrentFrame());
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(new Restore(restoreTo,formerValue));
 				} else if (object instanceof InstanceFieldPut) {
-					((InstanceFieldPut) object).restoreField();
-                    // TODO Create inverse trail element and push it.
-                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of InstanceFieldPut not implemented");
+				    InstanceFieldPut ifp = ((InstanceFieldPut) object);
+				    InstanceFieldPut ifpInverse = ifp.createInverseElement();
+					ifp.restoreField();
+                    // Create inverse trail element and push it.
+                    if (respectiveInverse != null) respectiveInverse.push(ifpInverse);
 				} else if (object instanceof StaticFieldPut) {
 					((StaticFieldPut) object).restoreField();
                     // TODO Create inverse trail element and push it.

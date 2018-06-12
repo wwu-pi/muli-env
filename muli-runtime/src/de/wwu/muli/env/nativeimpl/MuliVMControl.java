@@ -5,6 +5,7 @@ import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
+import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
@@ -164,6 +165,7 @@ public class MuliVMControl extends NativeMethodProvider {
         // Backtracking, and proceed to next choice/branch immediately.
         vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);
         // TODO needs special handling if result of trackBackLocallyNextChoice is false (i.e. no more choices left)
+
     }
 
     public static void label(Frame frame) {

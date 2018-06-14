@@ -102,8 +102,9 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
     // At most one search region instantiation, i.e. the corresponding iterator, is active in the VM at the same time. Store which one.
     private Objectref currentSearchRegion = null;
+    private long searchStarted;
 
-	/**
+    /**
 	 * Special constructor, which sets the search algorithm and initializes the other fields. It is
 	 * used to start a "fresh" symbolic virtual machine during execution and start from scratch. The
 	 * virtual machine specified is succeeded by it. The solutions found in the earlier execution
@@ -994,5 +995,14 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
     public void setCurrentSearchRegion(Objectref currentSearchRegion) {
         this.currentSearchRegion = currentSearchRegion;
+    }
+
+    public void recordSearchStarted() {
+        this.searchStarted = System.nanoTime();
+    }
+
+    public void recordSearchEnded() {
+        long searchTime =  System.nanoTime() - this.searchStarted;
+        //System.out.println("Time spent searching: " + searchTime + " ns.");
     }
 }

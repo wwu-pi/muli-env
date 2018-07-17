@@ -17,6 +17,7 @@ import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
 import de.wwu.muli.SearchStrategy;
 import de.wwu.muli.iteratorsearch.DepthFirstSearchAlgorithm;
+import de.wwu.muli.search.NoFurtherSolutionsIndicator;
 import de.wwu.muli.solution.MuliFailException;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -55,17 +56,6 @@ public class MuliVMControl extends NativeMethodProvider {
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "setSearchStrategyVM",
                 MethodType.methodType(void.class, Frame.class, Object.class, Object.class),
                 MethodType.methodType(void.class, de.wwu.muli.search.SolutionIterator.class, SearchStrategy.class));
-
-        // Solutions - store and retrieve.
-        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "recordSolutionAndBacktrackVM",
-                MethodType.methodType(void.class, Frame.class, Object.class),
-                MethodType.methodType(void.class, Object.class));
-        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "recordExceptionAndBacktrackVM",
-                MethodType.methodType(void.class, Frame.class, Object.class),
-                MethodType.methodType(void.class, Throwable.class));
-        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "getVMRecordedSolutions",
-                MethodType.methodType(Arrayref.class, Frame.class),
-                MethodType.methodType(Solution[].class));
 
         // `fail' operation.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "fail",
@@ -117,54 +107,30 @@ public class MuliVMControl extends NativeMethodProvider {
 
     }
 
-    public static void recordSolutionAndBacktrackVM(Frame frame, Object solutionObject) {
-        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().symbolicExecLogger.debug("Record solution: Result " + solutionObject);
-        vm.saveSolutionObject(solutionObject);
-        //System.out.println("solution, " + System.nanoTime());
-
-        // backtracking
-        vm.getSearchAlgorithm().trackBack(vm);
-        // TODO consider special handling / logging if result of trackBack is false
-    }
-
-    public static void recordExceptionAndBacktrackVM(Frame frame, Object solutionException) {
-        // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
-        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().symbolicExecLogger.debug("Record solution: Exception " + solutionException);
-        vm.saveSolutionException(solutionException);
-
-        // backtracking
-        vm.getSearchAlgorithm().trackBack(vm);
-        // TODO consider special handling / logging if result of trackBack is false
-    }
-
-    public static Arrayref getVMRecordedSolutions(Frame frame) {
-        // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
-        CLASS_SOLUTION.getTheInitializedClass(frame.getVm());
-        Objectref objectref = frame.getVm().getAnObjectref(CLASS_SOLUTION);
-
-        // Retrieve solutions from VM and pack them into an array(ref).
-        final ArrayList<Solution> solutions = ((LogicVirtualMachine)frame.getVm()).getSolutions();
-        final int solutioncount = solutions.size();
-        final Arrayref returnvalue = new Arrayref(objectref, solutioncount);
-        final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());
-        for (int i = 0; i < solutioncount; i++) {
-            try {
-                returnvalue.putElement(i, conversion.toMuggl(solutions.get(i), false));
-            } catch (ConversionException e) {
-                throw new RuntimeException("Could not create Muggl VM object from Java object", e);
-            }
-        }
-        return returnvalue;
-    }
-
     public static void fail(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
 
         // Backtracking, and proceed to next choice/branch immediately.
-        vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);
-        // TODO needs special handling if result of trackBackLocallyNextChoice is false (i.e. no more choices left)
+        boolean hasNextChoice = vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);
+        if (!hasNextChoice) {
+            // Special handling if result is false, i.e. no choices are left.
+            // Needs to be communicated to surrounding VM, however, fail() does not usually have a return
+            // value and we cannot artificially throw exceptions here. Regardless, the next Muli CP computation
+            // expects to be able to ASTORE something. Therefore we just push a fake "solution" to the operand stack.
+            Object returnValue;
+            try {
+                final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());
+                returnValue = (Objectref) conversion.toMuggl(new NoFurtherSolutionsIndicator(), false);
+            } catch (ConversionException e) {
+                throw new RuntimeException("Could not create fake solution for surrounding program", e);
+            }
+
+            // Current frame has changed as a result of backtracking! Push value to correct opstack; likely tryAdvance().
+            frame.getVm().getCurrentFrame().getOperandStack().push(returnValue);
+
+            // tryAdvance of SolutionIterator will now handle this case.
+        }
+
 
     }
 

@@ -322,7 +322,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             }
 
             // Apply its state value.
-            this.currentChoicePoint.applyStateChanges();
+            if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
 
             // Replay its inverse trail before proceeding to the next choice point.
             recoverState(vm, RestoreMode.InverseToTrail);
@@ -372,6 +372,9 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
         // Count up for the next branch (first branches have been counted on CP generation).
         this.numberOfVisitedBranches++;
+
+        // Does the CP require any state specific changes (corresponding to the next choice) besides those already done?
+        if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
 
         // Success, continue execution!
         return true;

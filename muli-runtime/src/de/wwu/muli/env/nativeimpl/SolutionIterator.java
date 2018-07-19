@@ -161,7 +161,9 @@ public class SolutionIterator extends NativeMethodProvider {
             try {
                 solution = vm.getSolverManager().getSolution();
                 if (solutionObject instanceof Objectref) {
+                    Objectref solutionObject2 = vm.getAnObjectref(((Objectref) solutionObject).getInitializedClass().getClassFile());
                     HashMap<Field, Object> fields = ((Objectref) solutionObject).getFields();
+                    HashMap<Field, Object> fields2 = ((Objectref) solutionObject2).getFields();
                     fields.entrySet().forEach((entry) -> {
                         if (entry.getValue() instanceof Term) {
                             Term value = (Term) entry.getValue();
@@ -170,9 +172,12 @@ public class SolutionIterator extends NativeMethodProvider {
                             if (simplified.isConstant()) {
                                 newValue = ((NumericConstant) simplified).getIntValue();
                             }
-                            fields.put(entry.getKey(), newValue);
+                            fields2.put(entry.getKey(), newValue);
+                        } else {
+                            fields2.put(entry.getKey(), entry.getValue());
                         }
                     });
+                    solutionObject = solutionObject2;
                 } else if (solutionObject instanceof Arrayref) {
                     Arrayref ar = (Arrayref) solutionObject;
                     Object[] elements = ar.getRawElements();

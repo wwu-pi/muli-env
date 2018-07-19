@@ -45,7 +45,7 @@ public class RootChoicePoint implements ChoicePoint {
     @Override
     public int getPcNext() {
         // Before proceeding, make sure, that after subsequent backtracking execution continues in the part where a solution is wrapped:
-        return 35; // TODO make dynamic. Needs to be the instruction immediately after the one that calls SearchRegion#get().
+        return 43; // TODO make dynamic. Needs to be the instruction immediately after the one that calls SearchRegion#get().
     }
 
     @Override

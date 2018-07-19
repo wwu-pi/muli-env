@@ -107,8 +107,12 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
      * Inverse choice point stack.
      */
     final protected Stack<ChoicePoint> inverseChoicePointStack;
+    /**
+     * Flag that is false until search begins.
+     */
+    private boolean hasStartedSearch = false;
 
-	/**
+    /**
 	 * Instantiate the depth first search algorithm.
 	 */
 	public DepthFirstSearchAlgorithm() {
@@ -301,6 +305,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         // If inverse trail is empty, it is the first execution => nothing to replay here.
         // Instead, generate a dummy choice point that marks the root.
         if (this.inverseChoicePointStack.isEmpty()) {
+            if (this.hasStartedSearch) {
+                return false;
+            }
+            this.hasStartedSearch = true;
             this.generateRootChoicePoint(vm);
             return true;
         }

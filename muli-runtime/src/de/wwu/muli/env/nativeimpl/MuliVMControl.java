@@ -111,7 +111,7 @@ public class MuliVMControl extends NativeMethodProvider {
 
     public static void fail(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        System.out.println(String.format("GV: \"%s\" -> \"%s\";", vm.getCurrentChoicePoint().getID(), "Fail_"+failCounter++));
+        Globals.getInst().choicesLogger.debug(String.format("\"%s\" -> \"%s\";", vm.getCurrentChoicePoint().getID(), "Fail_"+failCounter++));
 
         // Backtracking, and proceed to next choice/branch immediately.
         boolean hasNextChoice = vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);

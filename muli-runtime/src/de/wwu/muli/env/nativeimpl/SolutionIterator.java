@@ -82,7 +82,7 @@ public class SolutionIterator extends NativeMethodProvider {
 
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
-        System.out.println(String.format("GV: \"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Solution_" + solutionCounter++ + " " + solutionObject));
+        Globals.getInst().choicesLogger.debug(String.format("\"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Solution_" + solutionCounter++ + " " + solutionObject));
         vm.resetInstructionsExecutedSinceLastSolution();
         vm.recordSearchEnded();
 
@@ -125,7 +125,7 @@ public class SolutionIterator extends NativeMethodProvider {
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
-        System.out.println(String.format("GV: \"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Exception_ " + solutionCounter++ + " " + solutionException));
+        Globals.getInst().choicesLogger.debug(String.format("\"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Exception_ " + solutionCounter++ + " " + solutionException));
         vm.resetInstructionsExecutedSinceLastSolution();
         vm.recordSearchEnded();
 

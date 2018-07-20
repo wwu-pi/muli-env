@@ -36,6 +36,8 @@ public class MuliVMControl extends NativeMethodProvider {
     private static ClassFile ENUM_EXECUTIONMODE = null;
     private static ClassFile ENUM_SEARCH_STRATEGY = null;
 
+    private static int failCounter = 0;
+
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         ENUM_EXECUTIONMODE = classLoader.getClassAsClassFile(ExecutionMode.class.getCanonicalName());
         ENUM_SEARCH_STRATEGY = classLoader.getClassAsClassFile(SearchStrategy.class.getCanonicalName());
@@ -109,6 +111,7 @@ public class MuliVMControl extends NativeMethodProvider {
 
     public static void fail(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+        System.out.println(String.format("GV: \"%s\" -> \"%s\";", vm.getCurrentChoicePoint().getID(), "Fail_"+failCounter++));
 
         // Backtracking, and proceed to next choice/branch immediately.
         boolean hasNextChoice = vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);

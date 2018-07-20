@@ -37,6 +37,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
     private static boolean labelSolutions = true;
+    private static int solutionCounter = 0;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
@@ -81,6 +82,7 @@ public class SolutionIterator extends NativeMethodProvider {
 
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
+        System.out.println(String.format("GV: \"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Solution_" + solutionCounter++ + " " + solutionObject));
         vm.resetInstructionsExecutedSinceLastSolution();
         vm.recordSearchEnded();
 
@@ -123,6 +125,7 @@ public class SolutionIterator extends NativeMethodProvider {
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
+        System.out.println(String.format("GV: \"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Exception_ " + solutionCounter++ + " " + solutionException));
         vm.resetInstructionsExecutedSinceLastSolution();
         vm.recordSearchEnded();
 

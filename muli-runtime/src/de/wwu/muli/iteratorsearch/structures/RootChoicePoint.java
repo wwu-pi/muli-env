@@ -14,6 +14,14 @@ public class RootChoicePoint implements ChoicePoint {
     private final Frame frame;
     private Stack<TrailElement> trail = new Stack<>();
     private Stack<TrailElement> inverseTrail = new Stack<>();
+    /**
+     * Next available ID number.
+     */
+    static int nextIdNumber = 0;
+    /**
+     * This choicepoint's ID.
+     */
+    final int idNumber;
 
     /**
      * Create the initial Choicepoint that represents the root of a search region.
@@ -30,6 +38,14 @@ public class RootChoicePoint implements ChoicePoint {
         this.parent = parent;
         this.frame = frame;
         this.pc = pc; // This CP is created by a specific invokestatic call with a fixed length. pc is expected to continue after this one.
+
+        // Graph visualisation.
+        this.idNumber = nextIdNumber++;
+    }
+
+    @Override
+    public String getID() {
+        return this.getChoicePointType() + "_" + this.idNumber;
     }
 
     @Override
@@ -130,6 +146,6 @@ public class RootChoicePoint implements ChoicePoint {
 
     @Override
     public String getChoicePointType() {
-        return RootChoicePoint.class.getName();
+        return RootChoicePoint.class.getSimpleName();
     }
 }

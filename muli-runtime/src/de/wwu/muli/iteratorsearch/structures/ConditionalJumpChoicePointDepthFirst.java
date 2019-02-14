@@ -74,6 +74,9 @@ public class ConditionalJumpChoicePointDepthFirst extends ConditionalJumpChoiceP
 			// Set the fields.
 			this.number = parent.getNumber() + 1;
 			this.parent = parent;
+
+            // Graph visualisation.
+            Globals.getInst().choicesLogger.debug(String.format("\"%s\" -> \"%s\" [label=\"" + constraintExpression.toString() + "\"];", parent.getID(), this.getID()));
 		}
 
 		this.measureExecutionTime = Options.getInst().measureSymbolicExecutionTime;

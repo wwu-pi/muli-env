@@ -12,33 +12,46 @@ import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
+    @Deprecated
     ChoicePoint getCurrentChoicePoint();
 
+    Choice getCurrentChoice();
+
+    @Deprecated
     boolean trackBackLocallyNextChoice(LogicVirtualMachine vm);
 
+    @Deprecated
     boolean trackBack(LogicVirtualMachine vm);
 
+    @Deprecated
     boolean changeToNextChoice(LogicVirtualMachine vm);
 
+    @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, int localVariableIndex, Generator generator)
 			throws ConversionException, ExecutionException;
 
+    @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, String type) throws ExecutionException;
 
+    @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, GeneralInstructionWithOtherBytes instruction,
                                 ConstraintExpression constraintExpression);
 
+    @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, LCmp instruction,
                                 Term leftTerm, Term rightTerm)
 			throws ExecutionException;
 
+    @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, CompareFp instruction,
                                 boolean less, Term leftTerm, Term rightTerm)
 			throws ExecutionException;
 
+    @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
                                 IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
 			throws ExecutionException;

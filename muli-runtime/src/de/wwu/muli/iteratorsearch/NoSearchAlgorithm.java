@@ -14,6 +14,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FieldPut;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Restore;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
@@ -24,6 +25,11 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     @Override
     public ChoicePoint getCurrentChoicePoint() {
+        return null;
+    }
+
+    @Override
+    public Choice getCurrentChoice() {
         return null;
     }
 

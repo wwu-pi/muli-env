@@ -38,6 +38,8 @@ import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muli.iteratorsearch.structures.ConditionalJumpChoicePointDepthFirst;
 import de.wwu.muli.iteratorsearch.structures.RootChoicePoint;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
+import de.wwu.muli.searchtree.Choice;
+import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import org.apache.log4j.Level;
@@ -80,10 +82,6 @@ import java.util.Stack;
 public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	// Fields
 	/**
-	 * The choice point the search algorithm last branched at.
-	 */
-	protected ChoicePoint currentChoicePoint;
-	/**
 	 * The total number of branches visited so far.
 	 */
 	protected long numberOfVisitedBranches;
@@ -108,9 +106,22 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
      */
     final protected Stack<ChoicePoint> inverseChoicePointStack;
     /**
+     * The choice point the search algorithm last branched at.
+     */
+    protected ChoicePoint currentChoicePoint;
+    /**
      * Flag that is false until search begins.
      */
     private boolean hasStartedSearch = false;
+
+    /**
+     * Search tree representation
+     */
+    private ST searchTree;
+    /**
+     * Current node in search tree;
+     */
+    private Choice currentChoice;
 
     /**
 	 * Instantiate the depth first search algorithm.
@@ -128,6 +139,11 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
      */
     public ChoicePoint getCurrentChoicePoint() {
         return this.currentChoicePoint;
+    }
+
+    @Override
+    public Choice getCurrentChoice() {
+        return this.currentChoice;
     }
 
 

@@ -5,10 +5,7 @@ import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
 import de.wwu.muggl.instructions.bytecode.LCmp;
 import de.wwu.muggl.instructions.bytecode.Newarray;
-import de.wwu.muggl.instructions.general.CompareFp;
-import de.wwu.muggl.instructions.general.GeneralInstructionWithOtherBytes;
-import de.wwu.muggl.instructions.general.Load;
-import de.wwu.muggl.instructions.general.Switch;
+import de.wwu.muggl.instructions.general.*;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.solvers.SolverManager;
@@ -18,10 +15,8 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChange;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
 import de.wwu.muggl.symbolic.structures.Loop;
+import de.wwu.muggl.vm.*;
 import de.wwu.muggl.vm.Application;
-import de.wwu.muggl.vm.Frame;
-import de.wwu.muggl.vm.SearchingVM;
-import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
@@ -42,6 +37,8 @@ import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
+import de.wwu.muli.searchtree.Choice;
+import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import org.apache.log4j.Level;
@@ -49,6 +46,8 @@ import org.apache.log4j.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Optional;
+import java.util.function.BiFunction;
 
 /**
  * This concrete class represents a virtual machine for the logic execution of java bytecode. It
@@ -249,51 +248,59 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	@Override
 	protected void executeInstruction(Instruction instruction) throws ExecutionException {
-		// If the number of instructions before finding a new solution is limited, check them now.
-		// No need to do that if no more tracking back is desired.
-		if (!this.doNotTryToTrackBack && this.maximumInstructionsBeforeFindingANewSolution != -1) {
-			if (this.measureExecutionTime) this.timeExecutionInstructionTemp = System.nanoTime();
-			if (!this.onlyCountChoicePointGeneratingInstructions)
-				this.instructionsExecutedSinceLastSolution++;
-			if (this.instructionsExecutedSinceLastSolution > this.maximumInstructionsBeforeFindingANewSolution) {
-				// Abort the current execution.
-				if (Globals.getInst().symbolicExecLogger.isDebugEnabled())
-					Globals.getInst().symbolicExecLogger
-							.debug("Aborted execution as no new solution was found after executing "
-									+ this.maximumInstructionsBeforeFindingANewSolution
-									+ " instructions.");
-				this.abortionCriterionMatched = true;
-				this.abortionCriterionMatchedMessage = "No new solution was found after executing "
-						+ this.maximumInstructionsBeforeFindingANewSolution + " instructions.";
-				this.returnFromCurrentExecution = true;
-				this.stack.clear();
-				this.doNotTryToTrackBack = true;
-				if (this.measureExecutionTime)
-					this.timeExecutionInstruction += System.nanoTime()
-							- this.timeExecutionInstructionTemp;
-				return;
-			}
-		}
-
-		// Update the coverage before actually executing the instruction. This is needed since
-		// exception handling might further update it.
-		Options options = Options.getInst();
-
-		// Execute the instruction.
-		if (this.measureExecutionTime) this.timeExecutionInstructionTemp = System.nanoTime();
-		int oldpc = this.pc;
-		super.executedInstructions++;
-		if (options.symbolicMode) {
-			instruction.executeSymbolically(this.currentFrame);
-		} else {
-			instruction.execute(this.currentFrame);
-		}
-		if (this.measureExecutionTime)
-			this.timeExecutionInstruction += System.nanoTime() - this.timeExecutionInstructionTemp;
-
+	    if (instruction instanceof If_icmp) {
+	        execute_If_icmp((If_icmp)instruction);
+        } else {
+	        throw new UnsupportedBytecodeException(instruction.getClass().getCanonicalName() + "\n" + currentStackTrace());
+        }
 	}
 
-	/**
+    private Optional<ST> execute_If_icmp(If_icmp instruction) throws ExecutionException {
+        Options options = Options.getInst();
+
+        // Get operands from stack
+        Object op2 = this.currentFrame.getOperandStack().pop();
+        Object op1 = this.currentFrame.getOperandStack().pop();
+
+        // Deterministic execution.
+        if (!options.symbolicMode) {
+            int value2 = (Integer) VmSymbols.wideningPrimConversion(op2, Integer.class);
+            int value1 = (Integer) VmSymbols.wideningPrimConversion(op1, Integer.class);
+            if (instruction.compare(value1, value2)) {
+                this.setPC(instruction.getJumpTarget());
+            }
+            return Optional.empty();
+        } else {
+            // Potentially non-deterministic execution.
+            // Convert to Terms
+            Term term2 = instruction.convertToSymbolicTerm(op2);
+            Term term1 = instruction.convertToSymbolicTerm(op1);
+
+            // Check if both values are constant.
+            if (term1.isConstant() && term2.isConstant()) {
+                // Execute without generating a choice point.
+                int value1 = ((IntConstant) term1).getIntValue();
+                int value2 = ((IntConstant) term2).getIntValue();
+                if (instruction.compare(value1, value2)) {
+                    this.setPC(instruction.getJumpTarget());
+                }
+                return Optional.empty();
+            } else {
+                // Create the ConstraintExpression and generate a new ChoicePoint. It will set the pc.
+                ConstraintExpression expression = instruction.getConstraintExpression(term1, term2);
+                // TODO this.getPc() + 1 + instruction.getNumberOfOtherBytes() auslagern.
+                // TODO Trail einfügen?
+                return Optional.of(
+                        new Choice(this.getPc() + 1 + instruction.getNumberOfOtherBytes(),
+                        instruction.getJumpTarget(), expression,
+                        this.getCurrentChoice()));
+            }
+        }
+
+        // throw new ExecutionException("Trying to create a non-deterministic choice during deterministic evaluation.");
+    }
+
+    /**
 	 * Since execution reached a backtracking point, store the found solution for later retrieval.
 	 */
 	public void saveSolutionObject(Object solution) {

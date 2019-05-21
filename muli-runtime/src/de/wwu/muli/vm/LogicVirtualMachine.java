@@ -247,11 +247,20 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	protected void executeInstruction(Instruction instruction) throws ExecutionException {
         Optional<ST> st = instruction.executeMuli(this, this.currentFrame);
-        if (st.isPresent()) {
-            if (!Options.getInst().symbolicMode) {
-                throw new IllegalStateException("Tried non-deterministic branching outside of encapsulated search.");
-            }
-            // TODO do something with Choice (or whatever).
+        if (!st.isPresent()) {
+            return;
+        }
+
+        if (!Options.getInst().symbolicMode) {
+            throw new IllegalStateException("Tried non-deterministic branching outside of encapsulated search.");
+        }
+
+        ST result = st.get();
+        if (result instanceof Choice) {
+            this.getSearchAlgorithm().recordChoice((Choice)result);
+            this.getSearchAlgorithm().changeToNextChoice(this);
+        } else {
+            throw new IllegalStateException("Instruction " + instruction + " returned an unsupported result type: " + result);
         }
     }
 

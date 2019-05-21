@@ -15,6 +15,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Restore;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.searchtree.Choice;
+import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
@@ -31,6 +32,16 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     @Override
     public Choice getCurrentChoice() {
         return null;
+    }
+
+    @Override
+    public void recordChoice(Choice result) {
+        throw new IllegalStateException("Trying to record a new Choice during deterministic execution. Choice was " + result);
+    }
+
+    @Override
+    public void recordValue(Value result) {
+        throw new IllegalStateException("Trying to record a new Value during deterministic execution. Value was " + result);
     }
 
     @Override

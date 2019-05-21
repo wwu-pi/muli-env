@@ -40,6 +40,8 @@ import de.wwu.muli.iteratorsearch.structures.RootChoicePoint;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.ST;
+import de.wwu.muli.searchtree.STProxy;
+import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import org.apache.log4j.Level;
@@ -315,6 +317,26 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     public boolean changeToNextChoice(LogicVirtualMachine vm) {
+        // Stub.
+    }
+
+    @Override
+    public void recordChoice(Choice result) {
+        // "Replace" STProxy with its result.
+        this.currentNode.setEvaluationResult(result);
+        // First push st2 so that st1 (and its children) will be popped first.
+        this.nextNodes.push(result.st2);
+        this.nextNodes.push(result.st1);
+    }
+
+    @Override
+    public void recordValue(Value result) {
+        // "Replace" STProxy with its result.
+        this.currentNode.setEvaluationResult(result);
+    }
+
+
+    public boolean changeToNextChoiceOld(LogicVirtualMachine vm) {
         if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
         Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt replaying the inverse trail for current search region, and selecting the next choice.");
 

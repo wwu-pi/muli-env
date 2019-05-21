@@ -13,6 +13,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.searchtree.Choice;
+import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
@@ -21,13 +22,16 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 
     Choice getCurrentChoice();
 
+    void recordChoice(Choice result);
+
+    void recordValue(Value result);
+
     @Deprecated
     boolean trackBackLocallyNextChoice(LogicVirtualMachine vm);
 
     @Deprecated
     boolean trackBack(LogicVirtualMachine vm);
 
-    @Deprecated
     boolean changeToNextChoice(LogicVirtualMachine vm);
 
     @Deprecated

@@ -20,6 +20,7 @@ import de.wwu.muggl.vm.initialization.PrimitiveWrappingImpossibleException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
+import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -82,12 +83,15 @@ public class SolutionIterator extends NativeMethodProvider {
 
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
-        Globals.getInst().choicesLogger.debug(String.format("\"%s\" -> \"%s\";", ((LogicVirtualMachine) frame.getVm()).getCurrentChoicePoint().getID(), "Solution_" + solutionCounter++ + " " + solutionObject));
         vm.resetInstructionsExecutedSinceLastSolution();
         vm.recordSearchEnded();
 
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
+
+        // Store Value node in ST.
+        Value val = new Value(solutionObject);
+        vm.getSearchAlgorithm().recordValue(val);
 
         // Wrap and return.
         Objectref returnValue;
@@ -102,7 +106,7 @@ public class SolutionIterator extends NativeMethodProvider {
         vm.getSearchAlgorithm().trackBack(vm);
         // TODO consider special handling / logging if result of trackBack is false
 
-        // Make sure next frame (which is the reincarnation of tryAdvance) will continue at the same PC as we left of (instead of at the root choice point).
+        // Make sure next frame (which is the reincarnation of tryAdvance) will continue at the same PC as we left off (instead of at the pc of the root, which would result in an infinite loop).
         int nextPc;
         try {
             nextPc = pcBeforeBacktracking + 1 + vm.getCurrentFrame().getMethod().getInstructionsAndOtherBytes()[pcBeforeBacktracking].getNumberOfOtherBytes();

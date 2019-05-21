@@ -397,6 +397,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     public void recordValue(Value result) {
         // "Replace" STProxy with its result.
         this.currentNode.setEvaluationResult(result);
+        // TODO Consider deleting reference to Frame in STProxy to save some memory.
     }
 
 

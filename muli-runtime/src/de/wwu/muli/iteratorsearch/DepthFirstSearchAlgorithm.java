@@ -124,6 +124,14 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
      * Current node in search tree;
      */
     private Choice currentChoice;
+    /**
+     * Stack that represents the nodes that DFS will check subsequently.
+     */
+    private Stack<STProxy> nextNodes;
+    /**
+     * Currently explored subtree.
+     */
+    private STProxy currentNode;
 
     /**
 	 * Instantiate the depth first search algorithm.
@@ -317,7 +325,63 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     public boolean changeToNextChoice(LogicVirtualMachine vm) {
-        // Stub.
+        // Evaluate next subtree.
+        if (this.searchTree == null) {
+            this.searchTree = new STProxy(vm.getCurrentFrame(), vm.getPc(), null, null);
+            this.nextNodes = new Stack<>();
+            this.nextNodes.push((STProxy)this.searchTree);
+        }
+
+        if (this.nextNodes.empty()) {
+            return false;
+        }
+
+        STProxy node = this.nextNodes.pop();
+
+        if (node.isEvaluated()) {
+            throw new IllegalStateException("Node must correspond to an unevaluated subtree.");
+        }
+
+        // If required, navigate to the correct position in the search tree (and change VM state accordingly).
+        if (this.currentNode != null && node.getParent().parent != this.currentNode.getParent()) {
+            // TODO is the above condition correct?
+
+            // TODO:
+            // Find shortest path to next node.
+            // Obtain trail (towards root node),
+            // Revert state via trail,
+            // Revert constraints,
+            // Obtain inverse trail (towards next node),
+            // Apply inverse trail,
+            // Apply constraints.
+        }
+
+        // Add constraint.
+        if (node.getConstraintExpression() != null) {
+            vm.getSolverManager().addConstraint(node.getConstraintExpression());
+
+            // Check if the new branch can be visited at all, or if it causes an equation violation.
+            try {
+                if (!vm.getSolverManager().hasSolution()) {
+                    // Constraint system of this subtree is not satisfiable, try next.
+                    return changeToNextChoice(vm);
+                }
+            } catch (TimeoutException | SolverUnableToDecideException e) {
+                // Potentially inconsistent, try next.
+                return changeToNextChoice(vm);
+            }
+        }
+
+        // Everything is fine and we need to continue in this subtree.
+        // Set the current frame to the subtree's frame.
+        vm.setCurrentFrame(node.getFrame());
+
+        // Set the current pc to the subtree's pc!
+        vm.getCurrentFrame().setPc(node.getPc());
+
+        this.currentNode = node;
+        // Evaluate.
+        return true;
     }
 
     @Override
@@ -867,6 +931,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
      * has been visited already (since execution just continues there.)
      *
      * @param vm The currently executing LogicVirtualMachine.
+     * @deprecated
      *
      */
     private void generateRootChoicePoint(LogicVirtualMachine vm) {

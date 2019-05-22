@@ -45,6 +45,11 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     @Override
+    public void trackBackToRoot(LogicVirtualMachine vm) {
+        throw new IllegalStateException("Trying to track back outside of search");
+    }
+
+    @Override
     public boolean trackBack(LogicVirtualMachine vm) {
         return false;
     }

@@ -17,6 +17,7 @@ import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChange;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.TrailElement;
 import de.wwu.muggl.symbolic.structures.Loop;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
@@ -48,10 +49,7 @@ import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import org.apache.log4j.Level;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * This concrete class represents a virtual machine for the logic execution of java bytecode. It
@@ -93,6 +91,12 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
 	// Constant.
 	private static final long		NANOS_MILLIS	= 1000000;
+
+    /**
+     *
+     */
+    private Stack<TrailElement> currentTrail = new Stack<>();
+
 
 	// Map search region instantiations (i.e. their iterators) to their respective search strategies (each strategy maintaining its choice points).
 	// Actual type: HashMap<SolutionIterator, SearchStrategy>.
@@ -160,7 +164,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		} catch (ClassNotFoundException e) {
 			throw new InitializationException("Solver manager of class " + options.solverManager + " does not exist.");
 		}
-		this.stack = new StackToTrailWithInverse(true, this::getCurrentChoicePoint);
+		this.stack = new StackToTrailWithInverse(true, this::getCurrentChoicePoint, this);
 		this.solutions = new ArrayList<>();
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
 		this.timeExecutionInstruction = 0;
@@ -318,7 +322,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	protected Frame createFrame(Frame invokedBy, Method method, Object[] arguments) throws ExecutionException {
 		LogicFrame frame = new LogicFrame(invokedBy, this, method, method.getClassFile()
 				.getConstantPool(), arguments);
-		frame.setOperandStack(new StackToTrailWithInverse(false, this::getCurrentChoicePoint));
+		frame.setOperandStack(new StackToTrailWithInverse(false, this::getCurrentChoicePoint, this));
 
 		/*
 		 * Check which local variables are annotated and replace undefined local variables by logic
@@ -970,6 +974,24 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
             return null;
         }
         return algorithm.getCurrentChoice();
+    }
+
+    /**
+     * Obtain current trail and reset it for further execution
+     * @return Trail stack
+     */
+    @Override
+    public Stack<TrailElement> extractCurrentTrail() {
+        Stack<TrailElement> trail = this.currentTrail;
+        this.currentTrail = new Stack<>();
+        return trail;
+    }
+
+    @Override
+    public void addToTrail(TrailElement element) {
+        if (Options.getInst().symbolicMode) {
+            this.currentTrail.push(element);
+        }
     }
 
     public Objectref getCurrentSearchRegion() {

@@ -5,6 +5,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Pop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Push;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPush;
+import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.util.Stack;
 import java.util.function.Supplier;
@@ -28,16 +29,18 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	private boolean isVmStack;
     private boolean restoringMode;
     private Supplier<ChoicePoint> choicePointFromVMSupplier;
+    private final LogicVirtualMachine vm;
 
     /**
      * Initialize a new StackToTrailWithInverse.
      * @param isVmStack If set to true, this StackToTrailWithInverse should be used as a virtual machine stack. It should be used as a operand stack otherwise.
      * @param choicePointSupplier Supplier that gets the current active choicepoint from the VM.
      */
-    public StackToTrailWithInverse(boolean isVmStack, Supplier<ChoicePoint> choicePointSupplier) {
+    public StackToTrailWithInverse(boolean isVmStack, Supplier<ChoicePoint> choicePointSupplier, LogicVirtualMachine vm) {
         super();
         this.isVmStack = isVmStack;
         this.choicePointFromVMSupplier = choicePointSupplier;
+        this.vm = vm;
         this.restoringMode = false;
     }
 
@@ -50,6 +53,7 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	@Override
 	public Object push(Object item) {
 		if (!this.restoringMode) {
+            // Deprecated: old structure
 			ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
 			if (choicePoint != null && choicePoint.hasTrail()) {
 				if (this.isVmStack) {
@@ -58,6 +62,13 @@ public class StackToTrailWithInverse extends Stack<Object> {
 					choicePoint.addToTrail(new Pop());
 				}
 			}
+
+            // New (ST) choice structure:
+            if (this.isVmStack) {
+                vm.addToTrail(new VmPop());
+            } else {
+                vm.addToTrail(new Pop());
+            }
 		}
 
 		return super.push(item);
@@ -72,7 +83,8 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	public synchronized Object pop() {
 		Object item = super.pop();
 		if (!this.restoringMode) {
-			ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
+            // Deprecated: old structure
+            ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
 			if (choicePoint != null && choicePoint.hasTrail()) {
 				if (this.isVmStack) {
 					choicePoint.addToTrail(new VmPush(item));
@@ -80,6 +92,13 @@ public class StackToTrailWithInverse extends Stack<Object> {
 					choicePoint.addToTrail(new Push(item));
 				}
 			}
+
+            // New (ST) choice structure:
+            if (this.isVmStack) {
+                vm.addToTrail(new VmPush(item));
+            } else {
+                vm.addToTrail(new Push(item));
+            }
 		}
 
 		return item;

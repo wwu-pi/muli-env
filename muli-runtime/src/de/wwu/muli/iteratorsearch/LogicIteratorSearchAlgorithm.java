@@ -26,6 +26,8 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 
     void recordValue(Value result);
 
+    void trackBackToRoot(LogicVirtualMachine vm);
+
     @Deprecated
     boolean trackBackLocallyNextChoice(LogicVirtualMachine vm);
 
@@ -59,4 +61,5 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 	void generateNewChoicePoint(LogicVirtualMachine vm, Switch instruction, Term termFromStack,
                                 IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
 			throws ExecutionException;
+
 }

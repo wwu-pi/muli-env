@@ -104,6 +104,7 @@ public class SolutionIterator extends NativeMethodProvider {
         // Backtracking.
         int pcBeforeBacktracking = vm.getPc();
         vm.getSearchAlgorithm().trackBack(vm);
+        vm.getSearchAlgorithm().trackBackToRoot(vm);
         // TODO consider special handling / logging if result of trackBack is false
 
         // Make sure next frame (which is the reincarnation of tryAdvance) will continue at the same PC as we left off (instead of at the pc of the root, which would result in an infinite loop).

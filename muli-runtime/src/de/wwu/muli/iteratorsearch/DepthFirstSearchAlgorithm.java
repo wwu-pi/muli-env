@@ -400,6 +400,14 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         // TODO Consider deleting reference to Frame in STProxy to save some memory.
     }
 
+    @Override
+    public void trackBackToRoot(LogicVirtualMachine vm) {
+        Stack<TrailElement> trail = vm.extractCurrentTrail();
+        while (!trail.empty()) {
+            TrailElement element = trail.pop();
+        }
+    }
+
 
     public boolean changeToNextChoiceOld(LogicVirtualMachine vm) {
         if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
@@ -543,130 +551,9 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
 			// Empty the trail.
 			while (!trail.empty()) {
-				Object object = trail.pop();
-				// Decide about the action by checking the trail element's type.
-				if (object instanceof VmPush) {
-					VmPush vmPush = (VmPush) object;
-					object = vmPush.getObject();
-					vmStack.push(object);
-					if (vmPush.restoreStates()) {
-						// Restore states of the frame.
-						LogicFrame frame = (LogicFrame) object;
-						frame.setPc(vmPush.getPc());
-						frame.setMonitor(vmPush.getMonitor());
-					}
-					// Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(new VmPop());
-				} else if (object instanceof VmPop) {
-					if (vmStack.isEmpty()) {
-						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-							Globals.getInst().symbolicExecLogger.warn("(OP2) Processing the trail lead to a request to "
-									+ "pop an element from the empty VM stack. It will be ignored and skipped. "
-									+ "However, this hints to a serious problem and should be checked.");
-					} else {
-						Object fromVm = vmStack.pop();
-                        // Create inverse trail element and push it.
-                        if (respectiveInverse != null) respectiveInverse.push(new VmPush(fromVm));
-					}
-				} else if (object instanceof FrameChange) {
-                    Frame formerFrame = vm.getCurrentFrame();                    // TODO consider (because frames might be stored in pc 0, which is not quite correct.) formerFrame.setPc(vm.getPc());
-                    FrameChange frameChange = (FrameChange) object;
-					// There was a change in the frame. Put it as the (temporary) current Frame.
-					vm.setCurrentFrame(frameChange.getFrame());
-					// Disable the restoring mode for the last Frame's operand stack.
-					operandStack.setRestoringMode(false);
-					// Set the current operand stack accordingly.
-					operandStack = (StackToTrailWithInverse) frameChange.getFrame().getOperandStack();
-					// Enable restoring mode for it.
-					operandStack.setRestoringMode(true);
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(new FrameChange(formerFrame));
-                } else if (object instanceof PCChange) {
-				    int formerPC = vm.getPc();
-					PCChange pcChange = (PCChange) object;
-					// There was an explicit PC jump, e.g. due to exception handling.
-					// Restore the former PC value.
-					vm.setPC(pcChange.getPC());
-					vm.getCurrentFrame().setPc(pcChange.getPC());
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(new PCChange(formerPC));
-                } else if (object instanceof Push) {
-                    Push push = (Push) object;
-                    vm.getCurrentFrame().getOperandStack().push(push.getObject());
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(new Pop());
-                } else if (object instanceof Pop) {
-					if (vm.getCurrentFrame().getOperandStack().isEmpty()) {
-						if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-							Globals.getInst().symbolicExecLogger.warn("(OP1) Processing the trail lead to a request to "
-									+ "pop an element from an empty operand stack. It will be ignored and skipped. "
-									+ "However, this hints to a serious problem and should be checked.");
-					} else {
-                        Object fromStack = vm.getCurrentFrame().getOperandStack().pop();
-                        // Create inverse trail element and push it.
-                        if (respectiveInverse != null) respectiveInverse.push(new Push(fromStack));
-					}
-				} else if (object instanceof PopFromFrame) {
-                    StackToTrailWithInverse otherOperandStack = (StackToTrailWithInverse) ((PopFromFrame) object).getFrame().getOperandStack();
-                    if (otherOperandStack.isEmpty()) {
-                        if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-                            Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
-                                    + "pop an element from an empty operand stack. It will be ignored and skipped. "
-                                    + "However, this hints to a serious problem and should be checked.");
-                    } else {
-                        boolean previousRestoringMode = otherOperandStack.getRestoringMode();
-                        otherOperandStack.setRestoringMode(true); // Prevent (bogus) trail elements from being pushed.
-                        Object formerValue = otherOperandStack.pop();
-                        otherOperandStack.setRestoringMode(previousRestoringMode);
-                        // Create inverse trail element and push it.
-                        if (respectiveInverse != null) respectiveInverse.push(new PushToFrame(((PopFromFrame) object).getFrame(), formerValue));
-                    }
-                } else if (object instanceof PushToFrame) {
-                    StackToTrailWithInverse otherOperandStack = (StackToTrailWithInverse) ((PushToFrame) object).getFrame().getOperandStack();
-                    boolean previousRestoringMode = otherOperandStack.getRestoringMode();
-                    otherOperandStack.setRestoringMode(true); // Prevent (bogus) trail elements from being pushed.
-                    otherOperandStack.push(((PushToFrame) object).getValue());
-                    otherOperandStack.setRestoringMode(previousRestoringMode);
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(new PopFromFrame(((PushToFrame) object).getFrame()));
-                } else if (object instanceof ArrayRestore) {
-                    ArrayRestore ar = ((ArrayRestore) object);
-                    ArrayRestore arInverse = ar.createInverse();
-                    ar.restore();
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(arInverse);
-				} else if (object instanceof Restore) {
-				    Restore restore = ((Restore) object);
-				    int restoreTo = restore.getIndex();
-                    Object formerValue = vm.getCurrentFrame().getLocalVariables()[restoreTo];
-					restore.restore(vm.getCurrentFrame());
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(new Restore(restoreTo,formerValue));
-				} else if (object instanceof InstanceFieldPut) {
-				    InstanceFieldPut ifp = ((InstanceFieldPut) object);
-				    InstanceFieldPut ifpInverse = ifp.createInverseElement();
-					ifp.restoreField();
-                    // Create inverse trail element and push it.
-                    if (respectiveInverse != null) respectiveInverse.push(ifpInverse);
-				} else if (object instanceof StaticFieldPut) {
-					((StaticFieldPut) object).restoreField();
-                    // TODO Create inverse trail element and push it.
-                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of StaticFieldPut not implemented");
-				} else if (object instanceof DUCoverageTrailElement) {
-					((DUCoverageTrailElement) object).restore();
-                    // TODO Create inverse trail element and push it.
-                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of DUCoverageTrailElement not implemented");
-				} else if (object instanceof CGCoverageTrailElement) {
-					((CGCoverageTrailElement) object).restore();
-                    // TODO Create inverse trail element and push it.
-                    if (respectiveInverse != null) throw new UnsupportedOperationException("Inverse of CGCoverageTrailElement not implemented");
-				} else {
-					if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-						Globals.getInst().symbolicExecLogger.warn(
-								"Found an unrecognized object on the trail when trying to restore"
-									+ "an old state. It will be ignored and skipped.");
-				}
-			}
+				final TrailElement trailElement = trail.pop();
+                applyTrailElement(trailElement, vm, operandStack, vmStack, respectiveInverse);
+            }
 		}
 
 
@@ -693,7 +580,131 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 		vmStack.setRestoringMode(false);
 	}
 
-	/**
+    private void applyTrailElement(TrailElement trailElement, LogicVirtualMachine vm, StackToTrailWithInverse operandStack, StackToTrailWithInverse vmStack, Stack<TrailElement> respectiveInverseStack) {
+        // Decide about the action by checking the trail element's type.
+        if (trailElement instanceof VmPush) {
+            VmPush vmPush = (VmPush) trailElement;
+            LogicFrame frame = (LogicFrame)vmPush.getObject();
+            vmStack.push(frame);
+            if (vmPush.restoreStates()) {
+                // Restore states of the frame.
+                frame.setPc(vmPush.getPc());
+                frame.setMonitor(vmPush.getMonitor());
+            }
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(new VmPop());
+        } else if (trailElement instanceof VmPop) {
+            if (vmStack.isEmpty()) {
+                if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+                    Globals.getInst().symbolicExecLogger.warn("(OP2) Processing the trail lead to a request to "
+                            + "pop an element from the empty VM stack. It will be ignored and skipped. "
+                            + "However, this hints to a serious problem and should be checked.");
+            } else {
+                Object fromVm = vmStack.pop();
+                // Create inverse trail element and push it.
+                if (respectiveInverseStack != null) respectiveInverseStack.push(new VmPush(fromVm));
+            }
+        } else if (trailElement instanceof FrameChange) {
+            Frame formerFrame = vm.getCurrentFrame();                    // TODO consider (because frames might be stored in pc 0, which is not quite correct.) formerFrame.setPc(vm.getPc());
+            FrameChange frameChange = (FrameChange) trailElement;
+            // There was a change in the frame. Put it as the (temporary) current Frame.
+            vm.setCurrentFrame(frameChange.getFrame());
+            // Disable the restoring mode for the last Frame's operand stack.
+            operandStack.setRestoringMode(false);
+            // Set the current operand stack accordingly.
+            operandStack = (StackToTrailWithInverse) frameChange.getFrame().getOperandStack();
+            // Enable restoring mode for it.
+            operandStack.setRestoringMode(true);
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(new FrameChange(formerFrame));
+        } else if (trailElement instanceof PCChange) {
+            int formerPC = vm.getPc();
+            PCChange pcChange = (PCChange) trailElement;
+            // There was an explicit PC jump, e.g. due to exception handling.
+            // Restore the former PC value.
+            vm.setPC(pcChange.getPC());
+            vm.getCurrentFrame().setPc(pcChange.getPC());
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(new PCChange(formerPC));
+        } else if (trailElement instanceof Push) {
+            Push push = (Push) trailElement;
+            vm.getCurrentFrame().getOperandStack().push(push.getObject());
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(new Pop());
+        } else if (trailElement instanceof Pop) {
+            if (vm.getCurrentFrame().getOperandStack().isEmpty()) {
+                if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+                    Globals.getInst().symbolicExecLogger.warn("(OP1) Processing the trail lead to a request to "
+                            + "pop an element from an empty operand stack. It will be ignored and skipped. "
+                            + "However, this hints to a serious problem and should be checked.");
+            } else {
+                Object fromStack = vm.getCurrentFrame().getOperandStack().pop();
+                // Create inverse trail element and push it.
+                if (respectiveInverseStack != null) respectiveInverseStack.push(new Push(fromStack));
+            }
+        } else if (trailElement instanceof PopFromFrame) {
+            StackToTrailWithInverse otherOperandStack = (StackToTrailWithInverse) ((PopFromFrame) trailElement).getFrame().getOperandStack();
+            if (otherOperandStack.isEmpty()) {
+                if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+                    Globals.getInst().symbolicExecLogger.warn("Processing the trail lead to a request to "
+                            + "pop an element from an empty operand stack. It will be ignored and skipped. "
+                            + "However, this hints to a serious problem and should be checked.");
+            } else {
+                boolean previousRestoringMode = otherOperandStack.getRestoringMode();
+                otherOperandStack.setRestoringMode(true); // Prevent (bogus) trail elements from being pushed.
+                Object formerValue = otherOperandStack.pop();
+                otherOperandStack.setRestoringMode(previousRestoringMode);
+                // Create inverse trail element and push it.
+                if (respectiveInverseStack != null) respectiveInverseStack.push(new PushToFrame(((PopFromFrame) trailElement).getFrame(), formerValue));
+            }
+        } else if (trailElement instanceof PushToFrame) {
+            StackToTrailWithInverse otherOperandStack = (StackToTrailWithInverse) ((PushToFrame) trailElement).getFrame().getOperandStack();
+            boolean previousRestoringMode = otherOperandStack.getRestoringMode();
+            otherOperandStack.setRestoringMode(true); // Prevent (bogus) trail elements from being pushed.
+            otherOperandStack.push(((PushToFrame) trailElement).getValue());
+            otherOperandStack.setRestoringMode(previousRestoringMode);
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(new PopFromFrame(((PushToFrame) trailElement).getFrame()));
+        } else if (trailElement instanceof ArrayRestore) {
+            ArrayRestore ar = ((ArrayRestore) trailElement);
+            ArrayRestore arInverse = ar.createInverse();
+            ar.restore();
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(arInverse);
+        } else if (trailElement instanceof Restore) {
+            Restore restore = ((Restore) trailElement);
+            int restoreTo = restore.getIndex();
+            Object formerValue = vm.getCurrentFrame().getLocalVariables()[restoreTo];
+            restore.restore(vm.getCurrentFrame());
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(new Restore(restoreTo,formerValue));
+        } else if (trailElement instanceof InstanceFieldPut) {
+            InstanceFieldPut ifp = ((InstanceFieldPut) trailElement);
+            InstanceFieldPut ifpInverse = ifp.createInverseElement();
+            ifp.restoreField();
+            // Create inverse trail element and push it.
+            if (respectiveInverseStack != null) respectiveInverseStack.push(ifpInverse);
+        } else if (trailElement instanceof StaticFieldPut) {
+            ((StaticFieldPut) trailElement).restoreField();
+            // TODO Create inverse trail element and push it.
+            if (respectiveInverseStack != null) throw new UnsupportedOperationException("Inverse of StaticFieldPut not implemented");
+        } else if (trailElement instanceof DUCoverageTrailElement) {
+            ((DUCoverageTrailElement) trailElement).restore();
+            // TODO Create inverse trail element and push it.
+            if (respectiveInverseStack != null) throw new UnsupportedOperationException("Inverse of DUCoverageTrailElement not implemented");
+        } else if (trailElement instanceof CGCoverageTrailElement) {
+            ((CGCoverageTrailElement) trailElement).restore();
+            // TODO Create inverse trail element and push it.
+            if (respectiveInverseStack != null) throw new UnsupportedOperationException("Inverse of CGCoverageTrailElement not implemented");
+        } else {
+            if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
+                Globals.getInst().symbolicExecLogger.warn(
+                        "Found an unrecognized object on the trail when trying to restore"
+                                + "an old state. It will be ignored and skipped.");
+        }
+    }
+
+    /**
 	 * Generate a new GeneratorChoicePoint or ArrayInitializationChoicePoint for a local variable.
 	 * Set it as the current choice point.
 	 * 

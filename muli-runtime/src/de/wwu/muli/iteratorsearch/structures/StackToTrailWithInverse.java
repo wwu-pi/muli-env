@@ -131,7 +131,7 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	public synchronized boolean equals(Object obj) {
 		if (obj instanceof StackToTrailWithInverse) {
 			StackToTrailWithInverse stack = (StackToTrailWithInverse) obj;
-			if (stack.isVmStack == this.isVmStack && stack.restoringMode == this.restoringMode) {
+			if (stack.isVmStack == this.isVmStack && stack.restoringMode == this.restoringMode && stack.vm == this.vm) {
 				return super.equals(obj);
 			}
 		}

@@ -123,10 +123,6 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
      */
     private ST searchTree;
     /**
-     * Current node in search tree;
-     */
-    private Choice currentChoice;
-    /**
      * Stack that represents the nodes that DFS will check subsequently.
      */
     private Stack<STProxy> nextNodes;
@@ -408,11 +404,52 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     @Override
     public void trackBackToRoot(LogicVirtualMachine vm) {
+        // Get the current stacks.
+        StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+        StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
+
+        // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+        operandStack.setRestoringMode(true);
+        vmStack.setRestoringMode(true);
+
+
+        // Empty the trail.
         Stack<TrailElement> trail = vm.extractCurrentTrail();
         while (!trail.empty()) {
-            TrailElement element = trail.pop();
+            final TrailElement trailElement = trail.pop();
+            applyTrailElement(trailElement, vm, operandStack, vmStack, null);
         }
-    }
+        // Remove the current choice's constraint from the system.
+        vm.getSolverManager().removeConstraint();
+
+        // Set the correct Frame to be the current Frame.
+        vm.setCurrentFrame(this.currentNode.getFrame());
+
+        // If the frame was set to have finished the execution normally, reset that.
+        ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+        // Set the pc!
+        vm.getCurrentFrame().setPc(this.currentNode.getPc());
+
+        Choice nextChoice = this.currentNode.getParent();
+        while (nextChoice != null) {
+            nextChoice.parent
+
+
+            nextChoice =
+        }
+
+
+        // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
+        vm.setNextFrameIsAlreadyLoaded(true);
+        // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
+		vm.setReturnFromCurrentExecution(true);
+
+        // Disable the restoring mode.
+		operandStack.setRestoringMode(false);
+		vmStack.setRestoringMode(false);
+
+}
 
 
     public boolean changeToNextChoiceOld(LogicVirtualMachine vm) {

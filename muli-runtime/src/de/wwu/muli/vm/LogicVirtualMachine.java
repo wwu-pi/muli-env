@@ -956,6 +956,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
      * Get the current choicepoint, i.e. the most recent choicepoint in the currently active search region.
      * @return
      */
+    @Deprecated
     public ChoicePoint getCurrentChoicePoint() {
         LogicIteratorSearchAlgorithm algorithm = searchStrategies.get(currentSearchRegion);
         if (algorithm == null) {

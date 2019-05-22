@@ -1,6 +1,5 @@
 package de.wwu.muli.iteratorsearch;
 
-import com.sun.xml.internal.stream.buffer.stax.StreamReaderBufferProcessor;
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.MugglException;
 import de.wwu.muggl.configuration.Options;
@@ -151,7 +150,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     @Override
     public Choice getCurrentChoice() {
-        return this.currentChoice;
+        return this.currentNode.getParent();
     }
 
 
@@ -341,7 +340,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         }
 
         // If required, navigate to the correct position in the search tree (and change VM state accordingly).
-        if (this.currentNode != null && node.getParent().parent != this.currentNode.getParent()) {
+        if (this.currentNode != null && node.getParent().getParent() != this.currentNode.getParent()) {
             // TODO is the above condition correct?
 
             // TODO:
@@ -376,6 +375,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
         // Set the current pc to the subtree's pc!
         vm.getCurrentFrame().setPc(node.getPc());
+        vm.setPC(node.getPc());
 
         this.currentNode = node;
         // Evaluate.
@@ -384,11 +384,12 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     @Override
     public void recordChoice(Choice result) {
+        result.setSubstitutedSTProxy(this.currentNode);
         // "Replace" STProxy with its result.
         this.currentNode.setEvaluationResult(result);
 
         // Push search trees in reverse order so they will be popped from left-to-right.
-        ListIterator<STProxy> stIt = result.sts.listIterator(result.sts.size());
+        ListIterator<STProxy> stIt = result.getSts().listIterator(result.getSts().size());
 
         while (stIt.hasPrevious()) {
             this.nextNodes.push(stIt.previous());
@@ -419,8 +420,6 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             final TrailElement trailElement = trail.pop();
             applyTrailElement(trailElement, vm, operandStack, vmStack, null);
         }
-        // Remove the current choice's constraint from the system.
-        vm.getSolverManager().removeConstraint();
 
         // Set the correct Frame to be the current Frame.
         vm.setCurrentFrame(this.currentNode.getFrame());
@@ -431,24 +430,55 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         // Set the pc!
         vm.getCurrentFrame().setPc(this.currentNode.getPc());
 
+        // Disable the restoring mode.
+        operandStack.setRestoringMode(false);
+        vmStack.setRestoringMode(false);
+
         Choice nextChoice = this.currentNode.getParent();
         while (nextChoice != null) {
-            nextChoice.parent
+            // Remove the this choice's constraint from the system.
+            vm.getSolverManager().removeConstraint();
+
+            // Get the current stacks.
+            operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+            vmStack = (StackToTrailWithInverse) vm.getStack();
+
+            // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+            operandStack.setRestoringMode(true);
+            vmStack.setRestoringMode(true);
+
+            // Empty the trail.
+            trail = nextChoice.getTrail();
+            Stack<TrailElement> inverseTrail = nextChoice.getInverseTrail();
+            while (!trail.empty()) {
+                final TrailElement trailElement = trail.pop();
+                applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
+            }
+
+            // Set the correct Frame to be the current Frame.
+            vm.setCurrentFrame(nextChoice.getSubstitutedSTProxy().getFrame());
+
+            // If the frame was set to have finished the execution normally, reset that.
+            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+            // Set the pc!
+            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedSTProxy().getPc());
 
 
-            nextChoice =
+            // Disable the restoring mode.
+            operandStack.setRestoringMode(false);
+            vmStack.setRestoringMode(false);
+
+            nextChoice = nextChoice.getParent();
         }
 
+        // We are at the root.
+        this.currentNode = null;
 
         // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
         vm.setNextFrameIsAlreadyLoaded(true);
         // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
 		vm.setReturnFromCurrentExecution(true);
-
-        // Disable the restoring mode.
-		operandStack.setRestoringMode(false);
-		vmStack.setRestoringMode(false);
-
 }
 
 

@@ -1,5 +1,6 @@
 package de.wwu.muli.iteratorsearch;
 
+import com.sun.xml.internal.stream.buffer.stax.StreamReaderBufferProcessor;
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.MugglException;
 import de.wwu.muggl.configuration.Options;
@@ -46,6 +47,7 @@ import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import org.apache.log4j.Level;
 
+import java.util.ListIterator;
 import java.util.Stack;
 
 /**
@@ -388,9 +390,13 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     public void recordChoice(Choice result) {
         // "Replace" STProxy with its result.
         this.currentNode.setEvaluationResult(result);
-        // First push st2 so that st1 (and its children) will be popped first.
-        this.nextNodes.push(result.st2);
-        this.nextNodes.push(result.st1);
+
+        // Push search trees in reverse order so they will be popped from left-to-right.
+        ListIterator<STProxy> stIt = result.sts.listIterator(result.sts.size());
+
+        while (stIt.hasPrevious()) {
+            this.nextNodes.push(stIt.previous());
+        }
     }
 
     @Override

@@ -1,7 +1,6 @@
 package de.wwu.muli.iteratorsearch;
 
 import de.wwu.muggl.configuration.Globals;
-import de.wwu.muggl.configuration.MugglException;
 import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.instructions.bytecode.LCmp;
 import de.wwu.muggl.instructions.bytecode.Lookupswitch;
@@ -10,7 +9,6 @@ import de.wwu.muggl.instructions.general.CompareFp;
 import de.wwu.muggl.instructions.general.GeneralInstructionWithOtherBytes;
 import de.wwu.muggl.instructions.general.Switch;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
-import de.wwu.muggl.solvers.SolverManager;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
 import de.wwu.muggl.solvers.expressions.ConstraintExpression;
@@ -38,13 +36,11 @@ import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muli.iteratorsearch.structures.ConditionalJumpChoicePointDepthFirst;
 import de.wwu.muli.iteratorsearch.structures.RootChoicePoint;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
-import de.wwu.muli.searchtree.Choice;
-import de.wwu.muli.searchtree.ST;
-import de.wwu.muli.searchtree.STProxy;
-import de.wwu.muli.searchtree.Value;
+import de.wwu.muli.searchtree.*;
 import de.wwu.muli.vm.LogicFrame;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import org.apache.log4j.Level;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ListIterator;
 import java.util.Stack;
@@ -105,18 +101,9 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 	 */
 	protected long timeSolvingTemp;
     /**
-     * Inverse choice point stack.
-     */
-    final protected Stack<ChoicePoint> inverseChoicePointStack;
-    /**
      * The choice point the search algorithm last branched at.
      */
     protected ChoicePoint currentChoicePoint;
-    /**
-     * Flag that is false until search begins.
-     */
-    private boolean hasStartedSearch = false;
-
     /**
      * Search tree representation
      */
@@ -132,11 +119,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     /**
 	 * Instantiate the depth first search algorithm.
-	 */
+     */
 	public DepthFirstSearchAlgorithm() {
 		this.numberOfVisitedBranches = 0;
 		this.measureExecutionTime = Options.getInst().measureSymbolicExecutionTime;
-		this.inverseChoicePointStack = new Stack<>();
 	}
 
     /**
@@ -150,175 +136,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     @Override
     public Choice getCurrentChoice() {
+        if (this.currentNode == null) {
+            return null;
+        }
         return this.currentNode.getParent();
-    }
-
-
-    /**
-     * Try to track back to the last ChoicePoint thats non jumping branch was not yet visited
-     * and continue from there
-     *
-     * @param vm The currently executing LogicVirtualMachine.
-     * @return true, if tracking back was successful and the execution can be continued, false, if
-     *         there was no possibility for tracking back and then execution should hence be
-     *         stopped.
-     */
-    public boolean trackBackLocallyNextChoice(LogicVirtualMachine vm) {
-        if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
-        // Only track back if there ever was a ChoicePoint generated at all. Otherwise, no tracking back is possible.
-        if (this.currentChoicePoint == null) return false;
-
-        Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt local backtracking for the current branch and execute the one corresponding to the next choice.");
-
-        // Get the SolverManager.
-        SolverManager solverManager = vm.getSolverManager();
-
-        // Track back until the last choice point that offers another choice.
-        if (!trackBackLocally(vm, solverManager)) {
-            return false;
-        }
-
-        // Change to the next choice.
-        try {
-            this.currentChoicePoint.changeToNextChoice();
-        } catch (MugglException e) {
-            if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-            Globals.getInst().symbolicExecLogger
-                    .trace("Tracking back was successful, but encountered an Exception when switching "
-                            + " to the next choice. Trying to track back further. The root cause it "
-                            + e.getClass().getName() + " (" + e.getMessage() + ")");
-
-            return trackBackLocallyNextChoice(vm);
-        }
-
-        // Count up for the non-jumping branch.
-        this.numberOfVisitedBranches++;
-
-        // Perform operations specific to the constraint system.
-        if (this.currentChoicePoint.changesTheConstraintSystem()) {
-            // Remove the Constraint and get the new one.
-            solverManager.removeConstraint();
-            solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
-
-            // Check if the new branch can be visited at all, or if it causes an equation violation.
-            try {
-                // Try to solve the expression.
-                if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
-                if (!solverManager.hasSolution()) {
-                    if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
-                    if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                    return trackBackLocallyNextChoice(vm);
-                }
-                if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
-            } catch (SolverUnableToDecideException e) {
-                if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-                    Globals.getInst().symbolicExecLogger.trace("Solving lead to a SolverUnableToDecideException with message: " + e.getMessage());
-                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                return trackBackLocallyNextChoice(vm);
-            } catch (TimeoutException e) {
-                if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-                    Globals.getInst().symbolicExecLogger.trace("Solving lead to a TimeoutException with message: " + e.getMessage());
-                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                return trackBackLocallyNextChoice(vm);
-            }
-        }
-
-        // Found the choice point to continue, recover the state of it.
-        recoverState(vm, RestoreMode.SimpleRestore);
-
-        // Does the choice point require any state specific changes beside those already done?
-        if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
-
-        // Tracking back was successful.
-        if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-            Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
-        if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-        return true;
-
-    }
-
-    /**
-     * Try to track back to the last ChoicePoint thats non jumping branch was not yet visited,
-     * and then track back to the root of the symbolic execution tree while recording changes
-     * to the inverse trail.
-     *
-     * @param vm The currently executing LogicVirtualMachine.
-     * @return true, if tracking back was successful and the execution can be continued, false, if
-     *         there was no possibility for tracking back and then execution should hence be
-     *         stopped.
-     */
-    public boolean trackBack(LogicVirtualMachine vm) {
-        if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
-        // Only track back if there ever was a ChoicePoint generated at all. Otherwise, no tracking back is possible.
-        if (this.currentChoicePoint == null) return false;
-
-        Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt full backtracking for current search region.");
-
-        // Get the SolverManager.
-        SolverManager solverManager = vm.getSolverManager();
-
-
-        // Track back until the last choice point that offers another choice.
-        if (!trackBackLocally(vm, solverManager)) { return false; }
-
-        // Old implementation now would have changed to the next choice. Instead, keep on backtracking to the root.
-
-        // For the current choice point, also reset its state and remove its constraint from the constraint stack.
-        // Its trail is also not required anymore; it will be changed to its next choice next time!
-        recoverState(vm, RestoreMode.SimpleRestore);
-        if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
-
-        this.inverseChoicePointStack.push(this.currentChoicePoint);
-
-        while (this.currentChoicePoint.getParent() != null) {
-            this.currentChoicePoint = this.currentChoicePoint.getParent();
-            // Get back to its original state, and remove the constraint.
-            recoverState(vm, RestoreMode.TrailToInverse);
-            if (this.currentChoicePoint.changesTheConstraintSystem()) {
-                // No need for an inverse constraint stack, because we will always be able to get the constraint from the choice point.
-                solverManager.removeConstraint();
-            }
-            this.inverseChoicePointStack.push(this.currentChoicePoint);
-        }
-
-        this.currentChoicePoint = null;
-
-        // Tracking back was successful.
-        if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-            Globals.getInst().symbolicExecLogger.trace("Tracking back was successful. Already visited " + (this.numberOfVisitedBranches - 1) + " branches.");
-        if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-        return true;
-    }
-
-    /**
-     * Try to perform backtracking until reaching the next choice point that has another choice.
-     * @param vm executing SJVM
-     * @param solverManager current contraint solver manager
-     * @return false if there is no other choice.
-     */
-    private boolean trackBackLocally(LogicVirtualMachine vm, SolverManager solverManager) {
-        // Since the jump is executed first, find the newest ChoicePoint thats non jumping branch was not visited yet. Restore previous state while doing so.
-        // All of this does not need to go on the inverse trail, because this branch will not be executed again. We care about the next one(s).
-        while (!this.currentChoicePoint.hasAnotherChoice()) {
-            // No further choice for this CP. There is a parent, continue by recovering. Does not need to push to the inverse trail, because this branch
-            // will not be executed again. We only care about subsequent one(s).
-
-            // First step: Use the trail of the last choice point to get back to the old state.
-            recoverState(vm, RestoreMode.SimpleRestore);
-
-            // Second step: If one has been set, remove the ConstraintExpression from the ConstraintStack of the SolverManager.
-            if (this.currentChoicePoint.changesTheConstraintSystem()) solverManager.removeConstraint();
-
-            // Third step: Load its parent. This will also free the memory of the current choice point.
-            this.currentChoicePoint = this.currentChoicePoint.getParent();
-
-            if (this.currentChoicePoint == null) {
-                // We reached the root of the symbolic execution tree. There are no more choices.
-                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                return trackBackFinishedNoMoreChoices(vm);
-            }
-        }
-        return true;
     }
 
     public boolean changeToNextChoice(LogicVirtualMachine vm) {
@@ -333,24 +154,62 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             return false;
         }
 
-        STProxy node = this.nextNodes.pop();
+        final STProxy node = this.nextNodes.pop();
 
         if (node.isEvaluated()) {
             throw new IllegalStateException("Node must correspond to an unevaluated subtree.");
         }
 
-        // If required, navigate to the correct position in the search tree (and change VM state accordingly).
-        if (this.currentNode != null && node.getParent().getParent() != this.currentNode.getParent()) {
-            // TODO is the above condition correct?
+        if (this.currentNode == null) {
+            // We are descending from the root (instead of doing a local descent from an existing choice).
+            // This implies that we need to use the inverse trail.
+            final Stack<Choice> choices = new Stack<>();
+            Choice visit = node.getParent();
+            while (visit != null) {
+                choices.push(visit);
+                visit = visit.getParent();
+            }
 
-            // TODO:
-            // Find shortest path to next node.
-            // Obtain trail (towards root node),
-            // Revert state via trail,
-            // Revert constraints,
-            // Obtain inverse trail (towards next node),
-            // Apply inverse trail,
-            // Apply constraints.
+            StackToTrailWithInverse operandStack;
+            StackToTrailWithInverse vmStack;
+            while (!choices.empty()) {
+                Choice choice = choices.pop();
+
+                // Add constraint.
+                if (choice.getSubstitutedSTProxy().getConstraintExpression() != null) {
+                    vm.getSolverManager().addConstraint(choice.getSubstitutedSTProxy().getConstraintExpression());
+                }
+
+                // Set the correct Frame to be the current Frame.
+                vm.setCurrentFrame(choice.getSubstitutedSTProxy().getFrame());
+
+                // If the frame was set to have finished the execution normally, reset that.
+                ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+                // Set the pc!
+                vm.getCurrentFrame().setPc(choice.getSubstitutedSTProxy().getPc());
+                vm.setPC(choice.getSubstitutedSTProxy().getPc());
+
+                // Get the current stacks.
+                operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+                vmStack = (StackToTrailWithInverse) vm.getStack();
+
+                // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+                operandStack.setRestoringMode(true);
+                vmStack.setRestoringMode(true);
+
+                // Empty the inverse trail. (Note that the use of Inverse Trail and Trail is the exact opposite of what happens during backtracking.)
+                Stack<TrailElement> trail = choice.getInverseTrail();
+                Stack<TrailElement> inverseTrail = choice.getTrail();
+                while (!trail.empty()) {
+                    final TrailElement trailElement = trail.pop();
+                    applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
+                }
+
+                // Disable the restoring mode.
+                operandStack.setRestoringMode(false);
+                vmStack.setRestoringMode(false);
+            }
         }
 
         // Add constraint.
@@ -361,10 +220,14 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             try {
                 if (!vm.getSolverManager().hasSolution()) {
                     // Constraint system of this subtree is not satisfiable, try next.
+                    node.setEvaluationResult(new Fail());
+                    trackBackToRoot(vm);
                     return changeToNextChoice(vm);
                 }
             } catch (TimeoutException | SolverUnableToDecideException e) {
                 // Potentially inconsistent, try next.
+                node.setEvaluationResult(new Fail());
+                trackBackToRoot(vm);
                 return changeToNextChoice(vm);
             }
         }
@@ -429,6 +292,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
         // Set the pc!
         vm.getCurrentFrame().setPc(this.currentNode.getPc());
+        vm.setPC(this.currentNode.getPc());
 
         // Disable the restoring mode.
         operandStack.setRestoringMode(false);
@@ -463,6 +327,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
             // Set the pc!
             vm.getCurrentFrame().setPc(nextChoice.getSubstitutedSTProxy().getPc());
+            vm.setPC(nextChoice.getSubstitutedSTProxy().getPc());
 
 
             // Disable the restoring mode.
@@ -474,184 +339,25 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
         // We are at the root.
         this.currentNode = null;
+        //vm.getCurrentFrame().setPc(43); // TODO Replace with a reliable position of the next bytecode instruction (see RootChoicePoint)
+        //vm.setPC(43);
+
 
         // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
         vm.setNextFrameIsAlreadyLoaded(true);
         // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
 		vm.setReturnFromCurrentExecution(true);
-}
-
-
-    public boolean changeToNextChoiceOld(LogicVirtualMachine vm) {
-        if (this.measureExecutionTime) this.timeBacktrackingTemp = System.nanoTime();
-        Globals.getInst().symbolicExecLogger.trace("(LJVM) Attempt replaying the inverse trail for current search region, and selecting the next choice.");
-
-        // If inverse trail is empty, it is the first execution => nothing to replay here.
-        // Instead, generate a dummy choice point that marks the root.
-        if (this.inverseChoicePointStack.isEmpty()) {
-            if (this.hasStartedSearch) {
-                return false;
-            }
-            this.hasStartedSearch = true;
-            this.generateRootChoicePoint(vm);
-            return true;
-        }
-        // Sanity check.
-        if (!vm.getCurrentFrame().toString().equals("Frame for de.wwu.muli.search.SolutionIterator.tryAdvance(java.util.function.Consumer consumer) at pc 0.")) {
-            throw new IllegalStateException("Only expected to be called from within SolutionIterator!!");
-        }
-
-        // Get the SolverManager.
-        SolverManager solverManager = vm.getSolverManager();
-
-        // Replay the inverse trail.
-        while (!this.inverseChoicePointStack.isEmpty()) {
-            this.currentChoicePoint = this.inverseChoicePointStack.pop();
-
-            if (this.currentChoicePoint.changesTheConstraintSystem()) {
-                // No need for an inverse constraint stack, because we will always be able to get the constraint from the choice point.
-                solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
-            }
-
-            // Apply its state value.
-            if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
-
-            // Replay its inverse trail before proceeding to the next choice point.
-            recoverState(vm, RestoreMode.InverseToTrail);
-        }
-
-        // Change to the next choice.
-        try {
-            this.currentChoicePoint.changeToNextChoice();
-        } catch (MugglException e) {
-            if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-            Globals.getInst().symbolicExecLogger
-                    .trace("Tracking back was successful, but encountered an Exception when switching "
-                            + " to the next choice. Trying to track back further. The root cause it "
-                            + e.getClass().getName() + " (" + e.getMessage() + ")");
-
-            return trackBackLocallyNextChoice(vm); // TODO evaluate if the mechanisms are compatible here.
-        }
-
-        // Check if the constraint system still has a solution.
-        if (this.currentChoicePoint.changesTheConstraintSystem()) {
-            // Remove the constraint added during replay and add the new one.
-            solverManager.removeConstraint();
-            solverManager.addConstraint(this.currentChoicePoint.getConstraintExpression());
-
-            // Check if the new branch can be visited at all, or if it causes an equation violation.
-            try {
-                // Try to solve the expression.
-                if (this.measureExecutionTime) this.timeSolvingTemp = System.nanoTime();
-                if (!solverManager.hasSolution()) {
-                    if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
-                    if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                    return trackBackLocallyNextChoice(vm);
-                }
-                if (this.measureExecutionTime) vm.increaseTimeSolvingForBacktracking(System.nanoTime() - this.timeSolvingTemp);
-            } catch (SolverUnableToDecideException e) {
-                if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-                    Globals.getInst().symbolicExecLogger.trace("Solving lead to a SolverUnableToDecideException with message: " + e.getMessage());
-                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                return trackBackLocallyNextChoice(vm);
-            } catch (TimeoutException e) {
-                if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-                    Globals.getInst().symbolicExecLogger.trace("Solving lead to a TimeoutException with message: " + e.getMessage());
-                if (this.measureExecutionTime) vm.increaseTimeBacktracking(System.nanoTime() - this.timeBacktrackingTemp);
-                return trackBackLocallyNextChoice(vm);
-            }
-        }
-
-        // Count up for the next branch (first branches have been counted on CP generation).
-        this.numberOfVisitedBranches++;
-
-        // Does the CP require any state specific changes (corresponding to the next choice) besides those already done?
-        if (this.currentChoicePoint.enforcesStateChanges()) this.currentChoicePoint.applyStateChanges();
-
-        // Success, continue execution!
-        return true;
     }
 
-	/**
-	 * This method is called when tracking back failed. It will not change a thing, and just
-	 * log that the execution ends here, then return false. This method is intended to be overridden
-	 * by inheriting algorithms.
-	 * @param vm The currently executing SymbolicalVirtualMachine.
-	 * @return false in any case.
-	 */
-	protected boolean trackBackFinishedNoMoreChoices(LogicVirtualMachine vm) {
-		if (Globals.getInst().symbolicExecLogger.isTraceEnabled())
-			Globals.getInst().symbolicExecLogger.trace("No more tracking back is possible. Visited " + this.numberOfVisitedBranches + " branches in total.");
-		return false;
-	}
+    @Override
+    public boolean trackBackLocallyNextChoice(LogicVirtualMachine vm) {
+        throw new NotImplementedException();
+    }
 
-	/**
-	 * Recover that state at the ChoicePoint currentChoicePoint.
-	 * @param vm The currently executing SymbolicalVirtualMachine.
-	 */
-	private void recoverState(LogicVirtualMachine vm, RestoreMode mode) {
-		// Get the current stacks.
-		StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
-		StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
-
-		// Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
-		operandStack.setRestoringMode(true);
-		vmStack.setRestoringMode(true);
-
-        // All this needs to done before the other procedures iff InverseToTrail;
-        // otherwise, in regular backtracking, do it after replaying from the inverse trail.
-        if (mode == RestoreMode.InverseToTrail) {
-            // Set the correct Frame to be the current Frame.
-            vm.setCurrentFrame(this.currentChoicePoint.getFrame());
-
-            // Set the pc!
-            vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());
-        }
-
-		// If the choice point has a trail, use it to recover the state.
-		if (this.currentChoicePoint.hasTrail()) {
-            Stack<TrailElement> trail;
-            Stack<TrailElement> respectiveInverse = null;
-            if (mode == RestoreMode.SimpleRestore) { // No inverse stack used.
-                trail = this.currentChoicePoint.getTrail();
-            } else if (mode == RestoreMode.TrailToInverse) { // Use regular trail; populate inverse trail.
-                trail = this.currentChoicePoint.getTrail();
-                respectiveInverse = this.currentChoicePoint.getInverseTrail();
-            } else { // Use inverse trail; re-populate regular trail
-                trail = this.currentChoicePoint.getInverseTrail();
-                respectiveInverse = this.currentChoicePoint.getTrail();
-            }
-
-			// Empty the trail.
-			while (!trail.empty()) {
-				final TrailElement trailElement = trail.pop();
-                applyTrailElement(trailElement, vm, operandStack, vmStack, respectiveInverse);
-            }
-		}
-
-
-		// All this needs to done before the other procedures iff InverseToTrail;
-        // otherwise, in regular backtracking, do it now.
-        if (mode != RestoreMode.InverseToTrail) {
-            // Set the correct Frame to be the current Frame.
-            vm.setCurrentFrame(this.currentChoicePoint.getFrame());
-
-            // If the frame was set to have finished the execution normally, reset that.
-            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
-
-            // Set the pc!
-            vm.getCurrentFrame().setPc(this.currentChoicePoint.getPcNext());
-        }
-
-		// Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
-		vm.setNextFrameIsAlreadyLoaded(true);
-		// If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
-		vm.setReturnFromCurrentExecution(true);
-
-		// Disable the restoring mode.
-		operandStack.setRestoringMode(false);
-		vmStack.setRestoringMode(false);
-	}
+    @Override
+    public boolean trackBack(LogicVirtualMachine vm) {
+        throw new NotImplementedException();
+    }
 
     private void applyTrailElement(TrailElement trailElement, LogicVirtualMachine vm, StackToTrailWithInverse operandStack, StackToTrailWithInverse vmStack, Stack<TrailElement> respectiveInverseStack) {
         // Decide about the action by checking the trail element's type.

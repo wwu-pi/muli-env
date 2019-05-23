@@ -22,6 +22,8 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 
     Choice getCurrentChoice();
 
+    boolean isActivelySearching();
+
     void recordChoice(Choice result);
 
     void recordValue(Value result);

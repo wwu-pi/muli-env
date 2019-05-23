@@ -35,6 +35,11 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     @Override
+    public boolean isActivelySearching() {
+        return false;
+    }
+
+    @Override
     public void recordChoice(Choice result) {
         throw new IllegalStateException("Trying to record a new Choice during deterministic execution. Choice was " + result);
     }
@@ -99,33 +104,4 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         return "NoSearchAlgorithm";
     }
 
-    @Override
-    public boolean savingLocalVariableValues() {
-        return false;
-    }
-
-    @Override
-    public void saveLocalVariableValue(Restore valueRepresentation) {
-        throw new IllegalStateException("unexpected state: Trying to save local variable values, but no search algorithm initialised.");
-    }
-
-    @Override
-    public boolean savingFieldValues() {
-        return false;
-    }
-
-    @Override
-    public void saveFieldValue(FieldPut valueRepresentation) {
-        throw new IllegalStateException("unexpected state: Trying to save field values, but no search algorithm initialised.");
-    }
-
-    @Override
-    public boolean savingArrayValues() {
-        return false;
-    }
-
-    @Override
-    public void saveArrayValue(ArrayRestore valueRepresentation) {
-        throw new IllegalStateException("unexpected state: Trying to save array values, but no search algorithm initialised.");
-    }
 }

@@ -28,18 +28,15 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	// Fields.
 	private boolean isVmStack;
     private boolean restoringMode;
-    private Supplier<ChoicePoint> choicePointFromVMSupplier;
     private final LogicVirtualMachine vm;
 
     /**
      * Initialize a new StackToTrailWithInverse.
      * @param isVmStack If set to true, this StackToTrailWithInverse should be used as a virtual machine stack. It should be used as a operand stack otherwise.
-     * @param choicePointSupplier Supplier that gets the current active choicepoint from the VM.
      */
-    public StackToTrailWithInverse(boolean isVmStack, Supplier<ChoicePoint> choicePointSupplier, LogicVirtualMachine vm) {
+    public StackToTrailWithInverse(boolean isVmStack, LogicVirtualMachine vm) {
         super();
         this.isVmStack = isVmStack;
-        this.choicePointFromVMSupplier = choicePointSupplier;
         this.vm = vm;
         this.restoringMode = false;
     }
@@ -53,16 +50,6 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	@Override
 	public Object push(Object item) {
 		if (!this.restoringMode) {
-            // Deprecated: old structure
-			ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
-			if (choicePoint != null && choicePoint.hasTrail()) {
-				if (this.isVmStack) {
-					choicePoint.addToTrail(new VmPop());
-				} else {
-					choicePoint.addToTrail(new Pop());
-				}
-			}
-
             // New (ST) choice structure:
             if (this.isVmStack) {
                 vm.addToTrail(new VmPop());
@@ -83,16 +70,6 @@ public class StackToTrailWithInverse extends Stack<Object> {
 	public synchronized Object pop() {
 		Object item = super.pop();
 		if (!this.restoringMode) {
-            // Deprecated: old structure
-            ChoicePoint choicePoint = this.choicePointFromVMSupplier.get();
-			if (choicePoint != null && choicePoint.hasTrail()) {
-				if (this.isVmStack) {
-					choicePoint.addToTrail(new VmPush(item));
-				} else {
-					choicePoint.addToTrail(new Push(item));
-				}
-			}
-
             // New (ST) choice structure:
             if (this.isVmStack) {
                 vm.addToTrail(new VmPush(item));

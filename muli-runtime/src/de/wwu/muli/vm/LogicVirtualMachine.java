@@ -15,9 +15,7 @@ import de.wwu.muggl.solvers.SolverManager;
 import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.FrameChange;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.PCChange;
-import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.TrailElement;
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
 import de.wwu.muggl.symbolic.structures.Loop;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
@@ -164,7 +162,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		} catch (ClassNotFoundException e) {
 			throw new InitializationException("Solver manager of class " + options.solverManager + " does not exist.");
 		}
-		this.stack = new StackToTrailWithInverse(true, this::getCurrentChoicePoint, this);
+		this.stack = new StackToTrailWithInverse(true, this);
 		this.solutions = new ArrayList<>();
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
 		this.timeExecutionInstruction = 0;
@@ -322,7 +320,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	protected Frame createFrame(Frame invokedBy, Method method, Object[] arguments) throws ExecutionException {
 		LogicFrame frame = new LogicFrame(invokedBy, this, method, method.getClassFile()
 				.getConstantPool(), arguments);
-		frame.setOperandStack(new StackToTrailWithInverse(false, this::getCurrentChoicePoint, this));
+		frame.setOperandStack(new StackToTrailWithInverse(false, this));
 
 		/*
 		 * Check which local variables are annotated and replace undefined local variables by logic
@@ -904,12 +902,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	@Override
 	public void changeCurrentFrame(Frame frame) {
-		// Create a FrameChange trail element?
-		ChoicePoint choicePoint = this.getCurrentChoicePoint();
-		if (choicePoint != null && choicePoint.hasTrail()) {
-			// Add a FrameChange trail element.
-			choicePoint.addToTrail(new FrameChange(this.currentFrame));
-		}
+		// Create a FrameChange trail element (conditionally, see method).
+		this.addToTrail(new FrameChange(this.currentFrame));
 
 		// Invoke the super implementation to change the frame.
 		super.changeCurrentFrame(frame);
@@ -923,12 +917,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 */
 	@Override
 	public void changeCurrentPC(int pc) {
-		// Create a PCChange trail element?
-		ChoicePoint choicePoint = this.getCurrentChoicePoint();
-		if (choicePoint != null && choicePoint.hasTrail()) {
-			// Add a PCChange trail element.
-			choicePoint.addToTrail(new PCChange(this.pc));
-		}
+		// Create a PCChange trail element (conditionally, see method).
+        this.addToTrail(new PCChange(this.pc));
 
 		super.setPC(pc);
 	}
@@ -990,9 +980,47 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
     @Override
     public void addToTrail(TrailElement element) {
-        if (Options.getInst().symbolicMode) {
+        if (isInSearch()) {
             this.currentTrail.push(element);
         }
+    }
+
+    @Override
+    public boolean isInSearch() {
+        return (
+                !(this.getSearchAlgorithm() instanceof NoSearchAlgorithm)
+                && this.getSearchAlgorithm().isActivelySearching()
+        );
+    }
+
+    /**
+     * Store a field value for use by the seach algorithm's tracking back
+     * functionality.
+     * @param valueRepresentation Either a InstanceFieldPut or a StaticfieldPut object.
+     */
+    @Override
+    public void saveFieldValue(FieldPut valueRepresentation) {
+        addToTrail(valueRepresentation);
+    }
+
+    /**
+     * Store a local varable value for use by the seach algorithm's tracking back
+     * functionality.
+     * @param valueRepresentation A Restore object.
+     */
+    @Override
+    public void saveLocalVariableValue(Restore valueRepresentation) {
+        this.addToTrail(valueRepresentation);
+    }
+
+    /**
+     * Store a array value for use by the seach algorithm's tracking back
+     * functionality.
+     * @param valueRepresentation An ArrayRestore object.
+     */
+    @Override
+    public void saveArrayValue(ArrayRestore valueRepresentation) {
+        this.addToTrail(valueRepresentation);
     }
 
     public Objectref getCurrentSearchRegion() {

@@ -142,6 +142,10 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         return this.currentNode.getParent();
     }
 
+    public boolean isActivelySearching() {
+        return this.currentNode != null;
+    }
+
     public boolean changeToNextChoice(LogicVirtualMachine vm) {
         // Evaluate next subtree.
         if (this.searchTree == null) {
@@ -209,6 +213,11 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
                 // Disable the restoring mode.
                 operandStack.setRestoringMode(false);
                 vmStack.setRestoringMode(false);
+
+                // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
+                vm.setNextFrameIsAlreadyLoaded(true);
+                // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
+                vm.setReturnFromCurrentExecution(true);
             }
         }
 
@@ -716,85 +725,12 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 		if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
 	}
 
-    /**
-     * Generate a new  ArrayInitializationChoicePoint for instruction
-     * <code>anewarray</code>. Set it as the current choice point and mark that the jumping branch
-     * has been visited already (since execution just continues there.)
-     *
-     * @param vm The currently executing LogicVirtualMachine.
-     * @deprecated
-     *
-     */
-    private void generateRootChoicePoint(LogicVirtualMachine vm) {
-        if (this.measureExecutionTime) this.timeChoicePointGenerationTemp = System.nanoTime();
-        this.currentChoicePoint = new RootChoicePoint(vm.getCurrentFrame(), vm.getPc(), this.currentChoicePoint);
-
-        if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
-    }
-
 	/**
 	 * Return a String representation of this search algorithms name.
 	 * @return A String representation of this search algorithms name.
 	 */
 	public String getName() {
 		return "depth first";
-	}
-
-	/**
-	 * Get the information whether this search algorithm requires a field
-	 * value to be stored (at this exakt moment of execution).
-	 * @return true, if a choice point has been already generated, false otherwise.
-	 */
-	public boolean savingFieldValues() {
-		if (this.currentChoicePoint == null) return false;
-		return true;
-	}
-
-	/**
-	 * Store a field value for use by the seach algorithm's tracking back
-	 * functionality.
-	 * @param valueRepresentation Either a InstanceFieldPut or a StaticfieldPut object.
-	 */
-	public void saveFieldValue(FieldPut valueRepresentation) {
-		if (this.currentChoicePoint != null) this.currentChoicePoint.addToTrail(valueRepresentation);
-	}
-
-	/**
-	 * Get the information whether this search algorithm requires a local
-	 * variable value to be stored (at this exakt moment of execution).
-	 * @return true, if a choice point has been already generated, false otherwise.
-	 */
-	public boolean savingLocalVariableValues() {
-		if (this.currentChoicePoint == null) return false;
-		return true;
-	}
-
-	/**
-	 * Store a local varable value for use by the seach algorithm's tracking back
-	 * functionality.
-	 * @param valueRepresentation A Restore object.
-	 */
-	public void saveLocalVariableValue(Restore valueRepresentation) {
-		if (this.currentChoicePoint != null) this.currentChoicePoint.addToTrail(valueRepresentation);
-	}
-
-	/**
-	 * Get the information whether this search algorithm requires an array
-	 * value to be stored (at this exakt moment of execution).
-	 * @return true, if a choice point has been already generated, false otherwise.
-	 */
-	public boolean savingArrayValues() {
-		if (this.currentChoicePoint == null) return false;
-		return true;
-	}
-
-	/**
-	 * Store a array value for use by the seach algorithm's tracking back
-	 * functionality.
-	 * @param valueRepresentation An ArrayRestore object.
-	 */
-	public void saveArrayValue(ArrayRestore valueRepresentation) {
-		if (this.currentChoicePoint != null) this.currentChoicePoint.addToTrail(valueRepresentation);
 	}
 
 }

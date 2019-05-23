@@ -101,9 +101,7 @@ public class LogicFrame extends Frame implements SearchingFrame {
 			// Enable restoring mode.
 			operandStack.setRestoringMode(false);
 			// Add this item manually to the trail.
-			ChoicePoint choicePoint = ((LogicVirtualMachine) this.vm).getCurrentChoicePoint();
-			if (choicePoint != null && choicePoint.hasTrail())
-				choicePoint.addToTrail(new PopFromFrame(this.invokedBy));
+            ((LogicVirtualMachine) this.vm).addToTrail(new PopFromFrame(this.invokedBy));
 		} else {
 			this.vm.getStack().push(value);
 		}

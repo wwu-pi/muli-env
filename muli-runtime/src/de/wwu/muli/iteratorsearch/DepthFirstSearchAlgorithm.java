@@ -221,6 +221,8 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
             }
         }
 
+        this.currentNode = node;
+
         // Add constraint.
         if (node.getConstraintExpression() != null) {
             vm.getSolverManager().addConstraint(node.getConstraintExpression());
@@ -249,7 +251,6 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         vm.getCurrentFrame().setPc(node.getPc());
         vm.setPC(node.getPc());
 
-        this.currentNode = node;
         // Evaluate.
         return true;
     }

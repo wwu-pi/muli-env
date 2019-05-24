@@ -226,7 +226,7 @@ public class SolutionIterator extends NativeMethodProvider {
         if (currentIteratorSearchAlgorithm instanceof NoSearchAlgorithm) {
             throw new IllegalStateException("Must be inside an active search region, set by setVMActiveIterator.");
         }
-        boolean hasAnotherChoice = currentIteratorSearchAlgorithm.changeToNextChoice(((LogicVirtualMachine) frame.getVm()));
+        boolean hasAnotherChoice = currentIteratorSearchAlgorithm.takeNextDecision(((LogicVirtualMachine) frame.getVm()));
         if (hasAnotherChoice) {
             ((LogicVirtualMachine) frame.getVm()).recordSearchStarted();
         }

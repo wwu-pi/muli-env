@@ -145,7 +145,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         return this.currentNode != null;
     }
 
-    public boolean changeToNextChoice(LogicVirtualMachine vm) {
+    public boolean takeNextDecision(LogicVirtualMachine vm) {
         // Evaluate next subtree.
         if (this.searchTree == null) {
             this.searchTree = new STProxy(vm.getCurrentFrame(), vm.getPc(), null, null);
@@ -232,13 +232,13 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
                     // Constraint system of this subtree is not satisfiable, try next.
                     node.setEvaluationResult(new Fail());
                     trackBackToRoot(vm);
-                    return changeToNextChoice(vm);
+                    return takeNextDecision(vm);
                 }
             } catch (TimeoutException | SolverUnableToDecideException e) {
                 // Potentially inconsistent, try next.
                 node.setEvaluationResult(new Fail());
                 trackBackToRoot(vm);
-                return changeToNextChoice(vm);
+                return takeNextDecision(vm);
             }
         }
 

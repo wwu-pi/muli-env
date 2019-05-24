@@ -260,7 +260,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         ST result = st.get();
         if (result instanceof Choice) {
             this.getSearchAlgorithm().recordChoice((Choice)result);
-            this.getSearchAlgorithm().changeToNextChoice(this);
+            this.getSearchAlgorithm().takeNextDecision(this);
         } else {
             throw new IllegalStateException("Instruction " + instruction + " returned an unsupported result type: " + result);
         }

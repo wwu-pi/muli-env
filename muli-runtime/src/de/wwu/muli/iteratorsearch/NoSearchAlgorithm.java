@@ -71,7 +71,7 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     @Override
-    public boolean changeToNextChoice(LogicVirtualMachine vm) {
+    public boolean takeNextDecision(LogicVirtualMachine vm) {
         throw new IllegalStateException("unexpected state: Trying to change to next choice, but no search algorithm initialised.");
     }
 

@@ -33,13 +33,13 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 
     void trackBackToRoot(LogicVirtualMachine vm);
 
+    boolean takeNextDecision(LogicVirtualMachine vm);
+
     @Deprecated
     boolean trackBackLocallyNextChoice(LogicVirtualMachine vm);
 
     @Deprecated
     boolean trackBack(LogicVirtualMachine vm);
-
-    boolean changeToNextChoice(LogicVirtualMachine vm);
 
     @Deprecated
 	void generateNewChoicePoint(LogicVirtualMachine vm, int localVariableIndex, Generator generator)

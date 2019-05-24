@@ -110,11 +110,11 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
     /**
      * Stack that represents the nodes that DFS will check subsequently.
      */
-    private Stack<STProxy> nextNodes;
+    private Stack<UnevaluatedST> nextNodes;
     /**
      * Currently explored subtree.
      */
-    private STProxy currentNode;
+    private UnevaluatedST currentNode;
 
     /**
 	 * Instantiate the depth first search algorithm.
@@ -148,16 +148,16 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
     public boolean takeNextDecision(LogicVirtualMachine vm) {
         // Evaluate next subtree.
         if (this.searchTree == null) {
-            this.searchTree = new STProxy(vm.getCurrentFrame(), vm.getPc(), null, null);
+            this.searchTree = new UnevaluatedST(vm.getCurrentFrame(), vm.getPc(), null, null);
             this.nextNodes = new Stack<>();
-            this.nextNodes.push((STProxy)this.searchTree);
+            this.nextNodes.push((UnevaluatedST)this.searchTree);
         }
 
         if (this.nextNodes.empty()) {
             return false;
         }
 
-        final STProxy node = this.nextNodes.pop();
+        final UnevaluatedST node = this.nextNodes.pop();
 
         if (node.isEvaluated()) {
             throw new IllegalStateException("Node must correspond to an unevaluated subtree.");
@@ -179,19 +179,19 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
                 Choice choice = choices.pop();
 
                 // Add constraint.
-                if (choice.getSubstitutedSTProxy().getConstraintExpression() != null) {
-                    vm.getSolverManager().addConstraint(choice.getSubstitutedSTProxy().getConstraintExpression());
+                if (choice.getSubstitutedUnevaluatedST().getConstraintExpression() != null) {
+                    vm.getSolverManager().addConstraint(choice.getSubstitutedUnevaluatedST().getConstraintExpression());
                 }
 
                 // Set the correct Frame to be the current Frame.
-                vm.setCurrentFrame(choice.getSubstitutedSTProxy().getFrame());
+                vm.setCurrentFrame(choice.getSubstitutedUnevaluatedST().getFrame());
 
                 // If the frame was set to have finished the execution normally, reset that.
                 ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
 
                 // Set the pc!
-                vm.getCurrentFrame().setPc(choice.getSubstitutedSTProxy().getPc());
-                vm.setPC(choice.getSubstitutedSTProxy().getPc());
+                vm.getCurrentFrame().setPc(choice.getSubstitutedUnevaluatedST().getPc());
+                vm.setPC(choice.getSubstitutedUnevaluatedST().getPc());
 
                 // Get the current stacks.
                 operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
@@ -254,12 +254,12 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
 
     @Override
     public void recordChoice(Choice result) {
-        result.setSubstitutedSTProxy(this.currentNode);
-        // "Replace" STProxy with its result.
+        result.setSubstitutedUnevaluatedST(this.currentNode);
+        // "Replace" UnevaluatedST with its result.
         this.currentNode.setEvaluationResult(result);
 
         // Push search trees in reverse order so they will be popped from left-to-right.
-        ListIterator<STProxy> stIt = result.getSts().listIterator(result.getSts().size());
+        ListIterator<UnevaluatedST> stIt = result.getSts().listIterator(result.getSts().size());
 
         while (stIt.hasPrevious()) {
             this.nextNodes.push(stIt.previous());
@@ -268,19 +268,19 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
 
     @Override
     public void recordValue(Value result) {
-        // "Replace" STProxy with its result.
+        // "Replace" UnevaluatedST with its result.
         this.currentNode.setEvaluationResult(result);
     }
 
     @Override
     public void recordException(de.wwu.muli.searchtree.Exception result) {
-        // "Replace" STProxy with its result.
+        // "Replace" UnevaluatedST with its result.
         this.currentNode.setEvaluationResult(result);
     }
 
     @Override
     public void recordFail(Fail result) {
-        // "Replace" STProxy with its result.
+        // "Replace" UnevaluatedST with its result.
         this.currentNode.setEvaluationResult(result);
     }
 
@@ -338,14 +338,14 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
             }
 
             // Set the correct Frame to be the current Frame.
-            vm.setCurrentFrame(nextChoice.getSubstitutedSTProxy().getFrame());
+            vm.setCurrentFrame(nextChoice.getSubstitutedUnevaluatedST().getFrame());
 
             // If the frame was set to have finished the execution normally, reset that.
             ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
 
             // Set the pc!
-            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedSTProxy().getPc());
-            vm.setPC(nextChoice.getSubstitutedSTProxy().getPc());
+            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedUnevaluatedST().getPc());
+            vm.setPC(nextChoice.getSubstitutedUnevaluatedST().getPc());
 
 
             // Disable the restoring mode.
@@ -371,7 +371,7 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
             return false;
         }
 
-        final STProxy node = this.nextNodes.pop();
+        final UnevaluatedST node = this.nextNodes.pop();
 
         if (node.isEvaluated()) {
             throw new IllegalStateException("Node must correspond to an unevaluated subtree.");
@@ -434,14 +434,14 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
             }
 
             // Set the correct Frame to be the current Frame.
-            vm.setCurrentFrame(nextChoice.getSubstitutedSTProxy().getFrame());
+            vm.setCurrentFrame(nextChoice.getSubstitutedUnevaluatedST().getFrame());
 
             // If the frame was set to have finished the execution normally, reset that.
             ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
 
             // Set the pc!
-            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedSTProxy().getPc());
-            vm.setPC(nextChoice.getSubstitutedSTProxy().getPc());
+            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedUnevaluatedST().getPc());
+            vm.setPC(nextChoice.getSubstitutedUnevaluatedST().getPc());
 
 
             // Disable the restoring mode.

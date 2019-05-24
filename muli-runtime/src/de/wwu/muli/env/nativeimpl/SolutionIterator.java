@@ -135,6 +135,10 @@ public class SolutionIterator extends NativeMethodProvider {
         // Label solution if enabled.
         solutionException = maybeLabel(vm, solutionException);
 
+        // Store Exception node in ST.
+        de.wwu.muli.searchtree.Exception exception = new de.wwu.muli.searchtree.Exception(solutionException);
+        vm.getSearchAlgorithm().recordException(exception);
+
         Objectref returnValue;
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());

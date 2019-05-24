@@ -51,8 +51,13 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     @Override
+    public void recordException(de.wwu.muli.searchtree.Exception result) {
+        throw new IllegalStateException("Trying to record a new Exception during deterministic execution. Exception was " + result);
+    }
+
+    @Override
     public void recordFail(Fail result) {
-        throw new IllegalStateException("Trying to record a new Value during deterministic execution. Value was " + result);
+        throw new IllegalStateException("Trying to record a new Fail during deterministic execution. Fail was " + result);
     }
 
     @Override

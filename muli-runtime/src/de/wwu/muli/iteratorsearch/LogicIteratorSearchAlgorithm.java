@@ -29,6 +29,8 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
 
     void recordValue(Value result);
 
+    void recordException(de.wwu.muli.searchtree.Exception exception);
+
     void recordFail(Fail result);
 
     void trackBackToRoot(LogicVirtualMachine vm);

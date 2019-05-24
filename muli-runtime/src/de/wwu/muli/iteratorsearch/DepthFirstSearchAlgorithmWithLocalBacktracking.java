@@ -270,7 +270,12 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
     public void recordValue(Value result) {
         // "Replace" STProxy with its result.
         this.currentNode.setEvaluationResult(result);
-        // TODO Consider deleting reference to Frame in STProxy to save some memory.
+    }
+
+    @Override
+    public void recordException(de.wwu.muli.searchtree.Exception result) {
+        // "Replace" STProxy with its result.
+        this.currentNode.setEvaluationResult(result);
     }
 
     @Override

@@ -16,13 +16,11 @@ import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
-import de.wwu.muggl.symbolic.structures.Loop;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
-import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
@@ -43,8 +41,6 @@ import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.ST;
-import de.wwu.muli.solution.ExceptionSolution;
-import de.wwu.muli.solution.Solution;
 import org.apache.log4j.Level;
 
 import java.util.*;
@@ -61,9 +57,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	// The Solver Manager.
 	private SolverManager			solverManager;
 
-	// Solution related fields.
-	private ArrayList<Solution> solutions;
-
 	// Fields for the execution time measured.
 	private boolean					measureExecutionTime;
 	private long					timeExecutionInstruction;
@@ -78,14 +71,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	private int						maximumInstructionsBeforeFindingANewSolution;
 	private boolean					onlyCountChoicePointGeneratingInstructions;
 	private int						instructionsExecutedSinceLastSolution;
-
-	/*
-	 * Fields to indicate if and if yes, why the execution did not finish without matching an
-	 * abortion criterion.
-	 */
-	private boolean					abortionCriterionMatched;
-	private String					abortionCriterionMatchedMessage;
-	private boolean					maximumLoopsReached;
 
 	// Constant.
 	private static final long		NANOS_MILLIS	= 1000000;
@@ -120,7 +105,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				.getClassFile(), succeededSVM.getInitialMethod());
 		
 		// Import outcomes of the former execution.
-		this.solutions = succeededSVM.solutions;
 		this.executedFrames = succeededSVM.getExecutedFrames();
 		this.executedInstructions = succeededSVM.getExecutedInstructions();
 		if (Options.getInst().measureSymbolicExecutionTime) {
@@ -163,7 +147,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			throw new InitializationException("Solver manager of class " + options.solverManager + " does not exist.");
 		}
 		this.stack = new StackToTrailWithInverse(true, this);
-		this.solutions = new ArrayList<>();
 		this.measureExecutionTime = options.measureSymbolicExecutionTime;
 		this.timeExecutionInstruction = 0;
 		this.timeCoverageChecking = 0;
@@ -175,9 +158,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.instructionsExecutedSinceLastSolution = 0;
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
-		this.abortionCriterionMatched = false;
-		this.maximumLoopsReached = false;
-		this.abortionCriterionMatchedMessage = null;
 		this.searchStrategies = new HashMap<>();
 	}
 
@@ -267,43 +247,12 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
     }
 
     /**
-	 * Since execution reached a backtracking point, store the found solution for later retrieval.
-	 */
-	public void saveSolutionObject(Object solution) {
-        // TODO maybe remove from VM.
-		// Reset the instruction-between-solutions counter.
-		this.instructionsExecutedSinceLastSolution = 0;
-
-		// Add the solution.
-		this.solutions.add(new Solution(solution));
-	}
-
-	/**
-	 * Since execution reached a backtracking point, store the found exception for later retrieval.
-	 */
-	public void saveSolutionException(Object solution) {
-        // TODO maybe remove from VM.
-		// Reset the instruction-between-solutions counter.
-		this.instructionsExecutedSinceLastSolution = 0;
-
-		// Add the solution.
-		this.solutions.add(new ExceptionSolution(solution));
-	}
-
-    /**
      * SolutionIterator recorded and returned a solution, so reset the counter.
      */
     public void resetInstructionsExecutedSinceLastSolution() {
         // Reset the instruction-between-solutions counter.
         this.instructionsExecutedSinceLastSolution = 0;
     }
-
-	/**
-	 * Retrieves solutions that were found and stored during execution.
-	 */
-	public ArrayList<Solution> getSolutions() {
-		return this.solutions;
-	}
 
 	/**
 	 * Create a new frame and check whether its local variables should be initialized to logic
@@ -409,41 +358,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		}
 		// Return it.
 		return frame;
-	}
-
-	/**
-	 * Check if the current instruction is the constituting element of a loop. In that case,
-	 * increase the counter for the passes of the loop. If the counter has reached the limit, return
-	 * false. This will signalize, that execution should be aborted and backtracking started.
-	 * Otherwise, true is returned, which signalizes that execution should continue.
-	 * 
-	 * @param instruction The currently executed instruction.
-	 * @param oldPc The pc before this instruction was executed.
-	 * @return true, if execution should continue, false, if execution should be aborted.
-	 */
-	private boolean checkForLoops(Instruction instruction, int oldPc) {
-		// Only do further operations if the instruction is actually a conditional jump.
-		if (instruction instanceof JumpConditional) {
-			Iterator<Loop> iterator = ((LogicFrame) this.currentFrame).getLoops().iterator();
-			while (iterator.hasNext()) {
-				Loop loop = iterator.next();
-				// Is there a matching entry?
-				if (loop.getFrom() == oldPc) {
-					int newPC = this.pc;
-					// Jumped too far?
-					if (newPC >= Limitations.MAX_CODE_LENGTH) {
-						newPC -= Limitations.MAX_CODE_LENGTH;
-					}
-					// Only increase if really jumping.
-					if (newPC != oldPc + 1 + instruction.getNumberOfOtherBytes()) loop.incCount();
-					// End the check here. If the count is now greater or equal than the maximum
-					// loops to take, return false. Return true otherwise.
-					return !loop.isCountGreaterEqual(Options.getInst().maximumLoopsToTake);
-				}
-			}
-		}
-		// Everything went all right. Return true, execution can be continued.
-		return true;
 	}
 
 	/**
@@ -750,33 +664,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	}
 
 	/**
-	 * Return an array of long elements with the times of the execution measurement. If it is
-	 * disabled, an array of zero length will be returned.
-	 * 
-	 * The array has six entries: 0 - Time spent on the execution of instructions. 1 - Time spent on
-	 * the detection of loops. 2 - Time spent on the coverage checking. 3 - Time spent on the
-	 * generation of choice points. 4 - Time spent on the solving of constraints. 5 - Time spent on
-	 * backtracking. 6 - Time spent on the generation of solutions.
-	 * 
-	 * The time spent on the execution of instructions has already been reduced by the time spent on
-	 * the generation of choice points (including solving), which is a sub task.
-	 * 
-	 * The time is in milliseconds and can directly be used for displaying issues.
-	 * 
-	 * @return An array of long elements with the times of the execution measurement.
-	 */
-	public long[] getExecutionTimeInformation() {
-		if (!this.measureExecutionTime) return new long[0];
-		return new long[]{
-				(this.timeExecutionInstruction - this.timeChoicePointGeneration) / NANOS_MILLIS,
-				0, this.timeCoverageChecking / NANOS_MILLIS,
-				(this.timeChoicePointGeneration - this.timeSolvingChoicePoints) / NANOS_MILLIS,
-				(this.timeSolvingChoicePoints + this.timeSolvingBacktracking) / NANOS_MILLIS,
-				(this.timeBacktracking - this.timeSolvingBacktracking) / NANOS_MILLIS,
-				this.timeSolutionGeneration / NANOS_MILLIS };
-	}
-
-	/**
 	 * Return an array of long elements with the times of the execution measurement. There will be
 	 * no preprocessing of the elements, hence it is only meant for internal (private) use.
 	 * 
@@ -787,16 +674,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				this.timeCoverageChecking, this.timeChoicePointGeneration,
 				this.timeSolvingChoicePoints, this.timeSolvingBacktracking, this.timeBacktracking,
 				this.timeSolutionGeneration };
-	}
-
-	/**
-	 * Increase the time spent on coverage checking by the supplied increment. Lower the instruction
-	 * execution time by that value.
-	 * 
-	 * @param increment The time needed for coverage checking.
-	 */
-	public void increaseTimeCoverageChecking(long increment) {
-		this.timeCoverageChecking += increment;
 	}
 
 	/**
@@ -811,15 +688,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	}
 
 	/**
-	 * Increase the time spent on backtracking by the supplied increment.
-	 * 
-	 * @param increment The time needed for a backtracking action.
-	 */
-	public void increaseTimeBacktracking(long increment) {
-		this.timeBacktracking += increment;
-	}
-
-	/**
 	 * Increase the time spent on solving for the generation of choice points by the supplied
 	 * increment.
 	 * 
@@ -828,71 +696,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	public void increaseTimeSolvingForChoicePointGeneration(long increment) {
 		this.timeSolvingChoicePoints += increment;
-	}
-
-	/**
-	 * Increase the time spent on solving for backtracking by the supplied increment.
-	 * 
-	 * @param increment The time needed for a solving action.
-	 */
-	public void increaseTimeSolvingForBacktracking(long increment) {
-		this.timeSolvingBacktracking += increment;
-	}
-
-	/**
-	 * Getter for the finalized field.
-	 * 
-	 * @return true, if this symbolic virtual machine has been finalized, false otherwise.
-	 */
-	public boolean isFinalized() {
-		return this.finalized;
-	}
-
-	/**
-	 * Getter for the information, whether execution finished as an abortion criterion was matched.
-	 * 
-	 * @return true, if an abortion criterion was matched, false otherwise.
-	 */
-	public boolean getAbortionCriterionMatched() {
-		return this.abortionCriterionMatched;
-	}
-
-	/**
-	 * Setter for the information, whether execution finished as an abortion criterion was matched.
-	 * 
-	 * @param abortionCriterionMatched Information, whether execution finished as an abortion
-	 *        criterion was matched.
-	 */
-	public void setAbortionCriterionMatched(boolean abortionCriterionMatched) {
-		this.abortionCriterionMatched = abortionCriterionMatched;
-	}
-
-	/**
-	 * Getter for the message stored if the execution finished as an abortion criterion was matched.
-	 * 
-	 * @return The abortion criterion message, or null, if there is no such message stored.
-	 */
-	public String getAbortionCriterionMatchedMessage() {
-		return this.abortionCriterionMatchedMessage;
-	}
-
-	/**
-	 * Setter for the message stored if the execution finished as an abortion criterion was matched.
-	 * 
-	 * @param abortionCriterionMatchedMessage The abortion criterion message.
-	 */
-	public void setAbortionCriterionMatchedMessage(String abortionCriterionMatchedMessage) {
-		this.abortionCriterionMatchedMessage = abortionCriterionMatchedMessage;
-	}
-
-	/**
-	 * Getter for the information, whether the maximum number of loops were reached and no further
-	 * deepening was done at least one time.
-	 * 
-	 * @return true, if the maximum number of loops were reached, false otherwise.
-	 */
-	public boolean getMaximumLoopsReached() {
-		return this.maximumLoopsReached;
 	}
 
 	/**

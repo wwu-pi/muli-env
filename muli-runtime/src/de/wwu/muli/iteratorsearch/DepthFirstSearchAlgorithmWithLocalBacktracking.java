@@ -352,8 +352,6 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
 
         // We are at the root.
         this.currentNode = null;
-        //vm.getCurrentFrame().setPc(43); // TODO Replace with a reliable position of the next bytecode instruction (see RootChoicePoint)
-        //vm.setPC(43);
 
 
         // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.

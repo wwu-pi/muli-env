@@ -34,7 +34,6 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muli.iteratorsearch.structures.ConditionalJumpChoicePointDepthFirst;
-import de.wwu.muli.iteratorsearch.structures.RootChoicePoint;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.searchtree.*;
 import de.wwu.muli.vm.LogicFrame;
@@ -274,6 +273,12 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
         // "Replace" STProxy with its result.
         this.currentNode.setEvaluationResult(result);
         // TODO Consider deleting reference to Frame in STProxy to save some memory.
+    }
+
+    @Override
+    public void recordFail(Fail result) {
+        // "Replace" STProxy with its result.
+        this.currentNode.setEvaluationResult(result);
     }
 
     @Override

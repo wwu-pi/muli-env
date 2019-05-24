@@ -16,6 +16,7 @@ import de.wwu.muli.ExecutionMode;
 import de.wwu.muli.SearchStrategy;
 import de.wwu.muli.iteratorsearch.DepthFirstSearchAlgorithm;
 import de.wwu.muli.search.NoFurtherSolutionsIndicator;
+import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.solution.MuliFailException;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -108,10 +109,12 @@ public class MuliVMControl extends NativeMethodProvider {
 
     public static void fail(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
-        Globals.getInst().choicesLogger.debug(String.format("\"%s\" -> \"%s\";", vm.getCurrentChoicePoint().getID(), "Fail_"+failCounter++));
 
-        // Backtracking, and proceed to next choice/branch immediately.
-        boolean hasNextChoice = vm.getSearchAlgorithm().trackBackLocallyNextChoice(vm);
+
+        // Record Fail for this node, then do backtracking to next branch immediately.
+        vm.getSearchAlgorithm().recordFail(new Fail());
+        boolean hasNextChoice = vm.getSearchAlgorithm().trackBackAndTakeNextDecision((LogicVirtualMachine) frame.getVm());
+
         if (!hasNextChoice) {
             // Special handling if result is false, i.e. no choices are left.
             // Needs to be communicated to surrounding VM, however, fail() does not usually have a return

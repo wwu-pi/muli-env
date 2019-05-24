@@ -13,6 +13,7 @@ import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.searchtree.Choice;
+import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
@@ -27,6 +28,8 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
     void recordChoice(Choice result);
 
     void recordValue(Value result);
+
+    void recordFail(Fail result);
 
     void trackBackToRoot(LogicVirtualMachine vm);
 

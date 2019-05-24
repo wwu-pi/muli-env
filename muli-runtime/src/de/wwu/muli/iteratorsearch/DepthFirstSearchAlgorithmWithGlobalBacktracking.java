@@ -231,14 +231,12 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking implements LogicIte
                 if (!vm.getSolverManager().hasSolution()) {
                     // Constraint system of this subtree is not satisfiable, try next.
                     node.setEvaluationResult(new Fail());
-                    trackBackToRoot(vm);
-                    return takeNextDecision(vm);
+                    return trackBackAndTakeNextDecision(vm);
                 }
             } catch (TimeoutException | SolverUnableToDecideException e) {
                 // Potentially inconsistent, try next.
                 node.setEvaluationResult(new Fail());
-                trackBackToRoot(vm);
-                return takeNextDecision(vm);
+                return trackBackAndTakeNextDecision(vm);
             }
         }
 

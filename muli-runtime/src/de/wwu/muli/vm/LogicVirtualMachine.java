@@ -41,7 +41,6 @@ import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.ST;
-import org.apache.log4j.Level;
 
 import java.util.*;
 
@@ -208,11 +207,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			this.application.executionHasFinished();
 
 			// Logging.
-			if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.INFO))
-				Globals.getInst().symbolicExecLogger
-						.info("The virtual machine was halted with an InterruptionException. "
-								+ e);
-
+            Globals.getInst().symbolicExecLogger.info("The virtual machine was halted with an InterruptionException. " + e);
 
 			// Rethrow.
 			throw e;
@@ -655,9 +650,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			this.solverManager.finalize();
 		} catch (Throwable t) {
 			// Log it, but do nothing.
-			if (Globals.getInst().symbolicExecLogger.isEnabledFor(Level.WARN))
-				Globals.getInst().symbolicExecLogger
-						.warn("Shutting down the SolverManager failed.");
+            Globals.getInst().symbolicExecLogger.warn("Shutting down the SolverManager failed.");
 		} finally {
 			super.finalize();
 		}

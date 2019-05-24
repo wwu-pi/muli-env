@@ -362,8 +362,125 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIter
 
     @Override
     public boolean trackBackAndTakeNextDecision(LogicVirtualMachine vm) {
-        trackBackToRoot(vm);
-        return takeNextDecision(vm);
+        if (this.nextNodes.empty()) {
+            return false;
+        }
+
+        final STProxy node = this.nextNodes.pop();
+
+        if (node.isEvaluated()) {
+            throw new IllegalStateException("Node must correspond to an unevaluated subtree.");
+        }
+
+        Choice correspondingChoice = node.getParent();
+
+        // Backtracking of the active trail. TODO refactor
+        // {{
+        StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+        StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
+
+        // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+        operandStack.setRestoringMode(true);
+        vmStack.setRestoringMode(true);
+
+
+        // Empty the trail.
+        Stack<TrailElement> trail = vm.extractCurrentTrail();
+        while (!trail.empty()) {
+            final TrailElement trailElement = trail.pop();
+            applyTrailElement(trailElement, vm, operandStack, vmStack, null);
+        }
+
+        // Set the correct Frame to be the current Frame.
+        vm.setCurrentFrame(this.currentNode.getFrame());
+
+        // If the frame was set to have finished the execution normally, reset that.
+        ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+        // Set the pc!
+        vm.getCurrentFrame().setPc(this.currentNode.getPc());
+        vm.setPC(this.currentNode.getPc());
+
+        // Disable the restoring mode.
+        operandStack.setRestoringMode(false);
+        vmStack.setRestoringMode(false);
+
+        // }}
+
+        Choice nextChoice = this.currentNode.getParent();
+        while (nextChoice != correspondingChoice) { // TODO refactor: basically identical to global backtracking
+            // Remove the this choice's constraint from the system.
+            vm.getSolverManager().removeConstraint();
+
+            // Get the current stacks.
+            operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+            vmStack = (StackToTrailWithInverse) vm.getStack();
+
+            // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+            operandStack.setRestoringMode(true);
+            vmStack.setRestoringMode(true);
+
+            // Empty the trail.
+            trail = nextChoice.getTrail();
+            //Stack<TrailElement> inverseTrail = nextChoice.getInverseTrail();
+            while (!trail.empty()) {
+                final TrailElement trailElement = trail.pop();
+                applyTrailElement(trailElement, vm, operandStack, vmStack, null);
+            }
+
+            // Set the correct Frame to be the current Frame.
+            vm.setCurrentFrame(nextChoice.getSubstitutedSTProxy().getFrame());
+
+            // If the frame was set to have finished the execution normally, reset that.
+            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+            // Set the pc!
+            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedSTProxy().getPc());
+            vm.setPC(nextChoice.getSubstitutedSTProxy().getPc());
+
+
+            // Disable the restoring mode.
+            operandStack.setRestoringMode(false);
+            vmStack.setRestoringMode(false);
+
+            nextChoice = nextChoice.getParent();
+        }
+
+        // Remove the this choice's constraint from the system.
+        vm.getSolverManager().removeConstraint();
+
+        // TODO refactor: identical to takeNextDecision
+        // Take next decision.
+        this.currentNode = node;
+
+        // Add constraint.
+        if (node.getConstraintExpression() != null) {
+            vm.getSolverManager().addConstraint(node.getConstraintExpression());
+
+            // Check if the new branch can be visited at all, or if it causes an equation violation.
+            try {
+                if (!vm.getSolverManager().hasSolution()) {
+                    // Constraint system of this subtree is not satisfiable, try next.
+                    node.setEvaluationResult(new Fail());
+                    return trackBackAndTakeNextDecision(vm);
+                }
+            } catch (TimeoutException | SolverUnableToDecideException e) {
+                // Potentially inconsistent, try next.
+                node.setEvaluationResult(new Fail());
+                return trackBackAndTakeNextDecision(vm);
+            }
+        }
+
+        // Everything is fine and we need to continue in this subtree.
+        // Set the current frame to the subtree's frame.
+        vm.setCurrentFrame(node.getFrame());
+
+        // Set the current pc to the subtree's pc!
+        vm.getCurrentFrame().setPc(node.getPc());
+        vm.setPC(node.getPc());
+
+        // Evaluate.
+        return true;
     }
 
     @Override

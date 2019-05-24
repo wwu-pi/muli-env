@@ -366,7 +366,8 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
 
     @Override
     public boolean trackBackAndTakeNextDecision(LogicVirtualMachine vm) {
-        return false;
+        trackBackToRoot(vm);
+        return takeNextDecision(vm);
     }
 
     @Override

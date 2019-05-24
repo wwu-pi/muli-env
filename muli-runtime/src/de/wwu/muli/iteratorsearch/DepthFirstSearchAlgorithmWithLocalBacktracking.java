@@ -77,7 +77,7 @@ import java.util.Stack;
  *
  * @author Jan C. Dageförde, based on work of Tim Majchrzak
  */
-public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
+public class DepthFirstSearchAlgorithmWithLocalBacktracking implements LogicIteratorSearchAlgorithm {
 	// Fields
 	/**
 	 * The total number of branches visited so far.
@@ -119,7 +119,7 @@ public class DepthFirstSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     /**
 	 * Instantiate the depth first search algorithm.
      */
-	public DepthFirstSearchAlgorithm() {
+	public DepthFirstSearchAlgorithmWithLocalBacktracking() {
 		this.numberOfVisitedBranches = 0;
 		this.measureExecutionTime = Options.getInst().measureSymbolicExecutionTime;
 	}

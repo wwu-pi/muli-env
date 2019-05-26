@@ -248,6 +248,36 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
         }
     }
 
+    protected void trackBackTheActiveTrail(LogicVirtualMachine vm) {
+        StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+        StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
+
+        // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+        operandStack.setRestoringMode(true);
+        vmStack.setRestoringMode(true);
+
+        // Empty the trail.
+        Stack<TrailElement> trail = vm.extractCurrentTrail();
+        while (!trail.empty()) {
+            final TrailElement trailElement = trail.pop();
+            applyTrailElement(trailElement, vm, operandStack, vmStack, null);
+        }
+
+        // Set the VM's current frame to the one specified in this node.
+        vm.setCurrentFrame(this.currentNode.getFrame());
+
+        // If the frame was set to have finished the execution normally, reset that.
+        ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+        // Set the pc!
+        vm.getCurrentFrame().setPc(this.currentNode.getPc());
+        vm.setPC(this.currentNode.getPc());
+
+        // Disable the restoring mode.
+        operandStack.setRestoringMode(false);
+        vmStack.setRestoringMode(false);
+    }
+
     /**
 	 * Generate a new GeneratorChoicePoint or ArrayInitializationChoicePoint for a local variable.
 	 * Set it as the current choice point.

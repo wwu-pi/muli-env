@@ -101,54 +101,25 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
 
         Choice correspondingChoice = node.getParent();
 
-        // Backtracking of the active trail. TODO refactor
-        // {{
-        StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
-        StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
+        // Perform local backtracking to revert all effects since the last choice.
+        trackBackTheActiveTrail(vm);
 
-        // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
-        operandStack.setRestoringMode(true);
-        vmStack.setRestoringMode(true);
-
-
-        // Empty the trail.
-        Stack<TrailElement> trail = vm.extractCurrentTrail();
-        while (!trail.empty()) {
-            final TrailElement trailElement = trail.pop();
-            applyTrailElement(trailElement, vm, operandStack, vmStack, null);
-        }
-
-        // Set the correct Frame to be the current Frame.
-        vm.setCurrentFrame(this.currentNode.getFrame());
-
-        // If the frame was set to have finished the execution normally, reset that.
-        ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
-
-        // Set the pc!
-        vm.getCurrentFrame().setPc(this.currentNode.getPc());
-        vm.setPC(this.currentNode.getPc());
-
-        // Disable the restoring mode.
-        operandStack.setRestoringMode(false);
-        vmStack.setRestoringMode(false);
-
-        // }}
-
+        // Now track back until the root using individual trails from the choices along the path.
         Choice nextChoice = this.currentNode.getParent();
         while (nextChoice != correspondingChoice) { // TODO refactor: basically identical to global backtracking
             // Remove the this choice's constraint from the system.
             vm.getSolverManager().removeConstraint();
 
             // Get the current stacks.
-            operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
-            vmStack = (StackToTrailWithInverse) vm.getStack();
+            StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+            StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
 
             // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
             operandStack.setRestoringMode(true);
             vmStack.setRestoringMode(true);
 
             // Empty the trail.
-            trail = nextChoice.getTrail();
+            Stack<TrailElement> trail = nextChoice.getTrail();
             //Stack<TrailElement> inverseTrail = nextChoice.getInverseTrail();
             while (!trail.empty()) {
                 final TrailElement trailElement = trail.pop();
@@ -210,7 +181,7 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
         return true;
     }
 
-	/**
+    /**
 	 * Return a String representation of this search algorithms name.
 	 * @return A String representation of this search algorithms name.
 	 */

@@ -44,13 +44,14 @@ import java.util.Stack;
  *
  * TODO rephrase description to account for new mechanism of iterator-based search and ST structure.
  *
- * @author Jan C. Dageförde, based on work of Tim Majchrzak
+ * @author Jan C. Dageförde and Finn Teegen
+ *
  */
 public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSearchAlgorithm {
     /**
      * Stack that represents the nodes that DFS will check subsequently.
      */
-    private Stack<UnevaluatedST> nextNodes;
+    protected Stack<UnevaluatedST> nextNodes;
 
     /**
 	 * Instantiate the depth first search algorithm.

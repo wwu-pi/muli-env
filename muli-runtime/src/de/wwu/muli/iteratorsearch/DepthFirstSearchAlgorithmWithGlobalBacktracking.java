@@ -60,6 +60,12 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
         super();
     }
 
+    /**
+     * Take the next possible decision and put the VM into a state in which it can follow the decision's path.
+     *
+     * @param vm VM
+     * @return true if there is another path that can be evaluated (and VM state is set accordingly); false if there is no path.
+     */
     public boolean takeNextDecision(LogicVirtualMachine vm) {
         // Evaluate next subtree.
         if (this.searchTree == null) {
@@ -135,33 +141,52 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
             }
         }
 
-        this.currentNode = node;
+        // Now activate the next subtree by imposing its constraint and setting current frame / pc accordingly.
+        // If the resulting constraint system is infeasible, switch to the next possible decision immediately.
+        // Otherwise, return false.
+        return implementNextDecisionAndDescendIntoSubtree(node, vm);
+    }
+
+    /**
+     * Activates the selected subtree by imposing its constraint and setting current frame / pc accordingly.
+     * If the resulting constraint system is infeasible, switch to the next possible decision immediately.
+     * Otherwise, return false.
+     *
+     * Precondition: The state of the VM is already consistent with the one at which this subtree's parent
+     * choice originated.
+     *
+     * @param subtree Selected subtree
+     * @param vm VM
+     * @return true if there is another path that can be evaluated (and VM state is set accordingly); false if there is no path.
+     */
+    protected boolean implementNextDecisionAndDescendIntoSubtree(UnevaluatedST subtree, LogicVirtualMachine vm) {
+        this.currentNode = subtree;
 
         // Add constraint.
-        if (node.getConstraintExpression() != null) {
-            vm.getSolverManager().addConstraint(node.getConstraintExpression());
+        if (subtree.getConstraintExpression() != null) {
+            vm.getSolverManager().addConstraint(subtree.getConstraintExpression());
 
             // Check if the new branch can be visited at all, or if it causes an equation violation.
             try {
                 if (!vm.getSolverManager().hasSolution()) {
                     // Constraint system of this subtree is not satisfiable, try next.
-                    node.setEvaluationResult(new Fail());
+                    subtree.setEvaluationResult(new Fail());
                     return trackBackAndTakeNextDecision(vm);
                 }
             } catch (TimeoutException | SolverUnableToDecideException e) {
                 // Potentially inconsistent, try next.
-                node.setEvaluationResult(new Fail());
+                subtree.setEvaluationResult(new Fail());
                 return trackBackAndTakeNextDecision(vm);
             }
         }
 
         // Everything is fine and we need to continue in this subtree.
         // Set the current frame to the subtree's frame.
-        vm.setCurrentFrame(node.getFrame());
+        vm.setCurrentFrame(subtree.getFrame());
 
         // Set the current pc to the subtree's pc!
-        vm.getCurrentFrame().setPc(node.getPc());
-        vm.setPC(node.getPc());
+        vm.getCurrentFrame().setPc(subtree.getPc());
+        vm.setPC(subtree.getPc());
 
         // Evaluate.
         return true;

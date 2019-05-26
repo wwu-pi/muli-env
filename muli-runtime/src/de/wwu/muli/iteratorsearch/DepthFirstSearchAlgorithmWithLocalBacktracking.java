@@ -104,44 +104,16 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
         // Perform local backtracking to revert all effects since the last choice.
         trackBackTheActiveTrail(vm);
 
-        // Now track back until the next interesting node using individual trails from the choices along the path.
+        // Now track back until the selected choice using individual trails from the choices along the path.
         trackBackUntil(correspondingChoice, false, vm);
 
         // Remove this choice's previous constraint from the system.
         vm.getSolverManager().removeConstraint();
 
-        // TODO refactor: identical to takeNextDecision
-        // Take next decision.
-        this.currentNode = node;
-
-        // Add constraint.
-        if (node.getConstraintExpression() != null) {
-            vm.getSolverManager().addConstraint(node.getConstraintExpression());
-
-            // Check if the new branch can be visited at all, or if it causes an equation violation.
-            try {
-                if (!vm.getSolverManager().hasSolution()) {
-                    // Constraint system of this subtree is not satisfiable, try next.
-                    node.setEvaluationResult(new Fail());
-                    return trackBackAndTakeNextDecision(vm);
-                }
-            } catch (TimeoutException | SolverUnableToDecideException e) {
-                // Potentially inconsistent, try next.
-                node.setEvaluationResult(new Fail());
-                return trackBackAndTakeNextDecision(vm);
-            }
-        }
-
-        // Everything is fine and we need to continue in this subtree.
-        // Set the current frame to the subtree's frame.
-        vm.setCurrentFrame(node.getFrame());
-
-        // Set the current pc to the subtree's pc!
-        vm.getCurrentFrame().setPc(node.getPc());
-        vm.setPC(node.getPc());
-
-        // Evaluate.
-        return true;
+        // Now activate the next subtree by imposing its constraint and setting current frame / pc accordingly.
+        // If the resulting constraint system is infeasible, switch to the next possible decision immediately.
+        // Otherwise, return false.
+        return implementNextDecisionAndDescendIntoSubtree(node, vm);
     }
 
     /**

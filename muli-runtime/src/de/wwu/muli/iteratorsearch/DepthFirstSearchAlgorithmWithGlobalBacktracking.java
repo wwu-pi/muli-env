@@ -173,44 +173,7 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
         trackBackTheActiveTrail(vm);
 
         // Now track back until the root using individual trails from the choices along the path.
-        Choice nextChoice = this.currentNode.getParent();
-        while (nextChoice != null) {
-            // Remove the this choice's constraint from the system.
-            vm.getSolverManager().removeConstraint();
-
-            // Get the current stacks.
-            StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
-            StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
-
-            // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
-            operandStack.setRestoringMode(true);
-            vmStack.setRestoringMode(true);
-
-            // Empty the trail.
-            Stack<TrailElement> trail = nextChoice.getTrail();
-            Stack<TrailElement> inverseTrail = nextChoice.getInverseTrail();
-            while (!trail.empty()) {
-                final TrailElement trailElement = trail.pop();
-                applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
-            }
-
-            // Set the correct Frame to be the current Frame.
-            vm.setCurrentFrame(nextChoice.getSubstitutedUnevaluatedST().getFrame());
-
-            // If the frame was set to have finished the execution normally, reset that.
-            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
-
-            // Set the pc!
-            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedUnevaluatedST().getPc());
-            vm.setPC(nextChoice.getSubstitutedUnevaluatedST().getPc());
-
-
-            // Disable the restoring mode.
-            operandStack.setRestoringMode(false);
-            vmStack.setRestoringMode(false);
-
-            nextChoice = nextChoice.getParent();
-        }
+        trackBackUntil(null, true, vm);
 
         // We are at the root.
         this.currentNode = null;
@@ -237,6 +200,49 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
 
         while (stIt.hasPrevious()) {
             this.nextNodes.push(stIt.previous());
+        }
+    }
+
+    protected void trackBackUntil(Choice until, boolean constructForwardTrail, LogicVirtualMachine vm) {
+        Choice nextChoice = this.currentNode.getParent();
+        while (nextChoice != until) {
+            // Remove the this choice's constraint from the system.
+            vm.getSolverManager().removeConstraint();
+
+            // Get the current stacks.
+            StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+            StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
+
+            // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+            operandStack.setRestoringMode(true);
+            vmStack.setRestoringMode(true);
+
+            // Empty the trail.
+            Stack<TrailElement> trail = nextChoice.getTrail();
+            // Optionally, create a forward trail using inverses of the previous trail.
+            // The forward trail is only needed if there ever is a chance that we will go down this path later.
+            Stack<TrailElement> inverseTrail = constructForwardTrail ? nextChoice.getInverseTrail() : null;
+            while (!trail.empty()) {
+                final TrailElement trailElement = trail.pop();
+                applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
+            }
+
+            // Set the correct Frame to be the current Frame.
+            vm.setCurrentFrame(nextChoice.getSubstitutedUnevaluatedST().getFrame());
+
+            // If the frame was set to have finished the execution normally, reset that.
+            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+
+            // Set the pc!
+            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedUnevaluatedST().getPc());
+            vm.setPC(nextChoice.getSubstitutedUnevaluatedST().getPc());
+
+
+            // Disable the restoring mode.
+            operandStack.setRestoringMode(false);
+            vmStack.setRestoringMode(false);
+
+            nextChoice = nextChoice.getParent();
         }
     }
 

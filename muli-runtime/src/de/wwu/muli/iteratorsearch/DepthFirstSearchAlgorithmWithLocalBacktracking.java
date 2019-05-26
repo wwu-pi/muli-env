@@ -104,47 +104,10 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
         // Perform local backtracking to revert all effects since the last choice.
         trackBackTheActiveTrail(vm);
 
-        // Now track back until the root using individual trails from the choices along the path.
-        Choice nextChoice = this.currentNode.getParent();
-        while (nextChoice != correspondingChoice) { // TODO refactor: basically identical to global backtracking
-            // Remove the this choice's constraint from the system.
-            vm.getSolverManager().removeConstraint();
+        // Now track back until the next interesting node using individual trails from the choices along the path.
+        trackBackUntil(correspondingChoice, false, vm);
 
-            // Get the current stacks.
-            StackToTrailWithInverse operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
-            StackToTrailWithInverse vmStack = (StackToTrailWithInverse) vm.getStack();
-
-            // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
-            operandStack.setRestoringMode(true);
-            vmStack.setRestoringMode(true);
-
-            // Empty the trail.
-            Stack<TrailElement> trail = nextChoice.getTrail();
-            //Stack<TrailElement> inverseTrail = nextChoice.getInverseTrail();
-            while (!trail.empty()) {
-                final TrailElement trailElement = trail.pop();
-                applyTrailElement(trailElement, vm, operandStack, vmStack, null);
-            }
-
-            // Set the correct Frame to be the current Frame.
-            vm.setCurrentFrame(nextChoice.getSubstitutedUnevaluatedST().getFrame());
-
-            // If the frame was set to have finished the execution normally, reset that.
-            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
-
-            // Set the pc!
-            vm.getCurrentFrame().setPc(nextChoice.getSubstitutedUnevaluatedST().getPc());
-            vm.setPC(nextChoice.getSubstitutedUnevaluatedST().getPc());
-
-
-            // Disable the restoring mode.
-            operandStack.setRestoringMode(false);
-            vmStack.setRestoringMode(false);
-
-            nextChoice = nextChoice.getParent();
-        }
-
-        // Remove the this choice's constraint from the system.
+        // Remove this choice's previous constraint from the system.
         vm.getSolverManager().removeConstraint();
 
         // TODO refactor: identical to takeNextDecision

@@ -187,9 +187,6 @@ public class BreadthFirstSearch extends AbstractSearchAlgorithm {
             operandStack.setRestoringMode(true);
             vmStack.setRestoringMode(true);
 
-            // Record pc prior to backtracking, which is used later when applying the forward trail.
-            nextChoice.setPcBeforeBacktracking(vm.getPc());
-
             // Empty the trail.
             Stack<TrailElement> trail = nextChoice.getTrail();
             // Optionally, create a forward trail using inverses of the previous trail.

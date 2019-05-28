@@ -124,7 +124,20 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
         this.currentNode.setEvaluationResult(result);
     }
 
-    protected void applyTrailElement(TrailElement trailElement, LogicVirtualMachine vm, StackToTrailWithInverse operandStack, StackToTrailWithInverse vmStack, Stack<TrailElement> respectiveInverseStack) {
+    /**
+     *
+     * @param trailElement
+     * @param vm
+     * @param operandStack
+     * @param vmStack
+     * @param respectiveInverseStack
+     * @return operand stack -- this is only different from the {@param operandStack} if the frame has changed because of the application of this trail element.
+     */
+    protected StackToTrailWithInverse applyTrailElement(final TrailElement trailElement,
+                                                        final LogicVirtualMachine vm,
+                                                        StackToTrailWithInverse operandStack,
+                                                        final StackToTrailWithInverse vmStack,
+                                                        final Stack<TrailElement> respectiveInverseStack) {
         // Decide about the action by checking the trail element's type.
         if (trailElement instanceof VmPush) {
             VmPush vmPush = (VmPush) trailElement;
@@ -246,6 +259,8 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
                         "Found an unrecognized object on the trail when trying to restore"
                                 + "an old state. It will be ignored and skipped.");
         }
+
+        return operandStack;
     }
 
     protected void trackBackTheActiveTrail(LogicVirtualMachine vm) {
@@ -256,11 +271,11 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
         operandStack.setRestoringMode(true);
         vmStack.setRestoringMode(true);
 
-        // Empty the trail.
+        // Empty the active trail.
         Stack<TrailElement> trail = vm.extractCurrentTrail();
         while (!trail.empty()) {
             final TrailElement trailElement = trail.pop();
-            applyTrailElement(trailElement, vm, operandStack, vmStack, null);
+            operandStack = applyTrailElement(trailElement, vm, operandStack, vmStack, null);
         }
 
         // Set the VM's current frame to the one specified in this node.

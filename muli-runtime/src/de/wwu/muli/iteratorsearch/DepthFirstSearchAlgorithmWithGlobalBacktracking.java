@@ -127,7 +127,7 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
                 Stack<TrailElement> inverseTrail = choice.getTrail();
                 while (!trail.empty()) {
                     final TrailElement trailElement = trail.pop();
-                    applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
+                    operandStack = applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
                 }
 
                 // Disable the restoring mode.
@@ -249,7 +249,7 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
             Stack<TrailElement> inverseTrail = constructForwardTrail ? nextChoice.getInverseTrail() : null;
             while (!trail.empty()) {
                 final TrailElement trailElement = trail.pop();
-                applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
+                operandStack = applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
             }
 
             // Set the correct Frame to be the current Frame.

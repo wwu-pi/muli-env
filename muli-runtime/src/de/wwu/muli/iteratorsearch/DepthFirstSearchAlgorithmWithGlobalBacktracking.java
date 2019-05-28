@@ -147,51 +147,6 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
         return implementNextDecisionAndDescendIntoSubtree(node, vm);
     }
 
-    /**
-     * Activates the selected subtree by imposing its constraint and setting current frame / pc accordingly.
-     * If the resulting constraint system is infeasible, switch to the next possible decision immediately.
-     * Otherwise, return false.
-     *
-     * Precondition: The state of the VM is already consistent with the one at which this subtree's parent
-     * choice originated.
-     *
-     * @param subtree Selected subtree
-     * @param vm VM
-     * @return true if there is another path that can be evaluated (and VM state is set accordingly); false if there is no path.
-     */
-    protected boolean implementNextDecisionAndDescendIntoSubtree(UnevaluatedST subtree, LogicVirtualMachine vm) {
-        this.currentNode = subtree;
-
-        // Add constraint.
-        if (subtree.getConstraintExpression() != null) {
-            vm.getSolverManager().addConstraint(subtree.getConstraintExpression());
-
-            // Check if the new branch can be visited at all, or if it causes an equation violation.
-            try {
-                if (!vm.getSolverManager().hasSolution()) {
-                    // Constraint system of this subtree is not satisfiable, try next.
-                    subtree.setEvaluationResult(new Fail());
-                    return trackBackAndTakeNextDecision(vm);
-                }
-            } catch (TimeoutException | SolverUnableToDecideException e) {
-                // Potentially inconsistent, try next.
-                subtree.setEvaluationResult(new Fail());
-                return trackBackAndTakeNextDecision(vm);
-            }
-        }
-
-        // Everything is fine and we need to continue in this subtree.
-        // Set the current frame to the subtree's frame.
-        vm.setCurrentFrame(subtree.getFrame());
-
-        // Set the current pc to the subtree's pc!
-        vm.getCurrentFrame().setPc(subtree.getPc());
-        vm.setPC(subtree.getPc());
-
-        // Evaluate.
-        return true;
-    }
-
     @Override
     public void trackBackToRoot(LogicVirtualMachine vm) {
         // Perform local backtracking to revert all effects since the last choice.
@@ -207,12 +162,6 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
         vm.setNextFrameIsAlreadyLoaded(true);
         // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
 		vm.setReturnFromCurrentExecution(true);
-    }
-
-    @Override
-    public boolean trackBackAndTakeNextDecision(LogicVirtualMachine vm) {
-        trackBackToRoot(vm);
-        return takeNextDecision(vm);
     }
 
     @Override
@@ -276,7 +225,7 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
      * @return A String representation of this search algorithms name.
      */
     public String getName() {
-        return "depth first (global backtracking)";
+        return "depth-first (global backtracking)";
     }
 
 }

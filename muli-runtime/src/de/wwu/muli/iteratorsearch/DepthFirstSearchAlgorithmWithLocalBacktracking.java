@@ -122,7 +122,7 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
 	 */
 	@Override
 	public String getName() {
-		return "depth first (local backtracking)";
+		return "depth-first (local backtracking)";
 	}
 
 }

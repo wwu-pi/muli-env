@@ -15,6 +15,7 @@ import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
 import de.wwu.muli.SearchStrategy;
 import de.wwu.muli.iteratorsearch.BreadthFirstSearch;
+import de.wwu.muli.iteratorsearch.BreadthFirstSearchWithLocalBacktracking;
 import de.wwu.muli.iteratorsearch.DepthFirstSearchAlgorithmWithGlobalBacktracking;
 import de.wwu.muli.iteratorsearch.DepthFirstSearchAlgorithmWithLocalBacktracking;
 import de.wwu.muli.search.NoFurtherSolutionsIndicator;
@@ -107,6 +108,8 @@ public class MuliVMControl extends NativeMethodProvider {
         } else if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.DepthFirstSearchNaive.toString()))) {
             vm.setSearchStrategy((Objectref)iterator, new DepthFirstSearchAlgorithmWithGlobalBacktracking());
         } else if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.BreadthFirstSearch.toString()))) {
+            vm.setSearchStrategy((Objectref)iterator, new BreadthFirstSearchWithLocalBacktracking());
+        } else if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.BreadthFirstSearchNaive.toString()))) {
             vm.setSearchStrategy((Objectref)iterator, new BreadthFirstSearch());
         }
         // TODO handle further strategies (== search algorithms)

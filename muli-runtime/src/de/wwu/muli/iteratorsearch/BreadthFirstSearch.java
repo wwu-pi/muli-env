@@ -27,7 +27,7 @@ public class BreadthFirstSearch extends AbstractSearchAlgorithm {
      * Queue that represents the nodes that BFS will check.
      */
     protected ArrayDeque<UnevaluatedST> nextNodes;
-    private Choice freshChoiceRecorded = null;
+    protected Choice freshChoiceRecorded = null;
 
     /**
 	 * Instantiate the depth first search algorithm.
@@ -55,10 +55,6 @@ public class BreadthFirstSearch extends AbstractSearchAlgorithm {
             return false;
         }
 
-        if (this.currentNode != null) {
-            trackBackToRoot(vm);
-        }
-
         // Get next node from the beginning of the queue.
         final UnevaluatedST node = this.nextNodes.remove();
 
@@ -66,66 +62,67 @@ public class BreadthFirstSearch extends AbstractSearchAlgorithm {
             throw new IllegalStateException("Node must correspond to an unevaluated subtree.");
         }
 
-        return navigateTo(node, vm);
+        if (this.currentNode != null) {
+            trackBackToRoot(vm);
+        }
+
+        return navigateTo(null, node, vm);
     }
 
-    private boolean navigateTo(UnevaluatedST node, LogicVirtualMachine vm) {
+    protected boolean navigateTo(Choice from, UnevaluatedST node, LogicVirtualMachine vm) {
+        // We need to use the inverse trail to get from the current node (from) until the next node.
+        final Stack<Choice> choices = new Stack<>();
+        Choice visit = node.getParent();
+        // Only visit nodes upwards until the `from' node (where null is the root).
+        while (visit != from) {
+            choices.push(visit);
+            visit = visit.getParent();
+        }
 
-        if (this.currentNode == null) { // TODO in BFS, this is always true.
-            // We are descending from the root (instead of doing a local descent from an existing choice).
-            // This implies that we need to use the inverse trail.
-            final Stack<Choice> choices = new Stack<>();
-            Choice visit = node.getParent();
-            while (visit != null) {
-                choices.push(visit);
-                visit = visit.getParent();
+        StackToTrailWithInverse operandStack;
+        StackToTrailWithInverse vmStack;
+        while (!choices.empty()) {
+            Choice choice = choices.pop();
+
+            // Add constraint.
+            if (choice.getSubstitutedUnevaluatedST().getConstraintExpression() != null) {
+                vm.getSolverManager().addConstraint(choice.getSubstitutedUnevaluatedST().getConstraintExpression());
             }
 
-            StackToTrailWithInverse operandStack;
-            StackToTrailWithInverse vmStack;
-            while (!choices.empty()) {
-                Choice choice = choices.pop();
+            // Set the correct Frame to be the current Frame.
+            vm.setCurrentFrame(choice.getSubstitutedUnevaluatedST().getFrame());
 
-                // Add constraint.
-                if (choice.getSubstitutedUnevaluatedST().getConstraintExpression() != null) {
-                    vm.getSolverManager().addConstraint(choice.getSubstitutedUnevaluatedST().getConstraintExpression());
-                }
+            // If the frame was set to have finished the execution normally, reset that.
+            ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
 
-                // Set the correct Frame to be the current Frame.
-                vm.setCurrentFrame(choice.getSubstitutedUnevaluatedST().getFrame());
+            // Set the pc!
+            vm.getCurrentFrame().setPc(choice.getSubstitutedUnevaluatedST().getPc());
+            vm.setPC(choice.getSubstitutedUnevaluatedST().getPc());
 
-                // If the frame was set to have finished the execution normally, reset that.
-                ((LogicFrame) vm.getCurrentFrame()).resetExecutionFinishedNormally();
+            // Get the current stacks.
+            operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
+            vmStack = (StackToTrailWithInverse) vm.getStack();
 
-                // Set the pc (*before* trail)!
-                vm.getCurrentFrame().setPc(choice.getSubstitutedUnevaluatedST().getPc());
-                vm.setPC(choice.getSubstitutedUnevaluatedST().getPc());
+            // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
+            operandStack.setRestoringMode(true);
+            vmStack.setRestoringMode(true);
 
-                // Get the current stacks.
-                operandStack = (StackToTrailWithInverse) vm.getCurrentFrame().getOperandStack();
-                vmStack = (StackToTrailWithInverse) vm.getStack();
-
-                // Set the StackToTrailWithInverse instances to restoring mode. Otherwise the recovery will be added to the trail, which will lead to weird behavior.
-                operandStack.setRestoringMode(true);
-                vmStack.setRestoringMode(true);
-
-                // Empty the inverse trail. (Note that the use of Inverse Trail and Trail is the exact opposite of what happens during backtracking.)
-                Stack<TrailElement> trail = choice.getInverseTrail();
-                Stack<TrailElement> inverseTrail = choice.getTrail();
-                while (!trail.empty()) {
-                    final TrailElement trailElement = trail.pop();
-                    operandStack = applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
-                }
-
-                // Disable the restoring mode.
-                operandStack.setRestoringMode(false);
-                vmStack.setRestoringMode(false);
-
-                // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
-                vm.setNextFrameIsAlreadyLoaded(true);
-                // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
-                vm.setReturnFromCurrentExecution(true);
+            // Empty the inverse trail. (Note that the use of Inverse Trail and Trail is the exact opposite of what happens during backtracking.)
+            Stack<TrailElement> trail = choice.getInverseTrail();
+            Stack<TrailElement> inverseTrail = choice.getTrail();
+            while (!trail.empty()) {
+                final TrailElement trailElement = trail.pop();
+                operandStack = applyTrailElement(trailElement, vm, operandStack, vmStack, inverseTrail);
             }
+
+            // Disable the restoring mode.
+            operandStack.setRestoringMode(false);
+            vmStack.setRestoringMode(false);
+
+            // Signalize to the virtual machine that no Frame has to be popped but execution can be resumed with the current Frame.
+            vm.setNextFrameIsAlreadyLoaded(true);
+            // If this tracking back is done while executing a Frame, also signalize to the vm to not continue executing it.
+            vm.setReturnFromCurrentExecution(true);
         }
 
         // Now activate the next subtree by imposing its constraint and setting current frame / pc accordingly.

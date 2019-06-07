@@ -90,6 +90,8 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
     @Override
     public boolean trackBackAndTakeNextDecision(LogicVirtualMachine vm) {
         if (this.nextNodes.empty()) {
+            trackBackTheActiveTrail(vm);
+            trackBackToRoot(vm);
             return false;
         }
 

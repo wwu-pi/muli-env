@@ -114,6 +114,11 @@ public class BreadthFirstSearchWithLocalBacktracking extends BreadthFirstSearch 
     }
     @Override
     public boolean trackBackAndTakeNextDecision(LogicVirtualMachine vm) {
+        if (this.nextNodes.isEmpty()) {
+            trackBackTheActiveTrail(vm);
+            trackBackToRoot(vm);
+            return false;
+        }
         return takeNextDecision(vm);
     }
 

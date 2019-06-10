@@ -169,11 +169,11 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
         // "Replace" the originating UnevaluatedST with its result.
         super.recordChoice(result);
 
-        // Push search trees in reverse order so they will be popped from left-to-right.
-        ListIterator<UnevaluatedST> stIt = result.getSts().listIterator(result.getSts().size());
-
-        while (stIt.hasPrevious()) {
-            this.nextNodes.push(stIt.previous());
+        // Push search trees.
+        ListIterator<UnevaluatedST> stIt = result.getSts().listIterator();
+		
+        while (stIt.hasNext()) {
+            this.nextNodes.push(stIt.next());
         }
     }
 

@@ -112,7 +112,6 @@ public class MuliVMControl extends NativeMethodProvider {
         } else if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.BreadthFirstSearchNaive.toString()))) {
             vm.setSearchStrategy((Objectref)iterator, new BreadthFirstSearch());
         }
-        // TODO handle further strategies (== search algorithms)
 
         Globals.getInst().symbolicExecLogger.debug("Registered search strategy successfully.");
 

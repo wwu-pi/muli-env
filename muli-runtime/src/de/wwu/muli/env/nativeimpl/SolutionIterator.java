@@ -39,6 +39,9 @@ public class SolutionIterator extends NativeMethodProvider {
     private static boolean classSolutionIsInitialised = false;
     private static boolean labelSolutions = true;
     private static int solutionCounter = 0;
+    private static long totalSearchTime = 0L;
+    private static long totalSolutionCount = 0L;
+    private static boolean abortAfter1Second = false;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
@@ -84,7 +87,8 @@ public class SolutionIterator extends NativeMethodProvider {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
         vm.resetInstructionsExecutedSinceLastSolution();
-        vm.recordSearchEnded();
+        SolutionIterator.totalSearchTime += vm.recordSearchEnded();
+        SolutionIterator.totalSolutionCount++;
 
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
@@ -92,6 +96,12 @@ public class SolutionIterator extends NativeMethodProvider {
         // Store Value node in ST.
         Value val = new Value(solutionObject);
         vm.getSearchAlgorithm().recordValue(val);
+
+        if (abortAfter1Second && totalSearchTime >= 1000000000L) {
+            // Only for evaluation purposes.
+            vm.getApplication().abortExecution();
+            throw new RuntimeException("Search ends after 1 second. Total no. of solutions found: " + totalSolutionCount);
+        }
 
         // Wrap and return.
         Objectref returnValue;
@@ -129,7 +139,8 @@ public class SolutionIterator extends NativeMethodProvider {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
         vm.resetInstructionsExecutedSinceLastSolution();
-        vm.recordSearchEnded();
+        SolutionIterator.totalSearchTime += vm.recordSearchEnded();
+        SolutionIterator.totalSolutionCount++;
 
         // Label solution if enabled.
         solutionException = maybeLabel(vm, solutionException);
@@ -137,6 +148,12 @@ public class SolutionIterator extends NativeMethodProvider {
         // Store Exception node in ST.
         de.wwu.muli.searchtree.Exception exception = new de.wwu.muli.searchtree.Exception(solutionException);
         vm.getSearchAlgorithm().recordException(exception);
+
+        if (abortAfter1Second && totalSearchTime >= 1000000000L) {
+            // Only for evaluation purposes.
+            vm.getApplication().abortExecution();
+            throw new RuntimeException("Search ends after 1 second. Total no. of solutions found: " + totalSolutionCount);
+        }
 
         Objectref returnValue;
         try {

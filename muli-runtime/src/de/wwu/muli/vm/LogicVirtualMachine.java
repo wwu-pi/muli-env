@@ -831,8 +831,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         this.searchStarted = System.nanoTime();
     }
 
-    public void recordSearchEnded() {
-        long searchTime =  System.nanoTime() - this.searchStarted;
+    public long recordSearchEnded() {
+        return System.nanoTime() - this.searchStarted;
         //System.out.println("Time spent searching: " + searchTime + " ns.");
     }
 }

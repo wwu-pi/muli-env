@@ -5,7 +5,6 @@ import de.wwu.muli.searchtree.UnevaluatedST;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.util.ArrayDeque;
-import java.util.HashSet;
 
 /**
  * This class implements the breadth first search algorithm along the ST
@@ -71,37 +70,7 @@ public class BreadthFirstSearchWithLocalBacktracking extends BreadthFirstSearch 
         return navigateTo(trackBackTo, node, vm);
     }
 
-    private Choice findCommonAncestor(UnevaluatedST currentNode, UnevaluatedST nextNode) {
-        if (nextNode == null || currentNode == null) {
-            throw new IllegalArgumentException();
-        }
-
-        // First, create a set of the parents of nextNode.
-        // In BFS, the path of nextNode can be assumed to be shorter or equal to that of the current node, so this likely results in the smaller set.
-        Choice nextNodesParent = nextNode.getParent();
-        HashSet<Choice> choicesUntilNextNode = new HashSet<>();
-        while (nextNodesParent != null) {
-            choicesUntilNextNode.add(nextNodesParent);
-            nextNodesParent = nextNodesParent.getParent();
-        }
-
-        // Traverse upwards starting from the current node and check against the set.
-        Choice currentNodesParent = currentNode.getParent();
-        while (currentNodesParent != null) {
-            // Is this the common ancestor?
-            if (choicesUntilNextNode.contains(currentNodesParent)) {
-                return currentNodesParent;
-            }
-
-            // Try upwards.
-            currentNodesParent = currentNodesParent.getParent();
-        }
-
-        // No choice is the common ancestor -> Track back to root and start from there.
-        // This only happens while we are initially evaluating the root node.
-        return null;
-    }
-
+    @Override
     protected void trackBackUntil(Choice until, Choice from, boolean firstChoicesDecisionWasApplied, boolean constructForwardTrail, LogicVirtualMachine vm) {
         // First perform backtracking as in naive BFS.
         super.trackBackUntil(until, from, firstChoicesDecisionWasApplied, constructForwardTrail, vm);
@@ -112,6 +81,7 @@ public class BreadthFirstSearchWithLocalBacktracking extends BreadthFirstSearch 
             vm.getSolverManager().removeConstraint();
         }
     }
+
     @Override
     public boolean trackBackAndTakeNextDecision(LogicVirtualMachine vm) {
         if (this.nextNodes.isEmpty()) {

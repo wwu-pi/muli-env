@@ -41,6 +41,7 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 import org.apache.log4j.Level;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.util.HashSet;
 import java.util.ListIterator;
 import java.util.Stack;
 
@@ -94,6 +95,37 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
 
     public boolean isActivelySearching() {
         return this.currentNode != null;
+    }
+
+    protected Choice findCommonAncestor(UnevaluatedST currentNode, UnevaluatedST nextNode) {
+        if (nextNode == null || currentNode == null) {
+            throw new IllegalArgumentException();
+        }
+
+        // First, create a set of the parents of nextNode.
+        // In BFS, the path of nextNode can be assumed to be shorter or equal to that of the current node, so this likely results in the smaller set.
+        Choice nextNodesParent = nextNode.getParent();
+        HashSet<Choice> choicesUntilNextNode = new HashSet<>();
+        while (nextNodesParent != null) {
+            choicesUntilNextNode.add(nextNodesParent);
+            nextNodesParent = nextNodesParent.getParent();
+        }
+
+        // Traverse upwards starting from the current node and check against the set.
+        Choice currentNodesParent = currentNode.getParent();
+        while (currentNodesParent != null) {
+            // Is this the common ancestor?
+            if (choicesUntilNextNode.contains(currentNodesParent)) {
+                return currentNodesParent;
+            }
+
+            // Try upwards.
+            currentNodesParent = currentNodesParent.getParent();
+        }
+
+        // No choice is the common ancestor -> Track back to root and start from there.
+        // This only happens while we are initially evaluating the root node.
+        return null;
     }
 
     @Override

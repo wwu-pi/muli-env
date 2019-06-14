@@ -41,7 +41,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
-    private static boolean abortAfter1Second = false;
+    private static boolean abortEarly = true;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
@@ -77,14 +77,14 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject) {
+        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
-            CLASS_SOLUTION.getTheInitializedClass(frame.getVm());
-            Objectref objectref = frame.getVm().getAnObjectref(CLASS_SOLUTION);
+            CLASS_SOLUTION.getTheInitializedClass(vm);
+            Objectref objectref = vm.getAnObjectref(CLASS_SOLUTION);
             classSolutionIsInitialised = true;
         }
 
-        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
         vm.resetInstructionsExecutedSinceLastSolution();
         SolutionIterator.totalSearchTime += vm.recordSearchEnded();
@@ -97,16 +97,13 @@ public class SolutionIterator extends NativeMethodProvider {
         Value val = new Value(solutionObject);
         vm.getSearchAlgorithm().recordValue(val);
 
-        if (abortAfter1Second && totalSearchTime >= 1000000000L) {
-            // Only for evaluation purposes.
-            vm.getApplication().abortExecution();
-            throw new RuntimeException("Search ends after 1 second. Total no. of solutions found: " + totalSolutionCount);
-        }
+        // Maybe abort after an amount of time has elapsed -- only for evaluation purposes.
+        maybeAbortEarly(vm);
 
         // Wrap and return.
         Objectref returnValue;
         try {
-            final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());
+            final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
@@ -128,15 +125,15 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException) {
+        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
-            CLASS_SOLUTION.getTheInitializedClass(frame.getVm());
-            Objectref objectref = frame.getVm().getAnObjectref(CLASS_SOLUTION);
+            CLASS_SOLUTION.getTheInitializedClass(vm);
+            Objectref objectref = vm.getAnObjectref(CLASS_SOLUTION);
             classSolutionIsInitialised = true;
         }
 
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
-        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
         vm.resetInstructionsExecutedSinceLastSolution();
         SolutionIterator.totalSearchTime += vm.recordSearchEnded();
@@ -149,15 +146,12 @@ public class SolutionIterator extends NativeMethodProvider {
         de.wwu.muli.searchtree.Exception exception = new de.wwu.muli.searchtree.Exception(solutionException);
         vm.getSearchAlgorithm().recordException(exception);
 
-        if (abortAfter1Second && totalSearchTime >= 1000000000L) {
-            // Only for evaluation purposes.
-            vm.getApplication().abortExecution();
-            throw new RuntimeException("Search ends after 1 second. Total no. of solutions found: " + totalSolutionCount);
-        }
+        // Maybe abort after an amount of time has elapsed -- only for evaluation purposes.
+        maybeAbortEarly(vm);
 
         Objectref returnValue;
         try {
-            final MugglToJavaConversion conversion = new MugglToJavaConversion(frame.getVm());
+            final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref)  conversion.toMuggl(new ExceptionSolution(solutionException), false);
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
@@ -252,5 +246,14 @@ public class SolutionIterator extends NativeMethodProvider {
         }
         // Might be false if search space was fully explored.
         return hasAnotherChoice;
+    }
+
+    private static void maybeAbortEarly(LogicVirtualMachine vm) {
+        // 5000000000L = 5 seconds.
+        if (abortEarly && totalSearchTime >= 5000000000L) {
+            // Only for evaluation purposes.
+            vm.getApplication().abortExecution();
+            throw new RuntimeException("Search ends after 5 seconds. Total no. of solutions found: " + totalSolutionCount);
+        }
     }
 }

@@ -99,7 +99,7 @@ public class MuliVMControl extends NativeMethodProvider {
 
         // parse param and set mode accordingly
         if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.IterativeDeepening.toString()))) {
-            // TODO implement this strategy
+            vm.setSearchStrategy((Objectref)iterator, new IterativeDeepeningDFSNaive());
         } else if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.DepthFirstSearch.toString()))) {
             vm.setSearchStrategy((Objectref)iterator, new DepthFirstSearchAlgorithmWithLocalBacktracking());
         } else if (searchStrategy == ic.getField(ENUM_SEARCH_STRATEGY.getFieldByName(SearchStrategy.DepthFirstSearchNaive.toString()))) {

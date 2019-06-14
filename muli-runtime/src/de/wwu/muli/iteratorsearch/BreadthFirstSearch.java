@@ -218,7 +218,7 @@ public class BreadthFirstSearch extends AbstractSearchAlgorithm {
      * @return A String representation of this search algorithms name.
      */
     public String getName() {
-        return "breadth-first search";
+        return "breadth-first search (naïve)";
     }
 
 }

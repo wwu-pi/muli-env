@@ -225,7 +225,7 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
      * @return A String representation of this search algorithms name.
      */
     public String getName() {
-        return "depth-first (global backtracking)";
+        return "depth-first (naïve)";
     }
 
 }

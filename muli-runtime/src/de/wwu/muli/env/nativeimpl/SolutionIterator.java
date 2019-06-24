@@ -37,7 +37,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.search.SolutionIterator.class.getCanonicalName();
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
-    private static boolean labelSolutions = true;
+    private static boolean labelSolutions = false;
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
@@ -250,10 +250,10 @@ public class SolutionIterator extends NativeMethodProvider {
 
     private static void maybeAbortEarly(LogicVirtualMachine vm) {
         // 5000000000L = 5 seconds.
-        if (abortEarly && totalSearchTime >= 5000000000L) {
+        if (abortEarly && totalSearchTime >= 10_000_000_000L) {
             // Only for evaluation purposes.
             vm.getApplication().abortExecution();
-            throw new RuntimeException("Search ends after 5 seconds. Total no. of solutions found: " + totalSolutionCount);
+            throw new RuntimeException("Search ended after 10 seconds. Total no. of solutions found: " + totalSolutionCount);
         }
     }
 }

@@ -37,7 +37,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.search.SolutionIterator.class.getCanonicalName();
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
-    private static boolean labelSolutions = false;
+    private static boolean labelSolutions = true;
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;

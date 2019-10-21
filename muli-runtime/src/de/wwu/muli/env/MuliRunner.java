@@ -112,7 +112,9 @@ public class MuliRunner {
 					throw new RuntimeException((Throwable)exception);
 				}
 			}
-			
+
+			// Exit the app runner thread.
+			runner.app.abortExecution();
 
 		} catch (InterruptedException e) {
 			// Just give out a message and then abort.

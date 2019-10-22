@@ -2,6 +2,7 @@ package de.wwu.muli.iteratorsearch;
 
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
+import de.wwu.muggl.solvers.expressions.ConstraintExpression;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.searchtree.*;
@@ -100,8 +101,8 @@ public class DepthFirstSearchAlgorithmWithGlobalBacktracking extends AbstractSea
                 Choice choice = choices.pop();
 
                 // Add constraint.
-                if (choice.getSubstitutedUnevaluatedST().getConstraintExpression() != null) {
-                    vm.getSolverManager().addConstraint(choice.getSubstitutedUnevaluatedST().getConstraintExpression());
+                if (choice.getSubstitutedUnevaluatedST().getConstraintExpression().isPresent()) {
+                    vm.getSolverManager().addConstraint((ConstraintExpression)choice.getSubstitutedUnevaluatedST().getConstraintExpression().get());
                 }
 
                 // Set the correct Frame to be the current Frame.

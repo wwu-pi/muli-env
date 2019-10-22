@@ -150,8 +150,8 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
         this.currentNode = subtree;
 
         // Add constraint.
-        if (subtree.getConstraintExpression() != null) {
-            vm.getSolverManager().addConstraint(subtree.getConstraintExpression());
+        if (subtree.getConstraintExpression().isPresent()) {
+            vm.getSolverManager().addConstraint((ConstraintExpression)subtree.getConstraintExpression().get());
 
             // Check if the new branch can be visited at all, or if it causes an equation violation.
             try {

@@ -26,11 +26,6 @@ eclipse {
 	}
 }
 
-sourceSets {
-	main.java.srcDir "src"
-	main.resources.srcDir "res"
-}
-
 mainClassName = 'de.wwu.muli.env.MuliRunner'
 run {
 	if (System.getProperty("exec.args") != null) {

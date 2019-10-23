@@ -47,55 +47,9 @@ public class MuliRunner {
 			// Execute
 			runner.startApplication();
 
-			// The first sleep should be shorter.
-			boolean firstSleep = true;
+            waitUntilExecutionFinishes(runner);
 
-			while (runner.isRunning()) {
-				// Sleep for the desired time.
-				if (firstSleep) {
-					Thread.sleep(Globals.SAFETY_SLEEP_DELAY);
-					firstSleep = false;
-				} else {
-					// Save the time sleeping started.
-					final long sleepStarted = System.currentTimeMillis();
-					int sleepFor = THREAD_SLEEP_TIME;
-					final int maximumSleepingSlice = Globals.SAFETY_SLEEP_DELAY;
-					// Continue to sleep until we slept long enough.
-					while (sleepFor > 0) {
-						// Has the execution finished?
-						if (runner.getExecutionFinished())
-							break;
-						// And now sleep.
-						try {
-							/*
-							 * Determine if the sleeping period is shorter than
-							 * the maximum time to sleep before checking if the
-							 * execution has finished. If the sleeping time is
-							 * high and execution finishes in the meanwhile,
-							 * there would be no output until sleeping is
-							 * finished. So this is checked more frequently with
-							 * higher sleeping times. It does not consume a lot
-							 * more cpu (actually its not really appreciable),
-							 * but the user will almost immediately get informed
-							 * if the execution finished.
-							 */
-							int sleepingSlice = Math.min(sleepFor, maximumSleepingSlice);
-							Thread.sleep(sleepingSlice);
-							// Sleeping finished as expected. So decrease
-							// the needed sleeping time by the minimum sleep
-							// delay.
-							sleepFor -= sleepingSlice;
-						} catch (InterruptedException e) {
-							// Sleeping was interrupted as the time to sleep
-							// was changed. Set it to the new time, but drop
-							// the time we slept already.
-							sleepFor = THREAD_SLEEP_TIME - (int) (System.currentTimeMillis() - sleepStarted);
-						}
-					}
-				}
-			}
-
-			// Finished the execution.
+            // Finished the execution.
 			final long milliSecondsRun = System.currentTimeMillis() - timeStarted;
 			Globals.getInst().execLogger.info("Total running time: " + TimeSupport.computeRunningTime(milliSecondsRun, true));
 			
@@ -124,8 +78,57 @@ public class MuliRunner {
 
 	}
 
+    protected static void waitUntilExecutionFinishes(MuliRunner runner) throws InterruptedException {
+        // The first sleep should be shorter.
+        boolean firstSleep = true;
+        while (runner.isRunning()) {
+            // Sleep for the desired time.
+            if (firstSleep) {
+                Thread.sleep(Globals.SAFETY_SLEEP_DELAY);
+                firstSleep = false;
+            } else {
+                // Save the time sleeping started.
+                final long sleepStarted = System.currentTimeMillis();
+                int sleepFor = THREAD_SLEEP_TIME;
+                final int maximumSleepingSlice = Globals.SAFETY_SLEEP_DELAY;
+                // Continue to sleep until we slept long enough.
+                while (sleepFor > 0) {
+                    // Has the execution finished?
+                    if (runner.getExecutionFinished())
+                        break;
+                    // And now sleep.
+                    try {
+                        /*
+                         * Determine if the sleeping period is shorter than
+                         * the maximum time to sleep before checking if the
+                         * execution has finished. If the sleeping time is
+                         * high and execution finishes in the meanwhile,
+                         * there would be no output until sleeping is
+                         * finished. So this is checked more frequently with
+                         * higher sleeping times. It does not consume a lot
+                         * more cpu (actually its not really appreciable),
+                         * but the user will almost immediately get informed
+                         * if the execution finished.
+                         */
+                        int sleepingSlice = Math.min(sleepFor, maximumSleepingSlice);
+                        Thread.sleep(sleepingSlice);
+                        // Sleeping finished as expected. So decrease
+                        // the needed sleeping time by the minimum sleep
+                        // delay.
+                        sleepFor -= sleepingSlice;
+                    } catch (InterruptedException e) {
+                        // Sleeping was interrupted as the time to sleep
+                        // was changed. Set it to the new time, but drop
+                        // the time we slept already.
+                        sleepFor = THREAD_SLEEP_TIME - (int) (System.currentTimeMillis() - sleepStarted);
+                    }
+                }
+            }
+        }
+    }
 
-	protected void startApplication() {
+
+    protected void startApplication() {
 		this.app.start();
 		this.isRunning = true;
 	}

@@ -22,7 +22,8 @@ public class MuliRunner {
 	private static final String MAIN_METHOD_NAME = "main";
 	private static final String MAIN_METHOD_DESCRIPTOR = "([Ljava/lang/String;)V";
 	private static final int THREAD_SLEEP_TIME = 50;
-	private final Application app;
+	protected final Application app;
+    protected final MugglClassLoader classLoader;
 	private boolean isRunning;
 
 	public static void main(String[] args) {
@@ -33,7 +34,6 @@ public class MuliRunner {
 		
 		// The following is inspired by de.wwu.muggl.ui.gui.support.ExecutionRunner.run()
 		// Initialize the Application.
-
 		MuliRunner runner = null;
 		try {
 			runner = new MuliRunner(args);
@@ -125,18 +125,21 @@ public class MuliRunner {
 	}
 
 
-	private void startApplication() {
+	protected void startApplication() {
 		this.app.start();
 		this.isRunning = true;
 	}
 
 
-	private boolean isRunning() {
+    protected boolean isRunning() {
 		return this.isRunning;
 	}
 
+    protected MuliRunner(String[] args) throws ClassFileException, InitializationException {
+	    this(args, new MugglClassLoader(new String[]{ "./system-classes/", "./examples/"}));
+    }
 
-	private MuliRunner(String[] args) throws ClassFileException, InitializationException {
+    protected MuliRunner(String[] args, MugglClassLoader classLoader) throws ClassFileException, InitializationException {
 		assert (args != null);
 		assert (args.length > 0);
 		
@@ -162,17 +165,16 @@ public class MuliRunner {
 		}
 		// TODO: remove args that control (Muli/Muggl) VM instead of program.
 		
-		// Instantiate class loader
-		final MugglClassLoader classLoader = new MugglClassLoader(new String[]{ "./system-classes/", "./examples/"});
-		// TODO: Remove fake cp; Enable more classpaths from -cp arg
+        // TODO: Remove fake cp; Enable more classpaths from -cp arg
+        this.classLoader = classLoader;
 		
 		// Find main method
-		final ClassFile classFile = classLoader.getClassAsClassFile(className);
+		final ClassFile classFile = this.classLoader.getClassAsClassFile(className);
 		final Method mainMethod = classFile.getMethodByNameAndDescriptor(MAIN_METHOD_NAME, MAIN_METHOD_DESCRIPTOR);
 
 		// Pass newArgs to invoked main method.
 		mainMethod.setPredefinedParameters(new Object[] { newArgs });
-		app = new Application(classLoader, className, mainMethod);
+		app = new Application(this.classLoader, className, mainMethod);
 		
 		this.isRunning = false;
 		

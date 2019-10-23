@@ -1,30 +1,110 @@
 package de.wwu.muli.env;
 
+import de.wwu.muggl.configuration.Options;
+import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
+import de.wwu.muggl.vm.classfile.structures.Field;
+import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.InitializationException;
-import de.wwu.muli.vm.Application;
+import de.wwu.muggl.vm.initialization.Objectref;
+import de.wwu.muggl.vm.loading.MugglClassLoader;
+
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.junit.Assert.fail;
 
 public class TestableMuliRunner extends MuliRunner {
+    private final static Path resourcesRoot;
+
+    static {
+        // Statically determine the path to precompiled resources (i.e., testable artifacts).
+        // Resolve path of this class.
+        URL resource = TestableMuliRunner.class.getClassLoader().getResource(TestableMuliRunner.class.getName().replace(".", "/") + ".class");
+        Path thisClassLocation = Paths.get(resource.getFile());
+        // Use it to determine classes root and resources root. Testable artifacts are in resources root.
+        Path classesRoot = thisClassLocation.getParent().getParent().getParent().getParent().getParent();
+        resourcesRoot = classesRoot.resolveSibling("resources");
+    }
+
     public TestableMuliRunner(String[] args) throws ClassFileException, InitializationException {
-        super(args);
+        super(args, new MugglClassLoader(new String[]{"./system-classes/", resourcesRoot.toString()}));
     }
 
-    @Override
-    public void startApplication() {
-        super.startApplication();
-    }
-
-    @Override
-    public boolean isRunning() {
-        return super.isRunning();
-    }
-
-    public Application getApp() {
-        return super.app;
-    }
-
+    /**
+     * You are not supposed to call this! This class is intended to be used by unit tests only. In unit tests, use runApplication instead.
+     * @param args
+     */
     public static void main(String[] args) {
-        // You are not supposed to call this! This class is intended to be used by unit tests only.
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Helps executing a single program.
+     *
+     * Shall print Errors on stack trace and raise according exceptions or otherwise finish gracefully.
+     *
+     * @author Jan C. Dageförde (2019), based on work by Max Schulze
+     *
+     */
+    public static void runApplication(final String classFileName, final String[] args) throws ClassFileException, InterruptedException {
+        Options.getInst().symbolicMode = false;
+
+        // Initialize the Application.
+        TestableMuliRunner runner = null;
+        try {
+            // Combine classFileName and args into a single array.
+            String[] newargs = new String[args.length + 1];
+            newargs[0] = classFileName;
+            System.arraycopy(args, 0, newargs, 1, args.length);
+
+            runner = new TestableMuliRunner(newargs);
+        } catch (ClassFileException | InitializationException e) {
+            throw new RuntimeException(e);
+        }
+        runner.startApplication();
+        waitUntilExecutionFinishes(runner);
+
+        // Find out if execution finished successfully.
+        if (runner.app.errorOccured()) {
+            // There was an error.
+            fail("Execution did not finish successfully. The reason is:\n" + runner.app.fetchError());
+        } else {
+            if (runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
+                Objectref objectref = (Objectref) runner.app.getReturnedObject();
+
+                ClassFile throwableClassFile = objectref.getInitializedClass().getClassFile();
+                Field detailMessageField = throwableClassFile.getFieldByName("detailMessage", true);
+                ClassFile stringClassFile = runner.app.getVirtualMachine().getClassLoader()
+                        .getClassAsClassFile("java.lang.String");
+                Field stringValueField = stringClassFile.getFieldByNameAndDescriptor("value", "[C");
+                Objectref stringObjectref = (Objectref) objectref.getField(detailMessageField);
+                String message;
+                if (stringObjectref == null) {
+                    message = "null";
+                } else {
+                    Arrayref arrayref = (Arrayref) stringObjectref.getField(stringValueField);
+
+                    // Convert it.
+                    char[] characters = new char[arrayref.length];
+                    for (int a = 0; a < arrayref.length; a++) {
+                        characters[a] = (Character) arrayref.getElement(a);
+                    }
+                    message = new String(characters);
+                }
+
+                fail("Uncaught exception, no suitable exception handler: "
+                        + throwableClassFile.getName().replace("/", ".") + " (" + message + ")");
+
+            }
+        }
+
+        // Exit the app runner thread.
+        runner.app.abortExecution();
+    }
+
+    public static void runApplication(final String classFileName) throws ClassFileException, InterruptedException {
+        runApplication(classFileName, new String[]{});
     }
 }

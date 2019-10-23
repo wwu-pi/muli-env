@@ -8,6 +8,8 @@ import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
+import de.wwu.muli.searchtree.ST;
+import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.net.URL;
 import java.nio.file.Path;
@@ -47,8 +49,9 @@ public class TestableMuliRunner extends MuliRunner {
      *
      * @author Jan C. Dageförde (2019), based on work by Max Schulze
      *
+     * @return
      */
-    public static void runApplication(final String classFileName, final String[] args) throws ClassFileException, InterruptedException {
+    public static ST[] runApplication(final String classFileName, final String[] args) throws ClassFileException, InterruptedException {
         Options.getInst().symbolicMode = false;
 
         // Initialize the Application.
@@ -99,12 +102,15 @@ public class TestableMuliRunner extends MuliRunner {
 
             }
         }
+        LogicVirtualMachine virtualMachine = (LogicVirtualMachine)runner.app.getVirtualMachine();
+        ST[] allSearchTrees = virtualMachine.getAllSearchTreesDebug().toArray(new ST[0]);
 
         // Exit the app runner thread.
         runner.app.abortExecution();
+        return allSearchTrees;
     }
 
-    public static void runApplication(final String classFileName) throws ClassFileException, InterruptedException {
-        runApplication(classFileName, new String[]{});
+    public static ST[] runApplication(final String classFileName) throws ClassFileException, InterruptedException {
+        return runApplication(classFileName, new String[]{});
     }
 }

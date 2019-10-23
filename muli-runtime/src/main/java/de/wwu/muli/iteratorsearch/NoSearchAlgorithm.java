@@ -16,6 +16,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
+import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
@@ -116,8 +117,14 @@ public class NoSearchAlgorithm implements LogicIteratorSearchAlgorithm {
     }
 
     @Override
+    public ST getSearchTreeDebug() {
+        return null;
+    }
+
+    @Override
     public String getName() {
         return "NoSearchAlgorithm";
     }
+
 
 }

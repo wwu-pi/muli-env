@@ -14,6 +14,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
+import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
@@ -71,4 +72,5 @@ public interface LogicIteratorSearchAlgorithm extends SearchAlgorithm {
                                 IntConstant[] keys, int[] pcs, IntConstant low, IntConstant high)
 			throws ExecutionException;
 
+    public ST getSearchTreeDebug();
 }

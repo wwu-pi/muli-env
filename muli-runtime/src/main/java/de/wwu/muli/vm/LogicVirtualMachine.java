@@ -43,6 +43,7 @@ import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.ST;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This concrete class represents a virtual machine for the logic execution of java bytecode. It
@@ -834,5 +835,9 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
     public long recordSearchEnded() {
         return System.nanoTime() - this.searchStarted;
         //System.out.println("Time spent searching: " + searchTime + " ns.");
+    }
+
+    public List<ST> getAllSearchTreesDebug() {
+        return this.searchStrategies.values().stream().map(LogicIteratorSearchAlgorithm::getSearchTreeDebug).collect(Collectors.toList());
     }
 }

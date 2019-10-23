@@ -608,6 +608,11 @@ trackBackLocallyNextChoice(vm);
         if (this.measureExecutionTime) vm.increaseTimeChoicePointGeneration(System.nanoTime() - this.timeChoicePointGenerationTemp);
     }
 
+    @Override
+    public ST getSearchTreeDebug() {
+        return this.searchTree;
+    }
+
     @Override @Deprecated
     public boolean trackBackLocallyNextChoice(LogicVirtualMachine vm) {
         throw new NotImplementedException();

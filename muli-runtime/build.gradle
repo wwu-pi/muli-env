@@ -32,3 +32,10 @@ run {
 		args System.getProperty("exec.args").split()
 	}
 }
+
+test {
+    testLogging {
+        events "started", "passed", "skipped", "failed"
+        exceptionFormat = 'full'
+    }
+}

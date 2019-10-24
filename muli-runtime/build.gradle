@@ -16,6 +16,7 @@ dependencies {
 	compile project(':muggl-common')
     compile 'log4j:log4j:1.2.17'
 	compile 'de.wwu.muli:muli-classpath:1.7.3-SNAPSHOT' // needed at compile time, as parts of CP are implemented in native providers.
+    testCompile "junit:junit:4.+"
 }
 
 targetCompatibility = '1.8'
@@ -38,4 +39,22 @@ test {
         events "started", "passed", "skipped", "failed"
         exceptionFormat = 'full'
     }
+}
+
+
+
+// Gather all reports
+task codeCoverageReport(type: JacocoReport) {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    reports {
+        xml.enabled true
+        xml.destination "${buildDir}/reports/jacoco/report.xml"
+        html.enabled false
+        csv.enabled false
+    }
+}
+
+codeCoverageReport.dependsOn {
+    check
 }

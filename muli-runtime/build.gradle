@@ -1,6 +1,10 @@
+plugins {
+	id 'jacoco'
+}
 apply plugin: 'eclipse'
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'jacoco'
 
 group 'de.wwu.muli'
 version '1.7.3-SNAPSHOT'

@@ -1,10 +1,6 @@
-plugins {
-	id 'jacoco'
-}
 apply plugin: 'eclipse'
 apply plugin: 'java'
 apply plugin: 'application'
-apply plugin: 'jacoco'
 
 group 'de.wwu.muli'
 version '1.7.3-SNAPSHOT'
@@ -43,22 +39,4 @@ test {
         events "started", "passed", "skipped", "failed"
         exceptionFormat = 'full'
     }
-}
-
-
-
-// Gather all reports
-task codeCoverageReport(type: JacocoReport) {
-    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
-
-    reports {
-        xml.enabled true
-        xml.destination "${buildDir}/reports/jacoco/report.xml"
-        html.enabled false
-        csv.enabled false
-    }
-}
-
-codeCoverageReport.dependsOn {
-    check
 }

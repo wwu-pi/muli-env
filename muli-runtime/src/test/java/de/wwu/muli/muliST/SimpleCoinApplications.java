@@ -20,7 +20,7 @@ public class SimpleCoinApplications {
 
     @Test
     public final void test_ComplicatedCoins() throws InterruptedException, ClassFileException {
-        ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.ComplicatedCoins");
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.ComplicatedCoinsBFS");
         assertEquals(1, foundTrees.length);
         System.out.println(foundTrees[0].toString());
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();

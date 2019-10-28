@@ -53,6 +53,8 @@ public class TestableMuliRunner extends MuliRunner {
      */
     public static ST[] runApplication(final String classFileName, final String[] args) throws ClassFileException, InterruptedException {
         Options.getInst().symbolicMode = false;
+        Options.getInst().actualCliPrinting = true;
+        Options.getInst().isUnitTest = true;
 
         // Initialize the Application.
         TestableMuliRunner runner = null;

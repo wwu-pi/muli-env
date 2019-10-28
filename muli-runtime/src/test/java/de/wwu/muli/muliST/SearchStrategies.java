@@ -5,7 +5,7 @@ import de.wwu.muggl.vm.execution.nativeWrapping.TestablePrintStreamWrapper;
 import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
 import de.wwu.muli.searchtree.ST;
-import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -88,8 +88,8 @@ public class SearchStrategies {
         assertEquals("false\nfalse\nfalse\ntrue\n", TestablePrintStreamWrapper.outputStream().getBufferContents());
     }
 
-    @After
-    public void cleanupAfterTest() {
+    @Before
+    public void clearStreamsBeforeTests() {
         TestablePrintStreamWrapper.outputStream().resetBuffer();
         TestablePrintStreamWrapper.errorStream().resetBuffer();
     }

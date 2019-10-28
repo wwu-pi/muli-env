@@ -1,0 +1,47 @@
+package applications.muliST;
+import java.util.List;
+import java.util.stream.Stream;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class FlipTwoCoinsDFS {
+    public static void main(String[] args) {
+        List<Solution<Object>> solutionsDfs = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.DepthFirstSearch);
+        for (Solution<Object> solution : solutionsDfs) {
+            System.out.println(solution.value);
+        }
+    }
+}
+
+public class FlipTwoCoinsBFS {
+
+    public static void main(String[] args) {
+        List<Solution<Object>> solutionsBfs = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.BreadthFirstSearch);
+        for (Solution<Object> solution : solutionsBfs) {
+            System.out.println(solution.value);
+        }
+    }
+
+}
+
+public class FlipTwoCoinsIDD {
+    public static void main(String[] args) {
+        List<Solution<Object>> solutionsIdd = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.IterativeDeepening);
+        for (Solution<Object> solution : solutionsIdd) {
+            System.out.println(solution.value);
+        }
+    }
+}
+
+class FlipTwoCoins {
+    static boolean flipTwoCoins() {
+        int coin1 free, coin2 free;
+        if (coin1 == 0) {
+            return false;
+        } else if (coin2 == 0) {
+            throw Muli.fail();
+        } else {
+            return true;
+        }
+    }
+}

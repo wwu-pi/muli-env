@@ -89,6 +89,22 @@ public class SearchStrategies {
         assertEquals("false\nfalse\nfalse\ntrue\n", TestablePrintStreamWrapper.outputStream().getBufferContents());
     }
 
+    @Test
+    public final void test_SolutionOrderIterativeDeepening() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.IterativeDeepeningCoinIDD");
+        assertEquals(1, foundTrees.length);
+        assertEquals("true\ntrue\ntrue\ntrue\ntrue\nfalse\ntrue\n", TestablePrintStreamWrapper.outputStream().getBufferContents());
+
+    }
+
+    @Test
+    public final void test_SolutionOrderDepthFirstSearch() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.IterativeDeepeningCoinDFS");
+        assertEquals(1, foundTrees.length);
+        assertEquals("false\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\n", TestablePrintStreamWrapper.outputStream().getBufferContents());
+
+    }
+
     @Before
     public void clearStreamsBeforeTests() {
         TestablePrintStreamWrapper.outputStream().resetBuffer();

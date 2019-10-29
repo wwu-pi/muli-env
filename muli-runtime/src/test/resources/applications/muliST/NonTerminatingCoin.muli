@@ -1,0 +1,22 @@
+package applications.muliST;
+
+import java.util.stream.Stream;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class NonTerminatingCoin {
+  public static void main(String[] args) {
+    Stream<Solution<Object>> solutions = Muli.muli(NonTerminatingCoin::nonTerminatingCoin, SearchStrategy.IterativeDeepening);
+    System.out.println(solutions.limit(5).count());
+  }
+
+  private static boolean nonTerminatingCoin() {
+    int coin free;
+    
+    if (coin == 0) {
+        return true;
+    } else {
+        return nonTerminatingCoin();
+    }
+  }
+}

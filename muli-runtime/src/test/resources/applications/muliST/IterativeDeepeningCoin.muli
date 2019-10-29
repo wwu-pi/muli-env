@@ -1,0 +1,55 @@
+package applications.muliST;
+
+import java.util.stream.Stream;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class IterativeDeepeningCoinDFS {
+    public static void main(String[] args) {
+        Stream<Solution<Object>> solutions = Muli.muli(IterativeDeepeningCoin::deepCoin, SearchStrategy.DepthFirstSearch);
+        solutions.limit(7).forEach(x -> System.out.println(x.value));
+    }
+}
+public class IterativeDeepeningCoinIDD {
+    public static void main(String[] args) {
+        Stream<Solution<Object>> solutions = Muli.muli(IterativeDeepeningCoin::deepCoin, SearchStrategy.IterativeDeepening);
+        solutions.limit(7).forEach(x -> System.out.println(x.value));
+    }
+}
+
+public class IterativeDeepeningCoin {
+  static boolean deepCoin() {
+    int coin free;
+    
+    if (coin == 0) {
+        return true;
+    } else {
+        int coin2 free;
+        if (coin2 == 0) {
+            return true;
+        } else {
+            int coin3 free;
+            if (coin3 == 0) {
+                return true;
+            } else {
+                int coin4 free;
+                if (coin4 == 0) {
+                    return true;
+                } else {
+                    int coin5 free;
+                    if (coin5 == 0) {
+                        return true;
+                    } else {
+                        int coin6 free;
+                        if (coin6 == 0) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+  }
+}

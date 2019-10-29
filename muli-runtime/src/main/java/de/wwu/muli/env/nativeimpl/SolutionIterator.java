@@ -41,7 +41,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
-    private static boolean abortEarly = true;
+    private static boolean abortEarly = false;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());

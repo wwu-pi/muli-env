@@ -13,7 +13,6 @@ public class SimpleCoinApplications {
     public final void test_FailCoin() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.FailCoin");
         assertEquals(1, foundTrees.length);
-        System.out.println(foundTrees[0].toString());
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         assertEquals(1, leaves.length);
     }
@@ -22,8 +21,24 @@ public class SimpleCoinApplications {
     public final void test_ComplicatedCoins() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.ComplicatedCoinsBFS");
         assertEquals(1, foundTrees.length);
-        System.out.println(foundTrees[0].toString());
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         assertEquals(4, leaves.length);
+    }
+
+    @Test
+    public final void test_NoNonDeterminism() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.NoCoin");
+        assertEquals(1, foundTrees.length);
+        System.out.println(foundTrees[0].toString());
+        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        assertEquals(1, leaves.length);
+    }
+
+    @Test
+    public final void test_NoSolution() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.muliST.NoSolution");
+        assertEquals(1, foundTrees.length);
+        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        assertEquals(0, leaves.length);
     }
 }

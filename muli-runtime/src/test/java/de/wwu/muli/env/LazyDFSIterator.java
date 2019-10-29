@@ -25,12 +25,13 @@ public class LazyDFSIterator implements Spliterator<Object> {
         }
         ST tree = nodes.pop();
         if (tree instanceof Fail) {
-            return tryAdvance(action);
+            action.accept(tree);
+            return true;
         } else if (tree instanceof de.wwu.muli.searchtree.Exception) {
-            action.accept(null);
+            action.accept(tree);
             return true;
         } else if (tree instanceof Value) {
-            action.accept(((Value)tree).value);
+            action.accept(tree);
             return true;
         } else if (tree instanceof Choice) {
             // Push search trees in reverse order so they will be popped from left-to-right.

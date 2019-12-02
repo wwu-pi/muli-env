@@ -1,0 +1,30 @@
+package applications.freeVarInLoop;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class LoopVars {
+
+  public static void main(String[] args) {
+    List<Solution<Object>> solutions = Muli.getAllSolutions(LoopVars::search);
+    
+    for (Solution<Object> solution : solutions) {
+      System.out.println(solution.value);
+    }
+  } 
+
+  private static int[] search() {
+      int[] vars = new int[2];
+      for (int i = 0; i < 2; i++) {
+          int var free;
+          vars[i] = var;
+      }
+      if (vars[0] != vars[1]) {
+          return vars;
+      } else {
+          throw Muli.fail();
+      }
+  }
+
+}

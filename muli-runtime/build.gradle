@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 group 'de.wwu.muli'
-version '1.7.3-SNAPSHOT'
+version '1.8.0-SNAPSHOT'
 
 repositories {
 	mavenLocal()
@@ -15,7 +15,7 @@ dependencies {
 	compile project(':muggl-core')
 	compile project(':muggl-common')
     compile 'log4j:log4j:1.2.17'
-	compile 'de.wwu.muli:muli-classpath:1.7.3-SNAPSHOT' // needed at compile time, as parts of CP are implemented in native providers.
+	compile 'de.wwu.muli:muli-classpath:1.8.0-SNAPSHOT' // needed at compile time, as parts of CP are implemented in native providers.
     testCompile "junit:junit:4.+"
 }
 

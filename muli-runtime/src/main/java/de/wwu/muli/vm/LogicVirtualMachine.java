@@ -267,96 +267,79 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				.getConstantPool(), arguments);
 		frame.setOperandStack(new StackToTrailWithInverse(false, this));
 
-		/*
-		 * Check which local variables are annotated and replace undefined local variables by logic
-		 * variables.
-		 */
-		AttributeFreeVariables freeVariablesAttribute = null;
-		for (Attribute attribute : method.getAttributes()) {
-			if (attribute.getStructureName().equals("attribute_free_variables")) {
-				freeVariablesAttribute = (AttributeFreeVariables)attribute;
-				break;
-			} 
-		}
-		
-		if (freeVariablesAttribute != null && freeVariablesAttribute.getFreeVariables().length > 0) {
-			AttributeLocalVariableTable localVariablesTableAttribute = null;
-			for (Attribute attribute : method.getCodeAttribute().getAttributes()) {
-				if (attribute.getStructureName().equals("attribute_local_variable_table")) {
-					localVariablesTableAttribute = (AttributeLocalVariableTable)attribute;
-					break;
-				}
-			}
-			
-			for (FreeVariable freeVariable : freeVariablesAttribute.getFreeVariables()) {
-				// find type of free variable
-				final int freeVariableIndex = freeVariable.getIndex();
-				// Note to future selves: "Parameters" are not "Variables" are not "Local Variables". Or sometimes they are.
-				// Anyway, do NOT trust method names of frame.method! Instead, we better determine the type ourselves.
-				String type = null;
-				assert localVariablesTableAttribute != null;
-				for (LocalVariableTable localVariable : localVariablesTableAttribute.getLocalVariableTable())
-				{
-					if (localVariable.getIndex() != freeVariableIndex) {
-						continue;
-					}
-					type = localVariable.getClassFile().getConstantPool()[localVariable.getDescriptorIndex()].getStringValue();
-					break; // Do not look any further.
-					
-				}
-				if (type == null) {
-					throw new IllegalStateException("Class File contains FreeVariable declaration for a non-existing variable");
-				}
-				
-				// Convert string type to expression type.
-				byte expressionType;
-				switch(type) {
-				case "B":
-					expressionType = Expression.BYTE;
-					break;
-				case "C":
-					expressionType = Expression.CHAR;
-					break;
-				case "D":
-					expressionType = Expression.DOUBLE;
-					break;
-				case "I":
-					expressionType = Expression.INT;
-					break;
-				case "F":
-					expressionType = Expression.FLOAT;
-					break;
-				case "J":
-					expressionType = Expression.LONG;
-					break;
-				case "S":
-					expressionType = Expression.SHORT;
-					break;
-				case "Z":
-					expressionType = Expression.BOOLEAN;
-					break;
-				default:
-					// TODO invent better exception type
-					throw new IllegalStateException("Free variables of non-primitive types are not supported");	
-				}
-				
-				// Put correct logic variable for field.
-				if (expressionType == Expression.BOOLEAN) {
-					frame.setLocalVariable(freeVariableIndex, 
-							new BooleanVariable(freeVariable.getName())
-							);
-				} else {
-					frame.setLocalVariable(freeVariableIndex, 
-							new NumericVariable(freeVariable.getName(), expressionType, false)
-							);
-				}
-			}
-		}
 		// Return it.
 		return frame;
 	}
 
-	/**
+    public void storeRepresentationForFreeVariable(Frame frame, int freeVariableIndex) {
+        AttributeLocalVariableTable localVariablesTableAttribute = null;
+        for (Attribute attribute : frame.getMethod().getCodeAttribute().getAttributes()) {
+            if (attribute.getStructureName().equals("attribute_local_variable_table")) {
+                localVariablesTableAttribute = (AttributeLocalVariableTable)attribute;
+                break;
+            }
+        }
+
+        // Note to future selves: "Parameters" are not "Variables" are not "Local Variables". Or sometimes they are.
+        // Anyway, do NOT trust method names of frame.method! Instead, we better determine the type ourselves.
+        String type = null;
+        String name = null;
+        assert localVariablesTableAttribute != null;
+        for (LocalVariableTable localVariable : localVariablesTableAttribute.getLocalVariableTable())
+        {
+            if (localVariable.getIndex() != freeVariableIndex) {
+                continue;
+            }
+            name = localVariable.getName();
+            type = localVariable.getClassFile().getConstantPool()[localVariable.getDescriptorIndex()].getStringValue();
+            break; // Do not look any further.
+
+        }
+        if (type == null) {
+            throw new IllegalStateException("Trying to create a free variable for a non-existing variable! Aborting.");
+        }
+
+        // Convert string type to expression type.
+        byte expressionType;
+        switch(type) {
+        case "B":
+            expressionType = Expression.BYTE;
+            break;
+        case "C":
+            expressionType = Expression.CHAR;
+            break;
+        case "D":
+            expressionType = Expression.DOUBLE;
+            break;
+        case "I":
+            expressionType = Expression.INT;
+            break;
+        case "F":
+            expressionType = Expression.FLOAT;
+            break;
+        case "J":
+            expressionType = Expression.LONG;
+            break;
+        case "S":
+            expressionType = Expression.SHORT;
+            break;
+        case "Z":
+            expressionType = Expression.BOOLEAN;
+            break;
+        default:
+            // TODO invent better exception type
+            throw new IllegalStateException("Free variables of non-primitive types are not supported");
+        }
+
+        // Put correct logic variable for field.
+        if (expressionType == Expression.BOOLEAN) {
+            frame.setLocalVariable(freeVariableIndex, new BooleanVariable(name));
+        } else {
+            frame.setLocalVariable(freeVariableIndex, new NumericVariable(name, expressionType, false));
+        }
+    }
+
+    /**
 	 * Generate a new choice point.
 	 * 
 	 * @param instruction The instruction that wants to generate the choice points.

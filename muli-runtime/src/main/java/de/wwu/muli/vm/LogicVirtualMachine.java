@@ -24,9 +24,7 @@ import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
-import de.wwu.muggl.vm.classfile.structures.attributes.AttributeFreeVariables;
 import de.wwu.muggl.vm.classfile.structures.attributes.AttributeLocalVariableTable;
-import de.wwu.muggl.vm.classfile.structures.attributes.elements.FreeVariable;
 import de.wwu.muggl.vm.classfile.structures.attributes.elements.LocalVariableTable;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.execution.ConversionException;
@@ -300,43 +298,49 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         }
 
         // Convert string type to expression type.
-        byte expressionType;
+        Expression.Type expressionType = null;
         switch(type) {
         case "B":
-            expressionType = Expression.BYTE;
+            expressionType = Expression.Type.BYTE;
             break;
         case "C":
-            expressionType = Expression.CHAR;
+            expressionType = Expression.Type.CHAR;
             break;
         case "D":
-            expressionType = Expression.DOUBLE;
+            expressionType = Expression.Type.DOUBLE;
             break;
         case "I":
-            expressionType = Expression.INT;
+            expressionType = Expression.Type.INT;
             break;
         case "F":
-            expressionType = Expression.FLOAT;
+            expressionType = Expression.Type.FLOAT;
             break;
         case "J":
-            expressionType = Expression.LONG;
+            expressionType = Expression.Type.LONG;
             break;
         case "S":
-            expressionType = Expression.SHORT;
+            expressionType = Expression.Type.SHORT;
             break;
         case "Z":
-            expressionType = Expression.BOOLEAN;
+            expressionType = Expression.Type.BOOLEAN;
             break;
-        default:
-            // TODO invent better exception type
-            throw new IllegalStateException("Free variables of non-primitive types are not supported");
         }
 
-        // Put correct logic variable for field.
-        if (expressionType == Expression.BOOLEAN) {
-            frame.setLocalVariable(freeVariableIndex, new BooleanVariable(name));
-        } else {
-            frame.setLocalVariable(freeVariableIndex, new NumericVariable(name, expressionType, false));
+        if (expressionType == null) {
+            throw new IllegalStateException("Unexpected type '" + type + "' -- cannot use this in a free variable.");
         }
+
+        Object freeVariableRepresentation;
+
+        // Find the correct type and create an appropriate representation.
+        if (expressionType == Expression.Type.BOOLEAN) {
+            freeVariableRepresentation = new BooleanVariable(name);
+        } else {
+            freeVariableRepresentation = new NumericVariable(name, expressionType.toByte(), false);
+        }
+
+        // Put logic variable into field.
+        frame.setLocalVariable(freeVariableIndex, freeVariableRepresentation);
     }
 
     /**

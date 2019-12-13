@@ -1,0 +1,22 @@
+package applications.freeObjects;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.freeObjects.pojo.*;
+
+public class SimpleMethod {
+
+  public static void main(String[] args) {
+    List<Solution<Object>> solutions = Muli.getAllSolutions(SimpleMethod::search);
+  }
+
+  private static int search() {
+    Rectangle r free;
+    if (r.getArea() == 16) {
+      return r.getArea();
+    } else {
+      throw Muli.fail();
+    }
+  }
+}

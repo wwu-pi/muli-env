@@ -1,0 +1,22 @@
+package applications.freeObjects;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.freeObjects.pojo.*;
+
+public class FieldAccess {
+
+  public static void main(String[] args) {
+    List<Solution<Object>> solutions = Muli.getAllSolutions(FieldAccess::search);
+  }
+
+  private static int search() {
+    Rectangle r free;
+    if (r.width == 100) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }
+}

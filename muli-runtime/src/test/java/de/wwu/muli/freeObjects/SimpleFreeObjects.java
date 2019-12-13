@@ -23,7 +23,7 @@ public class SimpleFreeObjects {
         assertTrue(Arrays.stream(leaves).allMatch(x -> x instanceof Value));
     }
 
-    @Test
+    // Disabled @Test
     public final void test_methodInvocation() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.SimpleMethod");
         assertEquals(1, foundTrees.length);

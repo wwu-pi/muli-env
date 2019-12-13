@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class FreeObjectsWithHierarchy {
-    @Test
+    // Disabled @Test
     public final void test_methodInSubclasses() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.InheritedMethod");
         assertEquals(1, foundTrees.length);

@@ -1,0 +1,22 @@
+package applications.freeObjects;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.freeObjects.pojo.*;
+
+public class StaticFieldAccess {
+
+  public static void main(String[] args) {
+    List<Solution<Object>> solutions = Muli.getAllSolutions(StaticFieldAccess::access);
+  }
+
+  private static int access() {
+    ClassWithStaticField c free;
+    if (c.mustBeFive == 5) {
+      return 1;
+    } else {
+      throw new IllegalStateException("May never occur as field should be statically initialized to 5.");
+    }
+  }
+}

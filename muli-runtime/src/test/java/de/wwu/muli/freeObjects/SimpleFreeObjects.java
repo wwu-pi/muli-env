@@ -14,12 +14,22 @@ import static org.junit.Assert.assertTrue;
 
 public class SimpleFreeObjects {
     @Test
-    public final void test_fieldAccess() throws InterruptedException, ClassFileException {
+    public final void test_fieldAccessIsFree() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.FieldAccess");
         assertEquals(1, foundTrees.length);
         System.out.println(foundTrees[0].toString());
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         assertEquals(2, leaves.length);
+        assertTrue(Arrays.stream(leaves).allMatch(x -> x instanceof Value));
+    }
+    @Test
+    public final void test_staticFieldIsNotFree() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.StaticFieldAccess");
+        assertEquals(1, foundTrees.length);
+        System.out.println(foundTrees[0].toString());
+        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        // Expect no branching at all, as variable is not free.
+        assertEquals(1, leaves.length);
         assertTrue(Arrays.stream(leaves).allMatch(x -> x instanceof Value));
     }
 

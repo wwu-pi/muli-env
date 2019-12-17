@@ -27,6 +27,7 @@ import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.classfile.structures.attributes.AttributeLocalVariableTable;
 import de.wwu.muggl.vm.classfile.structures.attributes.elements.LocalVariableTable;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
+import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
@@ -249,8 +250,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
     }
 
 	/**
-	 * Create a new frame and check whether its local variables should be initialized to logic
-	 * variables.
+	 * Create a new frame.
+     * In contrast to earlier versions (Muli < 1.8), do NOT check whether its local variables should be initialized to logic
+	 * variables. Instead of the previous implicit approach, which was insufficient e. g. for variables that are scoped to a loop,
+     * the compiler produces explicit bytecode when initialization is required.
 	 * 
 	 * @param invokedBy The frame this frame is invoked by. Might be null.
 	 * @param method The Method that this frame holds.
@@ -296,7 +299,13 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         if (type == null) {
             throw new IllegalStateException("Trying to create a free variable for a non-existing variable! Aborting.");
         }
+        Object freeVariableRepresentation = createRepresentationForFreeVariableOrField(frame.getMethod().getClassFile(), type, name);
 
+        // Put logic variable into field.
+        frame.setLocalVariable(freeVariableIndex, freeVariableRepresentation);
+    }
+
+    protected Object createRepresentationForFreeVariableOrField(ClassFile fromClass, String type, String name) {
         // Convert string type to expression type.
         Expression.Type expressionType = null;
         switch(type) {
@@ -324,6 +333,12 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         case "Z":
             expressionType = Expression.Type.BOOLEAN;
             break;
+        default:
+            if (type.startsWith("L")) {
+                expressionType = Expression.Type.OBJECT;
+            } else if (type.startsWith("[")) {
+                expressionType = Expression.Type.ARRAY;
+            }
         }
 
         if (expressionType == null) {
@@ -333,14 +348,44 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         Object freeVariableRepresentation;
 
         // Find the correct type and create an appropriate representation.
-        if (expressionType == Expression.Type.BOOLEAN) {
+        if (expressionType == Expression.Type.OBJECT) {
+            freeVariableRepresentation = createRepresentationForFreeObject(fromClass, type);
+        } else if (expressionType == Expression.Type.ARRAY) {
+            throw new IllegalStateException("Free variables of array types are not supported yet.");
+        } else if (expressionType == Expression.Type.BOOLEAN) {
             freeVariableRepresentation = new BooleanVariable(name);
         } else {
             freeVariableRepresentation = new NumericVariable(name, expressionType.toByte(), false);
         }
+        return freeVariableRepresentation;
+    }
 
-        // Put logic variable into field.
-        frame.setLocalVariable(freeVariableIndex, freeVariableRepresentation);
+    private Object createRepresentationForFreeObject(ClassFile fromClass, String type) {
+	    // Resolve class of target type.
+        ClassFile classFile;
+        try {
+            classFile = resolveClassAsClassFile(fromClass, type);
+        } catch (VmRuntimeException | ExecutionException e) {
+            throw new IllegalStateException(e);
+        }
+
+        // Get an uninitialised(!) Objectref.
+        Objectref anObjectref = this.getAnObjectref(classFile);
+
+        // Do not call initialisers:
+        // - the static one already ran (via getAnObjectref).
+        // - the instance one is not called on purpose, see paper.
+
+        for (Field field : classFile.getFields()) {
+            if (anObjectref.hasValueFor(field)) {
+                continue;
+            }
+            // Initialise uninitialised fields as free.
+            String fieldType = field.getDescriptor();
+            Object representation = createRepresentationForFreeVariableOrField(classFile, fieldType, field.getName());
+            anObjectref.putField(field, representation);
+        }
+        return anObjectref;
     }
 
     /**
@@ -523,62 +568,16 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		// Get the object reference.
 		Objectref objectref = initializedClass.getANewInstance();
 
-		/*
-		 * Check which fields are annotated and replace undefined fields by logic variables.
-		 */
+		// Check which fields are annotated and replace undefined fields by logic variables.
 		for (Field field : classFile.getFields()) {
 			for (Attribute attribute : field.getAttributes()) {
 				if (!attribute.getStructureName().equals("attribute_free_field")) {
 					continue;
 				}
 				if (!objectref.hasValueFor(field)) {
-					String typeString = field.getType();
-					byte type;
-					switch (typeString) {
-					case "char":
-					case "java.lang.Character":
-						type = Expression.CHAR;
-						break;
-					case "boolean":
-					case "java.lang.Boolean":
-						type = Expression.BOOLEAN;
-						break;
-					case "byte":
-					case "java.lang.Byte":
-						type = Expression.BYTE;
-						break;
-					case "double":
-					case "java.lang.Double":
-						type = Expression.DOUBLE;
-						break;
-					case "int":
-					case "java.lang.Integer":
-						type = Expression.INT;
-						break;
-					case "float":
-					case "java.lang.Float":
-						type = Expression.FLOAT;
-						break;
-					case "long":
-					case "java.lang.Long":
-						type = Expression.LONG;
-						break;
-					case "short":
-					case "java.lang.Short":
-						type = Expression.SHORT;
-						break;
-					default:
-						// TODO invent better exception type
-						throw new IllegalStateException("Free variables of non-primitive types are not supported");	
-					}
-					
-					// Put correct logic variable for field.
-					if (type == Expression.BOOLEAN) {
-						objectref.putField(field, new BooleanVariable(field.getName()));
-					} else {
-						objectref.putField(field, new NumericVariable(field.getName(), type, false));
-					}
-
+					String type = field.getDescriptor();
+                    Object representation = createRepresentationForFreeVariableOrField(classFile, type, field.getName());
+                    objectref.putField(field, representation);
 				}
 				break;
 				

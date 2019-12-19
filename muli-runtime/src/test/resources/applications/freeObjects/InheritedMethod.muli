@@ -11,10 +11,10 @@ public class InheritedMethod {
     List<Solution<Object>> solutions = Muli.getAllSolutions(InheritedMethod::search);
   }
 
-  private static int search() {
+  private static String search() {
     Shape s free;
     if (s.getArea() == 16) {
-      return s.getArea();
+      return s.getClass().getName();
     } else {
       throw Muli.fail();
     }

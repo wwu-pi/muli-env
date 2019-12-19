@@ -93,6 +93,20 @@ public class SolutionIterator extends NativeMethodProvider {
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
 
+        // Try cloning the solution in order to prevent its contents from being backtracked later on.
+        try {
+            if (solutionObject instanceof Objectref) {
+                solutionObject = ((Objectref) solutionObject).clone();
+            } else {
+                // TODO add further known cases. But most of the results are Objectrefs anyway...
+                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
+            }
+        } catch (CloneNotSupportedException e) {
+            // Nevermind. At least we tried.
+            Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
+        }
+
+
         // Store Value node in ST.
         Value val = new Value(solutionObject);
         vm.getSearchAlgorithm().recordValue(val);

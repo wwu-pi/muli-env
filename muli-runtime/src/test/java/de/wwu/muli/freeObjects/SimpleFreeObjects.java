@@ -23,7 +23,7 @@ public class SimpleFreeObjects {
         String value0 = ((Value<Object>)leaves[0]).value.toString();
         assertTrue("Objectref <" + value0 + "> must encapsulate Integer(2)", value0.endsWith("val: 2)"));
         String value1 = ((Value<Object>)leaves[1]).value.toString();
-        assertTrue("Objectref <" + value0 + "> must encapsulate Integer(1)", value1.endsWith("val: 1)"));
+        assertTrue("Objectref <" + value1 + "> must encapsulate Integer(1)", value1.endsWith("val: 1)"));
     }
     @Test
     public final void test_staticFieldIsNotFree() throws InterruptedException, ClassFileException {
@@ -34,6 +34,8 @@ public class SimpleFreeObjects {
         // Expect no branching at all, as variable is not free.
         assertEquals(1, leaves.length);
         assertTrue(Arrays.stream(leaves).allMatch(x -> x instanceof Value));
+        String value0 = ((Value<Object>)leaves[0]).value.toString();
+        assertTrue("Objectref <" + value0 + "> must encapsulate Integer(5)", value0.endsWith("val: 5)"));
     }
 
     // Disabled @Test

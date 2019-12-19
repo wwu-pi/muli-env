@@ -9,8 +9,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SimpleFreeObjects {
     @Test
@@ -21,6 +20,10 @@ public class SimpleFreeObjects {
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         assertEquals(2, leaves.length);
         assertTrue(Arrays.stream(leaves).allMatch(x -> x instanceof Value));
+        String value0 = ((Value<Object>)leaves[0]).value.toString();
+        assertTrue("Objectref <" + value0 + "> must encapsulate Integer(2)", value0.endsWith("val: 2)"));
+        String value1 = ((Value<Object>)leaves[1]).value.toString();
+        assertTrue("Objectref <" + value0 + "> must encapsulate Integer(1)", value1.endsWith("val: 1)"));
     }
     @Test
     public final void test_staticFieldIsNotFree() throws InterruptedException, ClassFileException {

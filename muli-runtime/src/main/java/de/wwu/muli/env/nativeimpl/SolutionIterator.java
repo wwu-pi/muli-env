@@ -37,7 +37,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.search.SolutionIterator.class.getCanonicalName();
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
-    private static boolean labelSolutions = false;
+    private static boolean labelSolutions = true;
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
@@ -85,7 +85,9 @@ public class SolutionIterator extends NativeMethodProvider {
             classSolutionIsInitialised = true;
         }
 
-        Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
+        Globals.getInst().symbolicExecLogger.isDebugEnabled() {
+            Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
+        }
         vm.resetInstructionsExecutedSinceLastSolution();
         SolutionIterator.totalSearchTime += vm.recordSearchEnded();
         SolutionIterator.totalSolutionCount++;
@@ -103,7 +105,9 @@ public class SolutionIterator extends NativeMethodProvider {
             }
         } catch (CloneNotSupportedException e) {
             // Nevermind. At least we tried.
-            Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
+            Globals.getInst().symbolicExecLogger.isDebugEnabled() {
+                Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
+            }
         }
 
 
@@ -148,7 +152,9 @@ public class SolutionIterator extends NativeMethodProvider {
         }
 
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
-        Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
+        Globals.getInst().symbolicExecLogger.isDebugEnabled() {
+            Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
+        }
         vm.resetInstructionsExecutedSinceLastSolution();
         SolutionIterator.totalSearchTime += vm.recordSearchEnded();
         SolutionIterator.totalSolutionCount++;

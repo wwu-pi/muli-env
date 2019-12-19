@@ -38,7 +38,7 @@ public class SimpleFreeObjects {
         assertTrue("Objectref <" + value0 + "> must encapsulate Integer(5)", value0.endsWith("val: 5)"));
     }
 
-    // Disabled @Test
+    @Test
     public final void test_methodInvocation() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.SimpleMethod");
         assertEquals(1, foundTrees.length);

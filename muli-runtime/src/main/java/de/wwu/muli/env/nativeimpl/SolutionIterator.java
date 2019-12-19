@@ -85,7 +85,7 @@ public class SolutionIterator extends NativeMethodProvider {
             classSolutionIsInitialised = true;
         }
 
-        Globals.getInst().symbolicExecLogger.isDebugEnabled() {
+        if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
             Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
         }
         vm.resetInstructionsExecutedSinceLastSolution();
@@ -105,7 +105,7 @@ public class SolutionIterator extends NativeMethodProvider {
             }
         } catch (CloneNotSupportedException e) {
             // Nevermind. At least we tried.
-            Globals.getInst().symbolicExecLogger.isDebugEnabled() {
+            if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
                 Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
             }
         }
@@ -152,7 +152,7 @@ public class SolutionIterator extends NativeMethodProvider {
         }
 
         // solutionException is expected to be Objectref (most likely in symbExec) or Throwable (unlikely).
-        Globals.getInst().symbolicExecLogger.isDebugEnabled() {
+        if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
             Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
         }
         vm.resetInstructionsExecutedSinceLastSolution();

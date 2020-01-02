@@ -19,8 +19,8 @@ public class FreeObjectsWithHierarchy {
         assertEquals(1, foundTrees.length);
         System.out.println(foundTrees[0].toString());
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
-        // One for Rectangle, one for Square, one failing.
-        assertEquals(3, leaves.length);
+        // A binary choice for getArea, then one binary choice each for true/false -> One for Rectangle, one for Square, two failing.
+        assertEquals(4, leaves.length);
         assertEquals(2, Arrays.stream(leaves).filter(x -> x instanceof Value).count());
     }
 }

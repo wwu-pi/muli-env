@@ -31,6 +31,7 @@ import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
+import de.wwu.muggl.vm.initialization.FreeObjectref;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.InitializedClass;
 import de.wwu.muggl.vm.initialization.Objectref;
@@ -370,7 +371,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         }
 
         // Get an uninitialised(!) Objectref.
-        Objectref anObjectref = this.getAnObjectref(classFile);
+        FreeObjectref anObjectref = this.getAFreeObjectref(classFile);
 
         // Do not call initialisers:
         // - the static one already ran (via getAnObjectref).
@@ -551,6 +552,41 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.getSearchAlgorithm().generateNewChoicePoint(this, instruction, termFromStack, keys, pcs,
 				low, high);
 	}
+
+    /**
+     * Generate an instance of Objectref for the specified ClassFile and check whether its fields
+     * should be initialized to logic variables.
+     *
+     * @param classFile The class file to get an object reference for.
+     * @return A new instance of objectref for this ClassFile.
+     * @throws ExceptionInInitializerError If class initialization fails.
+     */
+    public FreeObjectref getAFreeObjectref(ClassFile classFile) {
+        // Get and check the initialized class.
+        InitializedClass initializedClass = classFile.getTheInitializedClass(this);
+
+        // Get the object reference.
+        FreeObjectref objectref = initializedClass.getANewFreeObject();
+
+        // Check which fields are annotated and replace undefined fields by logic variables.
+        for (Field field : classFile.getFields()) {
+            for (Attribute attribute : field.getAttributes()) {
+                if (!attribute.getStructureName().equals("attribute_free_field")) {
+                    continue;
+                }
+                if (!objectref.hasValueFor(field)) {
+                    String type = field.getDescriptor();
+                    Object representation = createRepresentationForFreeVariableOrField(classFile, type, field.getName());
+                    objectref.putField(field, representation);
+                }
+                break;
+
+            }
+        }
+
+        // Return the object reference.
+        return objectref;
+    }
 	
 	/**
 	 * Generate an instance of Objectref for the specified ClassFile and check whether its fields

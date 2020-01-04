@@ -40,6 +40,7 @@ import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.searchtree.Choice;
+import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
 
 import java.util.*;
@@ -237,6 +238,9 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         if (result instanceof Choice) {
             this.getSearchAlgorithm().recordChoice((Choice)result);
             this.getSearchAlgorithm().takeNextDecision(this);
+        } else if (result instanceof Fail) {
+            this.getSearchAlgorithm().recordFail((Fail) result);
+            this.getSearchAlgorithm().takeNextDecision(this); // TODO Might need additional backtracking?! Check interface.
         } else {
             throw new IllegalStateException("Instruction " + instruction + " returned an unsupported result type: " + result);
         }

@@ -1,0 +1,16 @@
+package applications.freeObjects;
+public class A {
+    public int i = 2;
+}
+public class B extends A {
+    public int i = 1;
+}
+public class SimpleFieldAccess {
+    public static void main(String[] args) {
+        A a = new A();
+        A b = new B();
+        System.out.print(a.i);
+        System.out.print(".");
+        System.out.println(b.i);
+    }
+}

@@ -1,6 +1,7 @@
 package de.wwu.muli.freeObjects;
 
 import de.wwu.muggl.vm.classfile.ClassFileException;
+import de.wwu.muggl.vm.execution.nativeWrapping.TestablePrintStreamWrapper;
 import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
 import de.wwu.muli.searchtree.ST;
@@ -12,6 +13,14 @@ import java.util.Arrays;
 import static org.junit.Assert.*;
 
 public class SimpleFreeObjects {
+    @Test
+    public final void test_fieldsAreShadowedAndNotOverridden() throws InterruptedException, ClassFileException {
+        // Testing WFLP2018, S. 3.1.
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.SimpleFieldAccess");
+        // No non-determinism expected; field accesses are deterministic.
+        assertEquals(0, foundTrees.length);
+        assertEquals("2.2\n", TestablePrintStreamWrapper.outputStream().getBufferContents());
+    }
     @Test
     public final void test_fieldAccessIsFree() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjects.FieldAccess");

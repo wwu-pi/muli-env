@@ -27,14 +27,10 @@ import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.classfile.structures.attributes.AttributeLocalVariableTable;
 import de.wwu.muggl.vm.classfile.structures.attributes.elements.LocalVariableTable;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
-import de.wwu.muggl.vm.exceptions.VmRuntimeException;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
-import de.wwu.muggl.vm.initialization.FreeObjectref;
-import de.wwu.muggl.vm.initialization.InitializationException;
-import de.wwu.muggl.vm.initialization.InitializedClass;
-import de.wwu.muggl.vm.initialization.Objectref;
+import de.wwu.muggl.vm.initialization.*;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
@@ -304,93 +300,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         if (type == null) {
             throw new IllegalStateException("Trying to create a free variable for a non-existing variable! Aborting.");
         }
-        Object freeVariableRepresentation = createRepresentationForFreeVariableOrField(frame.getMethod().getClassFile(), type, name);
+        Object freeVariableRepresentation = FreeObjectrefInitialisers.createRepresentationForFreeVariableOrField(this, frame.getMethod().getClassFile(), type, name);
 
         // Put logic variable into field.
         frame.setLocalVariable(freeVariableIndex, freeVariableRepresentation);
-    }
-
-    protected Object createRepresentationForFreeVariableOrField(ClassFile fromClass, String type, String name) {
-        // Convert string type to expression type.
-        Expression.Type expressionType = null;
-        switch(type) {
-        case "B":
-            expressionType = Expression.Type.BYTE;
-            break;
-        case "C":
-            expressionType = Expression.Type.CHAR;
-            break;
-        case "D":
-            expressionType = Expression.Type.DOUBLE;
-            break;
-        case "I":
-            expressionType = Expression.Type.INT;
-            break;
-        case "F":
-            expressionType = Expression.Type.FLOAT;
-            break;
-        case "J":
-            expressionType = Expression.Type.LONG;
-            break;
-        case "S":
-            expressionType = Expression.Type.SHORT;
-            break;
-        case "Z":
-            expressionType = Expression.Type.BOOLEAN;
-            break;
-        default:
-            if (type.startsWith("L")) {
-                expressionType = Expression.Type.OBJECT;
-            } else if (type.startsWith("[")) {
-                expressionType = Expression.Type.ARRAY;
-            }
-        }
-
-        if (expressionType == null) {
-            throw new IllegalStateException("Unexpected type '" + type + "' -- cannot use this in a free variable.");
-        }
-
-        Object freeVariableRepresentation;
-
-        // Find the correct type and create an appropriate representation.
-        if (expressionType == Expression.Type.OBJECT) {
-            freeVariableRepresentation = createRepresentationForFreeObject(fromClass, type);
-        } else if (expressionType == Expression.Type.ARRAY) {
-            throw new IllegalStateException("Free variables of array types are not supported yet.");
-        } else if (expressionType == Expression.Type.BOOLEAN) {
-            freeVariableRepresentation = new BooleanVariable(name);
-        } else {
-            freeVariableRepresentation = new NumericVariable(name, expressionType.toByte(), false);
-        }
-        return freeVariableRepresentation;
-    }
-
-    private Object createRepresentationForFreeObject(ClassFile fromClass, String type) {
-	    // Resolve class of target type.
-        ClassFile classFile;
-        try {
-            classFile = resolveClassAsClassFile(fromClass, type);
-        } catch (VmRuntimeException | ExecutionException e) {
-            throw new IllegalStateException(e);
-        }
-
-        // Get an uninitialised(!) Objectref.
-        FreeObjectref anObjectref = this.getAFreeObjectref(classFile);
-
-        // Do not call initialisers:
-        // - the static one already ran (via getAnObjectref).
-        // - the instance one is not called on purpose, see paper.
-
-        for (Field field : classFile.getFields()) {
-            if (anObjectref.hasValueFor(field)) {
-                continue;
-            }
-            // Initialise uninitialised fields as free.
-            String fieldType = field.getDescriptor();
-            Object representation = createRepresentationForFreeVariableOrField(classFile, fieldType, field.getName());
-            anObjectref.putField(field, representation);
-        }
-        return anObjectref;
     }
 
     /**
@@ -580,7 +493,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
                 }
                 if (!objectref.hasValueFor(field)) {
                     String type = field.getDescriptor();
-                    Object representation = createRepresentationForFreeVariableOrField(classFile, type, field.getName());
+                    Object representation = FreeObjectrefInitialisers.createRepresentationForFreeVariableOrField(this, classFile, type, field.getName());
                     objectref.putField(field, representation);
                 }
                 break;
@@ -616,7 +529,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 				}
 				if (!objectref.hasValueFor(field)) {
 					String type = field.getDescriptor();
-                    Object representation = createRepresentationForFreeVariableOrField(classFile, type, field.getName());
+                    Object representation = FreeObjectrefInitialisers.createRepresentationForFreeVariableOrField(this, classFile, type, field.getName());
                     objectref.putField(field, representation);
 				}
 				break;

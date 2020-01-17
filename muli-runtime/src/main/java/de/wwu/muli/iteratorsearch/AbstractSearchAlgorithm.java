@@ -42,7 +42,6 @@ import org.apache.log4j.Level;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashSet;
-import java.util.ListIterator;
 import java.util.Stack;
 
 public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgorithm {

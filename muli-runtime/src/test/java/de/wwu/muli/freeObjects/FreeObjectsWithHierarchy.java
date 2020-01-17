@@ -8,6 +8,8 @@ import de.wwu.muli.searchtree.Value;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,5 +24,9 @@ public class FreeObjectsWithHierarchy {
         // A binary choice for getArea, then one binary choice each for true/false -> One for Rectangle, one for Square, two failing.
         assertEquals(4, leaves.length);
         assertEquals(2, Arrays.stream(leaves).filter(x -> x instanceof Value).count());
+        List<Object> collect = Arrays.stream(leaves).filter(x -> x instanceof Value).map(v -> ((Value) v).value).collect(Collectors.toList());
+        // Show that the free object was interpreted with the correct type.
+        assertTrue(collect.get(0).toString().endsWith(" val: applications.freeObjects.pojo.Rectangle)"));
+        assertTrue(collect.get(1).toString().endsWith(" val: applications.freeObjects.pojo.Square)"));
     }
 }

@@ -1,0 +1,23 @@
+package applications.freeObjects;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.freeObjects.pojo2.*;
+
+public class InheritedAbstractMethod {
+
+  public static void main(String[] args) {
+    List<Solution<Object>> solutions = Muli.getAllSolutions(InheritedAbstractMethod::search);
+  }
+
+  private static String search() {
+    Rectangle r = new Rectangle(); Square sq = new Square();
+    Shape s free;
+    if (s.getArea() == 16) {
+      return s.getClass().getName();
+    } else {
+      throw Muli.fail();
+    }
+  }
+}

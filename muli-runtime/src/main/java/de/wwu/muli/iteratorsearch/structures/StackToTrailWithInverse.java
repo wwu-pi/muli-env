@@ -1,6 +1,7 @@
 package de.wwu.muli.iteratorsearch.structures;
 
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
+import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.StackWithTrail;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Pop;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.Push;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.VmPop;
@@ -23,7 +24,7 @@ import java.util.function.Supplier;
  * @author Jan C. Dageförde
  * @version 1.0.0, 2010-03-10
  */
-public class StackToTrailWithInverse extends Stack<Object> {
+public class StackToTrailWithInverse extends Stack<Object> implements StackWithTrail {
 	private static final long serialVersionUID = 2507257891851151819L;
 	// Fields.
 	private boolean isVmStack;

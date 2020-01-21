@@ -6,6 +6,7 @@ import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
 import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.searchtree.Value;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -55,5 +56,11 @@ public class SimpleFreeObjects {
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         assertEquals(2, leaves.length);
         assertEquals(1, Arrays.stream(leaves).filter(x -> x instanceof Value).count());
+    }
+
+    @Before
+    public void clearStreamsBeforeTests() {
+        TestablePrintStreamWrapper.outputStream().resetBuffer();
+        TestablePrintStreamWrapper.errorStream().resetBuffer();
     }
 }

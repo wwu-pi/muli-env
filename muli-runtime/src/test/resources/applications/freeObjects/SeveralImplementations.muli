@@ -1,0 +1,38 @@
+package applications.freeObjects;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class SevImplA {
+    public String m() {
+        return "I am A";
+    }
+}
+public class SevImplB extends SevImplA {
+    public String m() {
+        return "I am B";
+    }
+}
+public class SevImplC extends SevImplB {
+    // Intentionally no implementation for m().
+}
+public class SevImplD extends SevImplC {
+    public String m() {
+        return "I am D";
+    }
+}
+
+public class SeveralImplementations {
+
+  public static void main(String[] args) {
+    List<Solution<Object>> solutions = Muli.getAllSolutions(SeveralImplementations::search);
+  }
+
+  private static int search() {
+      SevImplB tempB = new SevImplB();SevImplC tempC = new SevImplC();SevImplD tempD = new SevImplD();
+    SevImplA a free;
+    System.out.println(a.m());
+    return 0;
+  }
+}

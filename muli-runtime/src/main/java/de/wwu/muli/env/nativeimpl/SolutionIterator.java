@@ -219,10 +219,10 @@ public class SolutionIterator extends NativeMethodProvider {
                     });
                     solutionObject = solutionObject2;
                 } else if (solutionObject instanceof Arrayref) {
+
                     Arrayref ar = (Arrayref) solutionObject;
                     Object[] elements = ar.getRawElements();
-                    Arrayref result = new Arrayref(vm.getClassLoader().getClassAsClassFile("java.lang.Integer")
-                            .getAPrimitiveWrapperObjectref(vm), elements.length);
+                    Arrayref result = new Arrayref(ar);
                     for (int i = 0; i < elements.length; i++) {
                         Object newValue = elements[i];
                         if (elements[i] instanceof Term) {
@@ -239,7 +239,7 @@ public class SolutionIterator extends NativeMethodProvider {
                     }
                     solutionObject = result;
                 }
-            } catch (TimeoutException | SolverUnableToDecideException | ClassFileException | PrimitiveWrappingImpossibleException e) {
+            } catch (TimeoutException | SolverUnableToDecideException e) {
                 throw new RuntimeException(e);
             }
         }

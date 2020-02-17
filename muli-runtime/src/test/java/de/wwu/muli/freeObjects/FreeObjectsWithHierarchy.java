@@ -26,8 +26,8 @@ public class FreeObjectsWithHierarchy {
         assertEquals(2, Arrays.stream(leaves).filter(x -> x instanceof Value).count());
         List<Object> collect = Arrays.stream(leaves).filter(x -> x instanceof Value).map(v -> ((Value) v).value).collect(Collectors.toList());
         // Show that the free object was interpreted with the correct type.
-        assertTrue(collect.get(0).toString().endsWith(" val: applications.freeObjects.pojo.Rectangle)"));
-        assertTrue(collect.get(1).toString().endsWith(" val: applications.freeObjects.pojo.Square)"));
+        assertTrue(collect.get(0).toString().endsWith(": applications.freeObjects.pojo.Rectangle)"));
+        assertTrue(collect.get(1).toString().endsWith(": applications.freeObjects.pojo.Square)"));
     }
     @Test
     public final void test_methodImplementingAbstractClass() throws InterruptedException, ClassFileException {
@@ -40,7 +40,7 @@ public class FreeObjectsWithHierarchy {
         assertEquals(2, Arrays.stream(leaves).filter(x -> x instanceof Value).count());
         List<Object> collect = Arrays.stream(leaves).filter(x -> x instanceof Value).map(v -> ((Value) v).value).collect(Collectors.toList());
         // Show that the free object was interpreted with the correct type.
-        assertTrue(collect.get(0).toString().endsWith(" val: applications.freeObjects.pojo2.Rectangle)"));
-        assertTrue(collect.get(1).toString().endsWith(" val: applications.freeObjects.pojo2.Square)"));
+        assertTrue(collect.get(0).toString().endsWith(": applications.freeObjects.pojo2.Rectangle)"));
+        assertTrue(collect.get(1).toString().endsWith(": applications.freeObjects.pojo2.Square)"));
     }
 }

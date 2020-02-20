@@ -1,0 +1,21 @@
+package applications.freeObjects;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.freeObjects.pojo3.*;
+
+public class EqualsNondeterministicInvoke {
+
+  public static void main(String[] args) {
+      new Rectangle();new Square();new Cuboid();new Cube();
+    List<Solution<Object>> solutions = Muli.getAllSolutions(EqualsNondeterministicInvoke::search);
+  }
+
+  private static boolean search() {
+      Shape s free;
+      Rectangle r = new Rectangle();
+      r.width = 100; r.height = 101;
+      return s.equals(r);
+  }
+}

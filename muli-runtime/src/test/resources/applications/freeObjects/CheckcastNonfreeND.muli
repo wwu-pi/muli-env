@@ -1,0 +1,32 @@
+package applications.freeObjects;
+
+import de.wwu.muli.Muli;
+
+import java.util.List;
+
+public class CheckcastNonfreeND {
+
+  public static void main(String[] args) {
+      Muli.getAllSolutions(() -> {
+          situation1();
+          return true;
+      });
+      Muli.getAllSolutions(() -> {
+          situation2();
+          return true;
+      });
+  }
+
+  public static void situation1() {
+    CheckcastNonfreeA a free;
+    CheckcastNonfreeC c = (CheckcastNonfreeC) a;
+    System.out.println("Sit 1 ok.");
+  }
+
+  public static void situation2() {
+    CheckcastNonfreeA a free;
+    CheckcastNonfreeB b = (CheckcastNonfreeB) a;
+    CheckcastNonfreeC c = (CheckcastNonfreeC) b;
+    System.out.println("Sit 2 ok.");
+  }
+}

@@ -1,0 +1,28 @@
+package applications.freeObjects;
+
+import java.util.List;
+
+public class CheckcastNonfree {
+
+  public static void main(String[] args) {
+    situation1();
+    situation2();
+  }
+
+  public static void situation1() {
+    CheckcastNonfreeA a = new CheckcastNonfreeB();
+    CheckcastNonfreeC c = (CheckcastNonfreeC) a;
+    System.out.println("Sit 1 ok.");
+  }
+
+  public static void situation2() {
+    CheckcastNonfreeA a = new CheckcastNonfreeB();
+    CheckcastNonfreeB b = (CheckcastNonfreeB) a;
+    CheckcastNonfreeC c = (CheckcastNonfreeC) b;
+    System.out.println("Sit 2 ok.");
+  }
+}
+
+public class CheckcastNonfreeA {}
+public class CheckcastNonfreeB extends CheckcastNonfreeA implements CheckcastNonfreeC {}
+public interface CheckcastNonfreeC {}

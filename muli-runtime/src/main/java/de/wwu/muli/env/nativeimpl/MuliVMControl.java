@@ -21,6 +21,7 @@ import de.wwu.muli.solution.MuliFailException;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
+import java.io.*;
 import java.lang.invoke.MethodType;
 
 /**
@@ -66,6 +67,11 @@ public class MuliVMControl extends NativeMethodProvider {
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "label",
                 MethodType.methodType(void.class, Frame.class),
                 MethodType.methodType(void.class));
+
+        // `executeOnShell' operation.
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "executeOnShell",
+                MethodType.methodType(Object.class, Frame.class, Object.class, Object.class, Object.class, Object.class, Object.class),
+                MethodType.methodType(String.class, String.class, String.class, String.class, String.class, String.class));
 
         Globals.getInst().logger.debug("MuliVMControl native method handlers registered");
     }
@@ -152,6 +158,47 @@ public class MuliVMControl extends NativeMethodProvider {
             vm.getSolverManager().getSolution();
         } catch (Exception e) {
             Globals.getInst().solverLogger.error("Labeling exception: " + e.getMessage());
+        }
+
+    }
+
+    public static Object executeOnShell(Frame frame, Object cmd, Object pathToTemp, Object prefix, Object suffix, Object script) {
+        String cmdStr = cmd instanceof Objectref ? NativeWrapper.stringObjectrefToString((Objectref) cmd) : (String) cmd;
+        String pathToTempStr = pathToTemp instanceof Objectref ? NativeWrapper.stringObjectrefToString((Objectref) pathToTemp) : (String) pathToTemp;
+        String prefixStr = prefix instanceof Objectref ? NativeWrapper.stringObjectrefToString((Objectref) prefix) : (String) prefix;
+        String suffixStr = suffix instanceof Objectref ? NativeWrapper.stringObjectrefToString((Objectref) suffix) : (String) suffix;
+        String scriptStr = script instanceof Objectref ? NativeWrapper.stringObjectrefToString((Objectref) script) : (String) script;
+
+        final File path = new File(pathToTempStr);
+        final File tempFile;
+        try {
+            tempFile = File.createTempFile(prefixStr, suffixStr, path);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+
+        try (PrintWriter out = new PrintWriter(tempFile)) {
+            out.println(scriptStr);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+        String tempFileName = tempFile.getName();
+
+        try {
+            Process p = Runtime.getRuntime().exec(cmdStr + " " + pathToTempStr + tempFileName);
+
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String s;
+            while ((s = stdInput.readLine()) != null) {
+                output.append(s);
+            }
+            return output.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
         }
 
     }

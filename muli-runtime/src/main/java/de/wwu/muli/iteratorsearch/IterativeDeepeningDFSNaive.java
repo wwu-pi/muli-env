@@ -27,7 +27,7 @@ public class IterativeDeepeningDFSNaive extends AbstractSearchAlgorithm {
     /**
      * The depth is incremented by this constant.
      */
-    protected static final int deepnessIncrement = 5;
+    protected static final int deepnessIncrement = 25;
     /**
      * For a given maximum depth of n = `currentMaximumDepth', this
      * stack represents the nodes up to a depth of n that DFS will check subsequently.

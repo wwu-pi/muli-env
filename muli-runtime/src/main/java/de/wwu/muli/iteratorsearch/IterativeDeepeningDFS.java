@@ -40,6 +40,7 @@ public class IterativeDeepeningDFS extends IterativeDeepeningDFSNaive {
             }
 
             this.currentMaximumDepth += IterativeDeepeningDFSNaive.deepnessIncrement;
+            System.out.println("incdepth");
             this.nextNodes = this.nextNodeStack;
             this.nextNodeStack = new Stack<>();
         }

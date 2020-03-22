@@ -91,6 +91,7 @@ public class SolutionIterator extends NativeMethodProvider {
         vm.resetInstructionsExecutedSinceLastSolution();
         SolutionIterator.totalSearchTime += vm.recordSearchEnded();
         SolutionIterator.totalSolutionCount++;
+        System.out.print(SolutionIterator.totalSearchTime);
 
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);

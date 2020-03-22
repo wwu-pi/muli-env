@@ -18,7 +18,7 @@ public class NNGenerator {
 
     public static void main(String[] args) {
         Stream<Solution<Object>> solutions = Muli.muli(NNGenerator::search, SearchStrategy.IterativeDeepening);
-        solutions.limit(2000).forEach(solution -> {
+        solutions.forEach(solution -> {
             //System.out.print("Solution: ");
             String creation = (String)solution.value;
             Network n = Network.fromCreationSequence(creation, 4, 2);
@@ -28,12 +28,12 @@ public class NNGenerator {
                 String[] a = calculated.split(",");
                 System.out.println(calculated);
                 // Quit if enough good results are found.
-                if (a[0].equals("solved")) {
+                /*if (a[0].equals("solved")) {
                     NNGenerator.workingNNs++;
                     if (NNGenerator.workingNNs >= 10) {
                         System.exit(0);
                     }
-                }
+                }*/
 
         });
     }
@@ -71,7 +71,7 @@ public class NNGenerator {
                         // Next operation.
                         return generateNetwork(network, newSeq);
                     } else {
-                        throw Muli.fail();
+                        // Try adding at a different place!
                     }
                 }
                 throw Muli.fail();

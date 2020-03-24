@@ -12,8 +12,8 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 
 public class NeuralNetworks {
-    @Test
-    public final void test_nngenerator() throws InterruptedException, ClassFileException {
+    //@Test
+    public final void /*test_*/nngenerator() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.neural.NNGenerator");
         assertEquals(1, foundTrees.length);
         System.out.println(foundTrees[0].toString());

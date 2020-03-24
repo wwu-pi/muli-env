@@ -1,0 +1,35 @@
+package applications.toys;
+
+import java.util.stream.Stream;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class Taxicab {
+
+    public static void main(String[] args) {
+        Stream<Solution<Object>> solutions = Muli.muli(Taxicab::solve);
+        solutions.limit(1).forEach(s -> System.out.println(s.value));
+    }
+
+    private static int solve() {
+        int a free, b free, c free, d free, e free;
+        positiveDomain(a, b, c, d, e);
+        if (a != c && a != d &&
+                cube(a) + cube(b) == e &&
+                cube(c) + cube(d) == e) {
+            return e;
+        }
+        throw Muli.fail();
+    }
+
+    private static int cube(int n) {
+        return n*n*n;
+    }
+
+    private static int[] positiveDomain(int... vars) {
+        for (int v : vars) {
+            if (v <= 0) throw Muli.fail();
+        }
+        return vars;
+    }
+}

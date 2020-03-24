@@ -7,8 +7,8 @@ import de.wwu.muli.solution.*;
 
 public class NNGenerator {
     public static String writeAndRunScript(String script) {
-        String stdout = Muli.executeOnShell("/home/j_dage01/Development/Muli/muliforneuralnets/venv/bin/python",
-                "/home/j_dage01/Development/Muli/muliforneuralnets/py-gen/",
+        String stdout = Muli.executeOnShell("/home/j_dage01/Dev-work/muli-for-neural-nets/venv/bin/python",
+                "/home/j_dage01/Dev-work/muli-for-neural-nets/py-gen/",
                 "network-", ".py",
                 script);
         return stdout;

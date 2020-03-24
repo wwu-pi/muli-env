@@ -65,6 +65,11 @@ public class MuliVMControl extends NativeMethodProvider {
 
         // `label' operation.
         NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "label",
+                MethodType.methodType(Object.class, Frame.class, Object.class),
+                MethodType.methodType(Object.class, Object.class));
+
+        // `label' operation.
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "label",
                 MethodType.methodType(void.class, Frame.class),
                 MethodType.methodType(void.class));
 
@@ -159,7 +164,16 @@ public class MuliVMControl extends NativeMethodProvider {
         } catch (Exception e) {
             Globals.getInst().solverLogger.error("Labeling exception: " + e.getMessage());
         }
+    }
 
+    public static Object label(Frame frame, Object o) {
+        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+        try {
+            return vm.labelSolutionObject(o);
+        } catch (Exception e) {
+            Globals.getInst().solverLogger.error("Labeling exception: " + e.getMessage());
+            return null; // TODO Throw a runtime exception instead.
+        }
     }
 
     public static Object executeOnShell(Frame frame, Object cmd, Object pathToTemp, Object prefix, Object suffix, Object script) {

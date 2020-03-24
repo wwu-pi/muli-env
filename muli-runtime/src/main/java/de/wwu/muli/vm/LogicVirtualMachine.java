@@ -12,6 +12,8 @@ import de.wwu.muggl.instructions.general.Switch;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.solvers.SolverManager;
+import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
+import de.wwu.muggl.solvers.exceptions.TimeoutException;
 import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
@@ -158,7 +160,58 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.searchStrategies = new HashMap<>();
 	}
 
-	/**
+    public Object labelSolutionObject(Object solutionObject) {
+        // Label found solution.
+        de.wwu.muggl.solvers.Solution solution;
+        try {
+            solution = this.getSolverManager().getSolution();
+            if (solutionObject instanceof Objectref) {
+                Objectref solutionObject2 = this.getAnObjectref(((Objectref) solutionObject).getInitializedClass().getClassFile());
+                HashMap<Field, Object> fields = ((Objectref) solutionObject).getFields();
+                HashMap<Field, Object> fields2 = ((Objectref) solutionObject2).getFields();
+                fields.entrySet().forEach((entry) -> {
+                    if (entry.getValue() instanceof Term) {
+                        Term value = (Term) entry.getValue();
+                        Term simplified = value.insert(solution, false);
+                        Object newValue = simplified;
+                        if (simplified.isConstant()) {
+                            newValue = ((NumericConstant) simplified).getIntValue();
+                        }
+                        fields2.put(entry.getKey(), newValue);
+                    } else {
+                        fields2.put(entry.getKey(), entry.getValue());
+                    }
+                });
+                solutionObject = solutionObject2;
+            } else if (solutionObject instanceof Arrayref) {
+
+                Arrayref ar = (Arrayref) solutionObject;
+                Object[] elements = ar.getRawElements();
+                Arrayref result = new Arrayref(ar);
+                for (int i = 0; i < elements.length; i++) {
+                    Object newValue = elements[i];
+                    if (elements[i] instanceof Term) {
+                        Term value = (Term) elements[i];
+                        Term simplified = value.insert(solution, false);
+
+                        if (simplified.isConstant()) {
+                            newValue = ((NumericConstant) simplified).getIntValue();
+                        } else {
+                            newValue = simplified;
+                        }
+                    }
+                    result.putElement(i, newValue);
+                }
+                solutionObject = result;
+            }
+        } catch (TimeoutException | SolverUnableToDecideException e) {
+            throw new RuntimeException(e);
+        }
+
+        return solutionObject;
+    }
+
+    /**
 	 * The main loop on the SymbolicalVirtualMachine executes the VirtualMachines main loop; it then
 	 * saves the found solutions, checks weather a tracking back is possible and continues from that
 	 * point on, again using the normal VirtualMachines main loop. It keeps doing so, until tracking

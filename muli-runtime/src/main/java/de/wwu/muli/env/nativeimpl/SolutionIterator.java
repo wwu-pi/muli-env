@@ -2,21 +2,14 @@ package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
-import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
-import de.wwu.muggl.solvers.exceptions.TimeoutException;
-import de.wwu.muggl.solvers.expressions.NumericConstant;
-import de.wwu.muggl.solvers.expressions.Term;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
-import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
-import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.Objectref;
-import de.wwu.muggl.vm.initialization.PrimitiveWrappingImpossibleException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
@@ -26,7 +19,6 @@ import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
-import java.util.HashMap;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.search.SolutionIterator
@@ -37,7 +29,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.search.SolutionIterator.class.getCanonicalName();
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
-    private static boolean labelSolutions = false;
+    public static boolean labelSolutions = false;
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
@@ -92,7 +84,6 @@ public class SolutionIterator extends NativeMethodProvider {
         long timeSpent = vm.recordSearchEnded();
         SolutionIterator.totalSearchTime += timeSpent;
         SolutionIterator.totalSolutionCount++;
-        System.out.print(timeSpent+",");
 
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
@@ -198,52 +189,7 @@ public class SolutionIterator extends NativeMethodProvider {
 
     private static Object maybeLabel(LogicVirtualMachine vm, Object solutionObject) {
         if (labelSolutions) {
-            // Label found solution.
-            de.wwu.muggl.solvers.Solution solution;
-            try {
-                solution = vm.getSolverManager().getSolution();
-                if (solutionObject instanceof Objectref) {
-                    Objectref solutionObject2 = vm.getAnObjectref(((Objectref) solutionObject).getInitializedClass().getClassFile());
-                    HashMap<Field, Object> fields = ((Objectref) solutionObject).getFields();
-                    HashMap<Field, Object> fields2 = ((Objectref) solutionObject2).getFields();
-                    fields.entrySet().forEach((entry) -> {
-                        if (entry.getValue() instanceof Term) {
-                            Term value = (Term) entry.getValue();
-                            Term simplified = value.insert(solution, false);
-                            Object newValue = simplified;
-                            if (simplified.isConstant()) {
-                                newValue = ((NumericConstant) simplified).getIntValue();
-                            }
-                            fields2.put(entry.getKey(), newValue);
-                        } else {
-                            fields2.put(entry.getKey(), entry.getValue());
-                        }
-                    });
-                    solutionObject = solutionObject2;
-                } else if (solutionObject instanceof Arrayref) {
-
-                    Arrayref ar = (Arrayref) solutionObject;
-                    Object[] elements = ar.getRawElements();
-                    Arrayref result = new Arrayref(ar);
-                    for (int i = 0; i < elements.length; i++) {
-                        Object newValue = elements[i];
-                        if (elements[i] instanceof Term) {
-                            Term value = (Term) elements[i];
-                            Term simplified = value.insert(solution, false);
-
-                            if (simplified.isConstant()) {
-                                newValue = ((NumericConstant) simplified).getIntValue();
-                            } else {
-                                newValue = simplified;
-                            }
-                        }
-                        result.putElement(i, newValue);
-                    }
-                    solutionObject = result;
-                }
-            } catch (TimeoutException | SolverUnableToDecideException e) {
-                throw new RuntimeException(e);
-            }
+            return vm.labelSolutionObject(solutionObject);
         }
 
         return solutionObject;

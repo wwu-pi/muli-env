@@ -9,7 +9,7 @@ allprojects { // Except muli runtime; that declares its own
     apply plugin: 'maven'
     apply plugin: 'jacoco'
     group = 'de.wwu.muggl'
-    version = '1.8.0-MULI-SNAPSHOT'
+    version = '2.0.0-MULI-SNAPSHOT'
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 

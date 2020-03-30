@@ -4,6 +4,7 @@ import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
+import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.Objectref;
@@ -77,7 +78,11 @@ public class TestableMuliRunner extends MuliRunner {
             fail("Execution did not finish successfully. The reason is:\n" + runner.app.fetchError());
         } else {
             if (runner.app.getVirtualMachine().getThrewAnUncaughtException()) {
-                Objectref objectref = (Objectref) runner.app.getReturnedObject();
+                Object returnedObject = runner.app.getReturnedObject();
+                if (returnedObject instanceof NoExceptionHandlerFoundException) {
+                    returnedObject = ((NoExceptionHandlerFoundException)returnedObject).getUncaughtThrowable();
+                }
+                Objectref objectref = (Objectref)returnedObject;
 
                 ClassFile throwableClassFile = objectref.getInitializedClass().getClassFile();
                 Field detailMessageField = throwableClassFile.getFieldByName("detailMessage", true);

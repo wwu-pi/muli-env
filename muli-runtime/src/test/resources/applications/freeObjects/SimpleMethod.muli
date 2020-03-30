@@ -8,7 +8,7 @@ import applications.freeObjects.pojo.*;
 public class SimpleMethod {
 
   public static void main(String[] args) {
-    List<Solution<Object>> solutions = Muli.getAllSolutions(SimpleMethod::search);
+    Solution<Object>[] solutions = Muli.getAllSolutions(SimpleMethod::search);
   }
 
   private static int search() {

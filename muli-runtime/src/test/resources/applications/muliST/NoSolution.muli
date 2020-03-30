@@ -7,7 +7,7 @@ import de.wwu.muli.solution.*;
 public class NoSolution {
 
   public static void main(String[] args) {
-    List<Solution<Object>> solutions = Muli.getAllSolutions(NoSolution::searchCoins);
+    Solution<Object>[] solutions = Muli.getAllSolutions(NoSolution::searchCoins);
     
     for (Solution<Object> solution : solutions) {
       System.out.println(solution.value);

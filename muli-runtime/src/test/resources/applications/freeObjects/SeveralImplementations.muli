@@ -26,7 +26,7 @@ public class SevImplD extends SevImplC {
 public class SeveralImplementations {
 
   public static void main(String[] args) {
-    List<Solution<Object>> solutions = Muli.getAllSolutions(SeveralImplementations::search);
+      Solution<Object>[] solutions = Muli.getAllSolutions(SeveralImplementations::search);
   }
 
   private static int search() {

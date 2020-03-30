@@ -10,7 +10,7 @@ public class ComplicatedCoinsBFS {
     }
 
     public ComplicatedCoinsBFS() {
-        List<Solution<Object>> solutions = Muli.getAllSolutions(ComplicatedCoins::searchCoins, SearchStrategy.BreadthFirstSearch);
+        Solution<Object>[] solutions = Muli.getAllSolutions(ComplicatedCoins::searchCoins, SearchStrategy.BreadthFirstSearch);
 
         for (Solution<Object> solution : solutions) {
             System.out.println(solution.value);
@@ -24,7 +24,7 @@ public class ComplicatedCoinsIDD {
     }
 
     public ComplicatedCoinsIDD() {
-        List<Solution<Object>> solutions = Muli.getAllSolutions(ComplicatedCoins::searchCoins, SearchStrategy.IterativeDeepening);
+        Solution<Object>[] solutions = Muli.getAllSolutions(ComplicatedCoins::searchCoins, SearchStrategy.IterativeDeepening);
 
         for (Solution<Object> solution : solutions) {
             System.out.println(solution.value);
@@ -39,7 +39,7 @@ public class ComplicatedCoinsDFS {
     }
 
     public ComplicatedCoinsDFS() {
-        List<Solution<Object>> solutions = Muli.getAllSolutions(ComplicatedCoins::searchCoins, SearchStrategy.DepthFirstSearch);
+        Solution<Object>[] solutions = Muli.getAllSolutions(ComplicatedCoins::searchCoins, SearchStrategy.DepthFirstSearch);
 
         for (Solution<Object> solution : solutions) {
             System.out.println(solution.value);

@@ -7,8 +7,8 @@ import de.wwu.muli.solution.*;
 public class ExceptionCoin {
 
   public static void main(String[] args) {
-    List<Solution<Object>> solutions = Muli.getAllSolutionsEx(ExceptionCoin::searchCoins);
-    System.out.println(solutions.size());
+    Solution<Object>[] solutions = Muli.getAllSolutionsEx(ExceptionCoin::searchCoins);
+    System.out.println(solutions.length);
     
   }
 

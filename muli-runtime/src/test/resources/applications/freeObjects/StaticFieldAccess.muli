@@ -8,7 +8,7 @@ import applications.freeObjects.pojo.*;
 public class StaticFieldAccess {
 
   public static void main(String[] args) {
-    List<Solution<Object>> solutions = Muli.getAllSolutions(StaticFieldAccess::access);
+    Solution<Object>[] solutions = Muli.getAllSolutions(StaticFieldAccess::access);
   }
 
   private static int access() {

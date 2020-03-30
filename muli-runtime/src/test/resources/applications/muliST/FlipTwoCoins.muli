@@ -6,7 +6,7 @@ import de.wwu.muli.solution.*;
 
 public class FlipTwoCoinsDFS {
     public static void main(String[] args) {
-        List<Solution<Object>> solutionsDfs = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.DepthFirstSearch);
+        Solution<Object>[] solutionsDfs = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.DepthFirstSearch);
         for (Solution<Object> solution : solutionsDfs) {
             System.out.println(solution.value);
         }
@@ -16,7 +16,7 @@ public class FlipTwoCoinsDFS {
 public class FlipTwoCoinsBFS {
 
     public static void main(String[] args) {
-        List<Solution<Object>> solutionsBfs = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.BreadthFirstSearch);
+        Solution<Object>[] solutionsBfs = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.BreadthFirstSearch);
         for (Solution<Object> solution : solutionsBfs) {
             System.out.println(solution.value);
         }
@@ -26,7 +26,7 @@ public class FlipTwoCoinsBFS {
 
 public class FlipTwoCoinsIDD {
     public static void main(String[] args) {
-        List<Solution<Object>> solutionsIdd = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.IterativeDeepening);
+        Solution<Object>[] solutionsIdd = Muli.getAllSolutions(FlipTwoCoins::flipTwoCoins, SearchStrategy.IterativeDeepening);
         for (Solution<Object> solution : solutionsIdd) {
             System.out.println(solution.value);
         }

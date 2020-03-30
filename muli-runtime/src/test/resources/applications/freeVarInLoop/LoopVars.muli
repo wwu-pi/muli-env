@@ -7,7 +7,7 @@ import de.wwu.muli.solution.*;
 public class LoopVars {
 
   public static void main(String[] args) {
-    List<Solution<Object>> solutions = Muli.getAllSolutions(LoopVars::search);
+    Solution<Object>[] solutions = Muli.getAllSolutions(LoopVars::search);
     
     for (Solution<Object> solution : solutions) {
       System.out.println(solution.value);

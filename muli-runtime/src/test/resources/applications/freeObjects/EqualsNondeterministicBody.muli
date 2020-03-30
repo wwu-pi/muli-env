@@ -9,7 +9,7 @@ public class EqualsNondeterministicBody {
 
   public static void main(String[] args) {
       new Rectangle();new Square();new Cuboid();new Cube();
-    List<Solution<Object>> solutions = Muli.getAllSolutions(EqualsNondeterministicBody::search);
+      Solution<Object>[] solutions = Muli.getAllSolutions(EqualsNondeterministicBody::search);
   }
 
   private static boolean search() {

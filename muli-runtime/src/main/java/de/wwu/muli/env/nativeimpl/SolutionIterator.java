@@ -82,6 +82,7 @@ public class SolutionIterator extends NativeMethodProvider {
         }
         vm.resetInstructionsExecutedSinceLastSolution();
         long timeSpent = vm.recordSearchEnded();
+        // System.out.print(timeSpent + ",");
         SolutionIterator.totalSearchTime += timeSpent;
         SolutionIterator.totalSolutionCount++;
 

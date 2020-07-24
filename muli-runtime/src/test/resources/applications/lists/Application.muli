@@ -2,6 +2,7 @@ package applications.lists;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.stream.Stream;
 import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
@@ -10,7 +11,7 @@ class Application {
 
     private static List<Truck> evaluateList(List<Order> orders) { // orders is a concrete list
         // trucks is a free list
-        ArrayList<Truck> trucks free;
+        LinkedList<Truck> trucks free;
         enforceConstraints(trucks);
         HashMap<Truck, List<Order>> assignments = new HashMap<>();
 

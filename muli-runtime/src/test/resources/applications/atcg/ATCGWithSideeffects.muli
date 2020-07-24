@@ -1,0 +1,54 @@
+package applications.atcg;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.stream.Stream;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+class ATCGWithSideeffects {
+    public static void main(String[] args) {
+        Solution<String>[] params = (Solution<String>[])Muli.muli( () -> {
+                    ApplicationWithSideEffects applicationUnderTest = new ApplicationWithSideEffects();
+                    int times free;
+                    applicationUnderTest.m(times);
+                    String result = applicationUnderTest.n();
+                    return new CallableParameters(result, times);
+                })
+                .limit(10)
+                .map( (solution) -> {
+                    CallableParameters cp = (CallableParameters) solution.value;
+                    Object[] p = cp.params;
+                    String pre = "int times = "+p[0]+";\n" +
+                            "applicationUnderTest.m(times);\n" +
+                            "String result = applicationUnderTest.n();\n";
+                    String assertion = "assertEquals("+cp.result+", result);";
+                    return pre + assertion;
+                })
+                .toArray((size) -> {
+                    return new Solution[size];
+                });
+    }
+}
+
+class ApplicationWithSideEffects{
+    A member;
+    public void m(int times) {
+        String s = "";
+        for (int i = 0; i < times; i++) {
+            s += "m";
+        }
+        this.member = new A(s);
+    }
+    public String n() {
+        return this.member.value;
+    }
+}
+
+class A {
+    final String value;
+    public A(String value) {
+        this.value = value;
+    }
+}

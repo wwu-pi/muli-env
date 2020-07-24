@@ -1,0 +1,54 @@
+package applications.lists;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Stream;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+class Application {
+
+    List<Truck> evaluateList(List<Order> orders) { // orders is a concrete list
+        // trucks is a free list
+        ArrayList<Truck> trucks free;
+        enforceConstraints(trucks);
+        HashMap<Truck, List<Order>> assignments = new HashMap<>();
+
+        // Counter-for-loop to explicitly highlight use of List.size()
+        for (int i = 0; i < trucks.size(); i++) {
+            Truck currentTruck = trucks.get(i);
+            if (assignments.get(currentTruck) == null) {
+                assignments.put(currentTruck, new ArrayList<Order>());
+            }
+
+            for (Order order : orders) {
+                if (order.weight <= currentTruck.remainingWeightCap) {
+                    currentTruck.remainingWeightCap -= order.weight;
+                    assignments.get(currentTruck).add(order);
+                }
+            }
+
+            orders.removeAll(assignments.get(currentTruck));
+
+            if (orders.size() == 0) {
+                break;
+            }
+        }
+
+        return trucks;
+    }
+
+    void enforceConstraints(List<Truck> trucks) {
+        if (trucks.size() > 10) {
+            throw Muli.fail();
+        }
+        for (int i = 0; i < trucks.size(); i++) {
+            Truck currentTruck = trucks.get(i);
+            if (currentTruck.remainingWeightCap != 1 ||
+                    currentTruck.remainingWeightCap != 5) {
+                throw Muli.fail();
+            }
+        }
+    }
+
+}

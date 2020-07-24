@@ -7,25 +7,22 @@ import java.util.stream.Stream;
 import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 
-class ATCG {
+class ATCGObjectIdentity {
 
     public static void main(String[] args) {
         Solution<CallableParameters>[] params = (Solution<CallableParameters>[])Muli.getAllSolutions( () -> {
-            int x free;
-            int result = ApplicationUnderTest.g(ApplicationUnderTest.f(x));
-            return new CallableParameters(result, x);
+            LinkedList l free;
+            l.add(2);
+            LinkedList result = Application2UnderTest.modify(l);
+            return new CallableParameters(result, l);
         });
     }
 
 }
 
-class ApplicationUnderTest{
-    static int f(int x) {
-        return x * 2;
+class Application2UnderTest{
+    static LinkedList modify(LinkedList l) {
+        l.add("Test");
+        return l;
     }
-
-    static int g(int x) {
-        return x/2;
-    }
-
 }

@@ -16,6 +16,13 @@ public class ATCG {
 
     }
     @Test
+    public final void test_runWithSideEffectAndObjectIdentity() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.atcg.ATCGObjectIdentity");
+        assertEquals(1, foundTrees.length);
+        System.out.println(foundTrees[0].toString());
+
+    }
+    @Test
     public final void test_runWithSideEffects() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.atcg.ATCGWithSideeffects");
         assertEquals(1, foundTrees.length);

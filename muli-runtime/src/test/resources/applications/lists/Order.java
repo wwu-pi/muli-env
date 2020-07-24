@@ -1,4 +1,7 @@
 package applications.lists;
 class Order {
-    int weight;
+    final int weight;
+    public Order(int weight) {
+        this.weight = weight;
+    }
 }

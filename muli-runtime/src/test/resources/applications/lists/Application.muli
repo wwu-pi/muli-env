@@ -8,7 +8,7 @@ import de.wwu.muli.solution.*;
 
 class Application {
 
-    List<Truck> evaluateList(List<Order> orders) { // orders is a concrete list
+    private static List<Truck> evaluateList(List<Order> orders) { // orders is a concrete list
         // trucks is a free list
         ArrayList<Truck> trucks free;
         enforceConstraints(trucks);
@@ -38,7 +38,7 @@ class Application {
         return trucks;
     }
 
-    void enforceConstraints(List<Truck> trucks) {
+    private static void enforceConstraints(List<Truck> trucks) {
         if (trucks.size() > 10) {
             throw Muli.fail();
         }
@@ -49,6 +49,16 @@ class Application {
                 throw Muli.fail();
             }
         }
+    }
+
+    public static void main(String[] args) {
+        List<Order> orders = new ArrayList<>();
+        orders.add(new Order(1));
+        orders.add(new Order(2));
+        orders.add(new Order(3));
+        orders.add(new Order(5));
+        Solution<List<Truck>> trucks = (Solution<List<Truck>>)Muli.getOneSolution(() -> { return evaluateList(orders); });
+
     }
 
 }

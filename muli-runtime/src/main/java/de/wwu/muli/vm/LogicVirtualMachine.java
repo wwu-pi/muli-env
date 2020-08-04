@@ -37,6 +37,8 @@ import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
+import de.wwu.muli.listener.ExecutionListener;
+import de.wwu.muli.listener.NullExecutionListener;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
@@ -87,6 +89,12 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
     // At most one search region instantiation, i.e. the corresponding iterator, is active in the VM at the same time. Store which one.
     private Objectref currentSearchRegion = null;
     private long searchStarted;
+
+	/**
+	 * A listener which is invoked before and after instructions are executed and if an exception
+	 * is thrown during the execution of the instruction.
+	 */
+	protected ExecutionListener executionListener;
 
     /**
 	 * Special constructor, which sets the search algorithm and initializes the other fields. It is
@@ -158,6 +166,11 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
+		this.executionListener = new NullExecutionListener();
+	}
+
+	public void setExecutionListener(ExecutionListener executionListener) {
+		this.executionListener = executionListener;
 	}
 
     public Object labelSolutionObject(Object solutionObject) {
@@ -294,6 +307,21 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
             throw new IllegalStateException("Instruction " + instruction + " returned an unsupported result type: " + result);
         }
     }
+
+	@Override
+	protected Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame) {
+		return executionListener.beforeExecuteInstruction(instruction, method, frame);
+	}
+
+	@Override
+	protected void afterExecuteInstruction(Instruction instruction, Method method, Frame frame) {
+		executionListener.afterExecuteInstruction(instruction, method, frame);
+	}
+
+	@Override
+	protected void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, ExecutionException e) {
+		executionListener.treatExceptionDuringInstruction(instruction, method, frame, e);
+	}
 
     /**
      * SolutionIterator recorded and returned a solution, so reset the counter.

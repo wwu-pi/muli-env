@@ -43,11 +43,11 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void registerNatives() {
         // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapSolutionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, boolean.class), // TODO
-                MethodType.methodType(Solution.class, Object.class, boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Object.class, Boolean.class)); // TODO
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class/*, boolean.class*/), // TODO
-                MethodType.methodType(Solution.class, Throwable.class/*, boolean.class*/)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Throwable.class, Boolean.class)); // TODO
 
         // Active search region / corresponding iterator.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
@@ -68,7 +68,7 @@ public class SolutionIterator extends NativeMethodProvider {
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
-    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, boolean wrapInputs) { // TODO wrap inputs
+    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
@@ -136,7 +136,7 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
-    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException/*, boolean wrapInputs*/) { // TODO wrap inputs
+    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.

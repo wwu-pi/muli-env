@@ -173,6 +173,10 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.executionListener = executionListener;
 	}
 
+	public ExecutionListener getExecutionListener() {
+		return executionListener;
+	}
+
     public Object labelSolutionObject(Object solutionObject) {
         // Label found solution.
         de.wwu.muggl.solvers.Solution solution;

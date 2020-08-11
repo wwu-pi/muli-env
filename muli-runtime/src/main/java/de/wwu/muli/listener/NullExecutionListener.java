@@ -16,4 +16,7 @@ public class NullExecutionListener implements ExecutionListener {
 
     @Override
     public void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, Exception ex) {}
+
+    @Override
+    public void backtrack() {}
 }

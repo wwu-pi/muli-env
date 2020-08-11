@@ -12,4 +12,6 @@ public interface ExecutionListener {
 
     void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, Exception ex);
 
+    void backtrack(); // TODO Parametrization, where should be used?
+
 }

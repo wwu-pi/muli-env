@@ -117,6 +117,8 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
+            // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
+            // TODO A stream of test cases would only make sense without test case reduction
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
         }

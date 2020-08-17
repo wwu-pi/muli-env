@@ -9,6 +9,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
+import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
@@ -43,11 +44,11 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void registerNatives() {
         // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapSolutionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class), // TODO
-                MethodType.methodType(Solution.class, Object.class, Boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Object.class, Boolean.class, Boolean.class)); // TODO
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class), // TODO
-                MethodType.methodType(Solution.class, Throwable.class, Boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, Boolean.class)); // TODO
 
         // Active search region / corresponding iterator.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
@@ -68,7 +69,7 @@ public class SolutionIterator extends NativeMethodProvider {
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
-    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs) { // TODO wrap inputs
+    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs, Object generateTest) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
@@ -89,21 +90,7 @@ public class SolutionIterator extends NativeMethodProvider {
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
 
-        // Try cloning the solution in order to prevent its contents from being backtracked later on.
-        try {
-            if (solutionObject instanceof Objectref) {
-                solutionObject = ((Objectref) solutionObject).clone();
-            } else {
-                // TODO add further known cases. But most of the results are Objectrefs anyway...
-                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
-            }
-        } catch (CloneNotSupportedException e) {
-            // Nevermind. At least we tried.
-            if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
-                Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
-            }
-        }
-
+        solutionObject = cloneSolution(solutionObject);
 
         // Store Value node in ST.
         Value val = new Value(solutionObject);
@@ -138,7 +125,27 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
-    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs) { // TODO wrap inputs
+    protected static Object cloneSolution(Object solutionObject) {
+        // Try cloning the solution in order to prevent its contents from being backtracked later on.
+        try {
+            if (solutionObject instanceof Objectref) {
+                solutionObject = ((Objectref) solutionObject).clone();
+            } else if (solutionObject instanceof Arrayref) {
+                solutionObject = ((Arrayref) solutionObject).clone();
+                //throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
+            } else {
+                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
+            }
+        } catch (CloneNotSupportedException e) {
+            // Nevermind. At least we tried.
+            if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
+                Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
+            }
+        }
+        return solutionObject;
+    }
+
+    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.

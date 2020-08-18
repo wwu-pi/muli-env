@@ -43,11 +43,11 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void registerNatives() {
         // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapSolutionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class), // TODO
-                MethodType.methodType(Solution.class, Object.class, Boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Object.class, Boolean.class, Boolean.class)); // TODO
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class), // TODO
-                MethodType.methodType(Solution.class, Throwable.class, Boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, Boolean.class)); // TODO
 
         // Active search region / corresponding iterator.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
@@ -68,7 +68,7 @@ public class SolutionIterator extends NativeMethodProvider {
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
-    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs) { // TODO wrap inputs
+    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs, Object generateTest) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
@@ -117,6 +117,7 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
+            vm.reachedSolutionEvent();
             // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
             // TODO A stream of test cases would only make sense without test case reduction
         } catch (ConversionException e) {
@@ -138,7 +139,7 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
-    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs) { // TODO wrap inputs
+    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.

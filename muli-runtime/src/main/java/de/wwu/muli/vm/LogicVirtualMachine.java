@@ -39,6 +39,7 @@ import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.listener.ExecutionListener;
 import de.wwu.muli.listener.NullExecutionListener;
+import de.wwu.muli.listener.TcgExecutionListener;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
@@ -166,8 +167,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
-		this.executionListener = new NullExecutionListener();
-	}
+		this.executionListener = new TcgExecutionListener();
+		executionListener.setCoverageListener();}
 
 	public void setExecutionListener(ExecutionListener executionListener) {
 		this.executionListener = executionListener;
@@ -292,6 +293,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	protected void executeInstruction(Instruction instruction) throws ExecutionException {
         Optional<ST> st = instruction.executeMuli(this, this.currentFrame);
+		afterExecuteInstruction(instruction);
         if (!st.isPresent()) {
             return;
         }
@@ -312,17 +314,18 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         }
     }
 
-	@Override
+    public void reachedSolutionEvent() {
+		executionListener.reachedSolutionEvent();
+	}
+
 	protected Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame) {
 		return executionListener.beforeExecuteInstruction(instruction, method, frame);
 	}
 
-	@Override
-	protected void afterExecuteInstruction(Instruction instruction, Method method, Frame frame) {
-		executionListener.afterExecuteInstruction(instruction, method, frame);
+	protected void afterExecuteInstruction(Instruction instruction) {
+		executionListener.afterExecuteInstruction(instruction);
 	}
 
-	@Override
 	protected void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, ExecutionException e) {
 		executionListener.treatExceptionDuringInstruction(instruction, method, frame, e);
 	}

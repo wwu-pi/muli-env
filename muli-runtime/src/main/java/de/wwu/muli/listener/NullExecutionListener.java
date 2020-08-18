@@ -12,11 +12,16 @@ public class NullExecutionListener implements ExecutionListener {
     }
 
     @Override
-    public void afterExecuteInstruction(Instruction instruction, Method method, Frame frame) {}
+    public void afterExecuteInstruction(Instruction instruction) {}
 
     @Override
     public void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, Exception ex) {}
 
     @Override
     public void backtrack() {}
+
+    @Override
+    public void setCoverageListener() {}
+
+    public void reachedSolutionEvent() {}
 }

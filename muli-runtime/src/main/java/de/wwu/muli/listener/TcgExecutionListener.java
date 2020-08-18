@@ -8,6 +8,10 @@ public class TcgExecutionListener implements ExecutionListener {
 
     protected ExecutionPathListener executionPathListener;
 
+    public void setCoverageListener() {
+        executionPathListener = new InstructionCoverageListener();
+    }
+
     @Override
     public Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame) {
         /*
@@ -18,10 +22,11 @@ public class TcgExecutionListener implements ExecutionListener {
     }
 
     @Override
-    public void afterExecuteInstruction(Instruction instruction, Method method, Frame frame) {
+    public void afterExecuteInstruction(Instruction instruction) {
         /*
          TODO After an instruction was executed, it should be recorded by a DefUseListener or a CoverageListener.
          */
+        executionPathListener.executedInstruction(instruction);
 
     }
 
@@ -33,5 +38,10 @@ public class TcgExecutionListener implements ExecutionListener {
     @Override
     public void backtrack() {
 
+    }
+
+    @Override
+    public void reachedSolutionEvent() {
+        executionPathListener.reachedSolutionEvent();
     }
 }

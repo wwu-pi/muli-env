@@ -117,7 +117,7 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
-            vm.reachedSolutionEvent();
+            vm.reachedEndEvent();
             // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
             // TODO A stream of test cases would only make sense without test case reduction
         } catch (ConversionException e) {

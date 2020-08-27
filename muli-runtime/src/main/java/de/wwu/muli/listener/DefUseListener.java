@@ -10,7 +10,7 @@ public class DefUseListener implements ExecutionPathListener {
     }
 
     @Override
-    public void reachedSolutionEvent() {
+    public void reachedEndEvent() {
 
     }
 }

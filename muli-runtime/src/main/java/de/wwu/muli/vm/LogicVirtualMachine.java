@@ -95,7 +95,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	 * A listener which is invoked before and after instructions are executed and if an exception
 	 * is thrown during the execution of the instruction.
 	 */
-	protected ExecutionListener executionListener;
+	protected TcgExecutionListener executionListener;
 
     /**
 	 * Special constructor, which sets the search algorithm and initializes the other fields. It is
@@ -169,10 +169,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.searchStrategies = new HashMap<>();
 		this.executionListener = new TcgExecutionListener();
 		executionListener.setCoverageListener();}
-
-	public void setExecutionListener(ExecutionListener executionListener) {
-		this.executionListener = executionListener;
-	}
 
 	public ExecutionListener getExecutionListener() {
 		return executionListener;
@@ -293,7 +289,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	protected void executeInstruction(Instruction instruction) throws ExecutionException {
         Optional<ST> st = instruction.executeMuli(this, this.currentFrame);
-		afterExecuteInstruction(instruction);
+        afterExecuteInstruction(instruction);
+
         if (!st.isPresent()) {
             return;
         }
@@ -314,8 +311,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         }
     }
 
-    public void reachedSolutionEvent() {
-		executionListener.reachedSolutionEvent();
+    public void reachedEndEvent() {
+		executionListener.reachedEndEvent();
 	}
 
 	protected Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame) {

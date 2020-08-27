@@ -41,7 +41,7 @@ public class TcgExecutionListener implements ExecutionListener {
     }
 
     @Override
-    public void reachedSolutionEvent() {
-        executionPathListener.reachedSolutionEvent();
+    public void reachedEndEvent() {
+        executionPathListener.reachedEndEvent();
     }
 }

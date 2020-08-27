@@ -6,7 +6,7 @@ public interface ExecutionPathListener {
 
     public void executedInstruction(Instruction instruction);
 
-    public void reachedSolutionEvent();
+    public void reachedEndEvent();
 
 
 }

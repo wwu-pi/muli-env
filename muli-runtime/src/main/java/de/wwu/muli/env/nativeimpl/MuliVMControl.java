@@ -130,6 +130,7 @@ public class MuliVMControl extends NativeMethodProvider {
     public static void fail(Frame frame) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
 
+        vm.reachedEndEvent();
 
         // Record Fail for this node, then do backtracking to next branch immediately.
         vm.getSearchAlgorithm().recordFail(new Fail());

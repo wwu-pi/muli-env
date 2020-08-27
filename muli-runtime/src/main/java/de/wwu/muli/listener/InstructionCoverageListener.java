@@ -21,23 +21,10 @@ public class InstructionCoverageListener implements ExecutionPathListener {
 
     @Override
     public void executedInstruction(Instruction instruction) {
-        //if(isEndInstruction(instruction.getName())) {
-          //  paths.add(currentPath);
-         //   currentPath = new CoveragePath();
-        //} else {
-            currentPath.addInstruction(instruction);
-        //}
+        currentPath.addInstruction(instruction);
     }
 
-    protected boolean isEndInstruction(String instructionName) {
-        if(instructionName.contains("return")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public void reachedSolutionEvent() {
+    public void reachedEndEvent() {
         paths.add(currentPath);
         currentPath = new CoveragePath();
     }

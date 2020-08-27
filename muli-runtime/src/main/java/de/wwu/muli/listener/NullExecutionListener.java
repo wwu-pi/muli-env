@@ -23,5 +23,5 @@ public class NullExecutionListener implements ExecutionListener {
     @Override
     public void setCoverageListener() {}
 
-    public void reachedSolutionEvent() {}
+    public void reachedEndEvent() {}
 }

@@ -14,7 +14,7 @@ public interface ExecutionListener {
 
     void setCoverageListener();
 
-    void reachedSolutionEvent();
+    void reachedEndEvent();
 
     void backtrack(); // TODO Parametrization, where should be used?
 

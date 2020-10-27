@@ -3,6 +3,7 @@ package de.wwu.muli.listener;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
+import de.wwu.muli.vm.LogicVirtualMachine;
 
 public class TcgExecutionListener implements ExecutionListener {
 
@@ -10,6 +11,10 @@ public class TcgExecutionListener implements ExecutionListener {
 
     public void setCoverageListener() {
         executionPathListener = new InstructionCoverageListener();
+    }
+
+    public void setDefUseListener(LogicVirtualMachine vm) {
+        executionPathListener = new DefUseListener(vm);
     }
 
     @Override

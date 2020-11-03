@@ -131,7 +131,7 @@ public class SolutionIterator extends NativeMethodProvider {
             if (solutionObject instanceof Objectref) {
                 solutionObject = ((Objectref) solutionObject).clone();
             } else if (solutionObject instanceof Arrayref) {
-                solutionObject = ((Arrayref) solutionObject).clone();
+                solutionObject = Arrayref.getSolutionArrayrefFrom((Arrayref) solutionObject);// ((Arrayref) solutionObject).clone();
                 //throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
             } else {
                 throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());

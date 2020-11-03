@@ -14,7 +14,10 @@ import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.solvers.SolverManager;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
-import de.wwu.muggl.solvers.expressions.*;
+import de.wwu.muggl.solvers.expressions.ConstraintExpression;
+import de.wwu.muggl.solvers.expressions.IntConstant;
+import de.wwu.muggl.solvers.expressions.NumericConstant;
+import de.wwu.muggl.solvers.expressions.Term;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
@@ -23,6 +26,7 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
+import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
@@ -43,7 +47,10 @@ import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 /**
@@ -205,6 +212,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
                 Arrayref ar = (Arrayref) solutionObject;
                 Object[] elements = ar.getRawElements();
                 Arrayref result = new Arrayref(ar);
+                boolean substitutedPrimitives = false;
+                boolean simplificationOfTermsSuccessful = true;
                 for (int i = 0; i < elements.length; i++) {
                     Object newValue = elements[i];
                     if (elements[i] instanceof Term) {
@@ -212,13 +221,16 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
                         Term simplified = value.insert(solution, false);
 
                         if (simplified.isConstant()) {
+                        	substitutedPrimitives = true;
                             newValue = ((NumericConstant) simplified).getIntValue();
                         } else {
+                        	simplificationOfTermsSuccessful = false;
                             newValue = simplified;
                         }
                     }
                     result.putElement(i, newValue);
                 }
+                replaceReferenceValueOfArray(result, substitutedPrimitives, simplificationOfTermsSuccessful);
                 solutionObject = result;
             }
         } catch (TimeoutException | SolverUnableToDecideException e) {
@@ -227,6 +239,24 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
         return solutionObject;
     }
+
+    protected void replaceReferenceValueOfArray(Arrayref result,
+												boolean substitutedPrimitives,
+												boolean simplificationOfTermsSuccessful) {
+		if (substitutedPrimitives) {
+			if (!simplificationOfTermsSuccessful) {
+				throw new RuntimeException("Simplification failed.");
+			}
+			try {
+				InitializedClass newClass =
+						new InitializedClass(getClassLoader().getClassAsClassFile("java.lang.Integer"), this);
+				Objectref newReferenceValue = new Objectref(newClass, true);
+				result.setReferenceValue(newReferenceValue);
+			} catch (ClassFileException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
 
     /**
 	 * The main loop on the SymbolicalVirtualMachine executes the VirtualMachines main loop; it then

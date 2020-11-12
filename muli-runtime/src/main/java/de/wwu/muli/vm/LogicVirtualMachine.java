@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  * @author Jan C. Dageförde
  * @version 1.0.0, 2016-09-09
  */
-public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
+public class LogicVirtualMachine extends SearchingVM {
 	// The Solver Manager.
 	private SolverManager			solverManager;
 
@@ -531,7 +531,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
      * @return A new instance of objectref for this ClassFile.
      * @throws ExceptionInInitializerError If class initialization fails.
      */
-    public FreeObjectref getAFreeObjectref(ClassFile classFile) {
+    @Override
+    public FreeObjectref getAFreeObjectref(ClassFile classFile) { /// TODO
         // Get and check the initialized class.
         InitializedClass initializedClass = classFile.getTheInitializedClass(this);
 
@@ -557,6 +558,11 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
         // Return the object reference.
         return objectref;
     }
+
+	@Override
+	public Objectref getAPrimitiveWrapperObjectref(ClassFile classFile) throws PrimitiveWrappingImpossibleException {
+		return classFile.getAPrimitiveWrapperObjectref(this);
+	}
 	
 	/**
 	 * Generate an instance of Objectref for the specified ClassFile and check whether its fields

@@ -1,0 +1,29 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckObjectFreeArray {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(CheckObjectFreeArray::check);
+    }
+
+    public class CheckObject {
+        public int val;
+    }
+
+    private static Boolean check() {
+        CheckObject[] objs free;
+        CheckObject obj free;
+        if (objs.length > 2) {
+            throw Muli.fail();
+        }
+
+        for (int i = 0; i < objs.length; i++) {
+            if (objs[i].val == obj.val) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

@@ -1,0 +1,24 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckPrimitiveFreeArray {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(CheckPrimitiveFreeArray::check);
+    }
+
+    private static Boolean check() {
+        int[] numbers free;
+        if (numbers.length > 2) {
+            throw Muli.fail();
+        }
+
+        for (int i = 0; i < numbers.length; i++) {
+            if (numbers[i] == 42) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

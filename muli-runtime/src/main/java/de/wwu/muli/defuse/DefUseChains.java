@@ -17,4 +17,9 @@ public class DefUseChains {
     public void addChain(DefUseChain chain){
         defUseChains.add(chain);
     }
+
+    public void mergeChains(DefUseChains chain) {
+        HashSet<DefUseChain> mChain = chain.getDefUseChains();
+        defUseChains.addAll(mChain);
+    }
 }

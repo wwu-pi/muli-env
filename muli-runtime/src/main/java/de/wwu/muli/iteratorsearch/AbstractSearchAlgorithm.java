@@ -146,6 +146,9 @@ public abstract class AbstractSearchAlgorithm implements LogicIteratorSearchAlgo
      * @return true if there is another path that can be evaluated (and VM state is set accordingly); false if there is no path.
      */
     protected boolean implementNextDecisionAndDescendIntoSubtree(UnevaluatedST subtree, LogicVirtualMachine vm) {
+        if (currentNode != null && currentNode.getPc() == subtree.getPc()) {
+            vm.preventNextSkip();
+        }
         this.currentNode = subtree;
 
         // Add constraint.

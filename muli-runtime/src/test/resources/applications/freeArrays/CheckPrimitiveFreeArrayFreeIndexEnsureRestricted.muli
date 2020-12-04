@@ -1,0 +1,29 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckPrimitiveFreeArrayFreeIndexEnsureRestricted {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(CheckPrimitiveFreeArrayFreeIndexEnsureRestricted::check);
+    }
+
+    private static Boolean check() {
+        int[] vals free;
+        int i free;
+        int val free;
+        int notVal = 0;
+
+        if (vals.length != 2) {
+            throw Muli.fail();
+        }
+        if (vals[0] == notVal) {
+            throw Muli.fail();
+        }
+        if (vals[1] == notVal) {
+            throw Muli.fail();
+        }
+
+        return vals[i] == notVal;
+    }
+}

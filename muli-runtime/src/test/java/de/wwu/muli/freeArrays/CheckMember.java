@@ -1,33 +1,31 @@
 package de.wwu.muli.freeArrays;
 
+import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
-import de.wwu.muli.searchtree.Exception;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.searchtree.Value;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.*;
 
-public class CheckPrimitiveFreeArray {
-
+public class CheckMember {
     @Test
-    public final void test_checkPrimitiveFreeArray() throws InterruptedException, ClassFileException {
-        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeArrays.CheckPrimitiveFreeArray");
+    public final void test_checkMember() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeArrays.CheckMember");
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         int numberFails = 0;
-        int numberValuesTrues = 0;
-        int numberValuesFalses = 0;
+        int numberNotFound = 0;
+        Set<Integer> values = new HashSet<>();
         for (Object leave : leaves) {
             if (leave instanceof Fail) {
                 numberFails++;
@@ -41,13 +39,14 @@ public class CheckPrimitiveFreeArray {
                         if (valAsSet.size() != 1) {
                             throw new IllegalStateException("Should not occur.");
                         }
-                        Integer booleanValue = (Integer) valAsSet.toArray()[0];
-                        if (booleanValue == 1) {
-                            numberValuesTrues++;
-                        } else {
-                            numberValuesFalses++;
+                        Integer value = ((IntConstant) valAsSet.toArray()[0]).getValue();
+                        if (value == -1) {
+                            numberNotFound++;
                         }
-                    } catch (java.lang.Exception e) { fail("Unexpected exception: " + e); }
+                        values.add(value);
+                    } catch (java.lang.Exception e) {
+                        fail("Unexpected exception: " + e);
+                    }
 
                 } else {
                     fail("Unknown value: " + val);
@@ -56,10 +55,12 @@ public class CheckPrimitiveFreeArray {
                 fail("Unexpected leave: " + leave);
             }
         }
-        // Returns true for lengths 1 and 2, one time and one >further< time correspondingly.
-        assertEquals(2, numberValuesTrues);
-        // Returns false for lengths 0, 1, and 2 one time each.
-        assertEquals(3, numberValuesFalses);
-        assertEquals(numberFails + numberValuesFalses + numberValuesTrues, leaves.length);
+        assertTrue(values.contains(0));
+        assertTrue(values.contains(1));
+        assertTrue(values.contains(2));
+        assertTrue(values.contains(-1));
+        assertEquals(4, numberNotFound);
+        assertEquals(4, values.size());
+        assertEquals(numberFails + values.size() + (numberNotFound - 1), leaves.length);
     }
 }

@@ -22,6 +22,7 @@ public class Taxicab {
     @Before
     public void checkSolvable() {
         // Z3 currently fails with "smt tactic failed to show goal to be sat/unsat (incomplete (theory arithmetic))"
+        // This seems to be a limitation of Z3.
         Assume.assumeFalse(Defaults.SOLVER_MANAGER.equals(Defaults.Z3_MANAGER));
     }
 

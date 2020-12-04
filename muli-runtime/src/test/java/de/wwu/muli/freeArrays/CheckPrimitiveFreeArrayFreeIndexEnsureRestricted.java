@@ -14,25 +14,25 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-public class CheckPrimitiveFreeArray {
+public class CheckPrimitiveFreeArrayFreeIndexEnsureRestricted {
 
     @Test
     public final void test_checkPrimitiveFreeArray() throws InterruptedException, ClassFileException {
-        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeArrays.CheckPrimitiveFreeArray");
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeArrays.CheckPrimitiveFreeArrayFreeIndexEnsureRestricted");
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         int numberFails = 0;
         int numberValuesTrues = 0;
         int numberValuesFalses = 0;
-        for (Object leave : leaves) {
-            if (leave instanceof Fail) {
+        int numberExceptions = 0;
+        for (Object leaf : leaves) {
+            if (leaf instanceof Fail) {
                 numberFails++;
-            } else if (leave instanceof Value) {
-                Value val = (Value) leave;
+            } else if (leaf instanceof Value) {
+                Value val = (Value) leaf;
                 if (val.value instanceof Objectref) {
                     try {
                         Objectref booleanRef = ((Objectref) val.value);
@@ -48,18 +48,19 @@ public class CheckPrimitiveFreeArray {
                             numberValuesFalses++;
                         }
                     } catch (java.lang.Exception e) { fail("Unexpected exception: " + e); }
-
                 } else {
                     fail("Unknown value: " + val);
                 }
+            } else if (leaf instanceof Exception) {
+                numberExceptions++;
             } else {
-                fail("Unexpected leave: " + leave);
+                fail("Unexpected leaf: " + leaf);
             }
         }
-        // Returns true for lengths 1 and 2, one time and one >further< time correspondingly.
-        assertEquals(2, numberValuesTrues);
-        // Returns false for lengths 0, 1, and 2 one time each.
-        assertEquals(3, numberValuesFalses);
-        assertEquals(numberFails + numberValuesFalses + numberValuesTrues, leaves.length);
+        assertEquals(1, numberExceptions);
+        assertEquals(0, numberValuesTrues);
+        assertEquals(1, numberValuesFalses);
+        assertEquals(numberFails + numberValuesFalses + numberValuesTrues + numberExceptions, leaves.length);
     }
+
 }

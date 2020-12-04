@@ -5,25 +5,22 @@ import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
-import de.wwu.muli.searchtree.Exception;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.searchtree.Value;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-public class CheckPrimitiveFreeArray {
+public class CheckIndexInBoundsAlternative {
 
     @Test
-    public final void test_checkPrimitiveFreeArray() throws InterruptedException, ClassFileException {
-        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeArrays.CheckPrimitiveFreeArray");
+    public final void test_checkIndexInBounds() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeArrays.CheckIndexInBoundsAlternative");
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         int numberFails = 0;
         int numberValuesTrues = 0;
@@ -56,10 +53,8 @@ public class CheckPrimitiveFreeArray {
                 fail("Unexpected leave: " + leave);
             }
         }
-        // Returns true for lengths 1 and 2, one time and one >further< time correspondingly.
-        assertEquals(2, numberValuesTrues);
-        // Returns false for lengths 0, 1, and 2 one time each.
-        assertEquals(3, numberValuesFalses);
+        assertEquals(0, numberValuesTrues);
+        assertEquals(1, numberValuesFalses);
         assertEquals(numberFails + numberValuesFalses + numberValuesTrues, leaves.length);
     }
 }

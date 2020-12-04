@@ -1,0 +1,22 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckIndexInBounds {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(CheckIndexInBounds::check);
+    }
+
+    private static Boolean check() {
+        for (int i = 0; i < 2; i++) {
+            int[] objs free;
+            if (objs.length != 2) {
+                throw Muli.fail();
+            }
+            int temp = objs[1];
+            temp = objs[0];
+        }
+        return false;
+    }
+}

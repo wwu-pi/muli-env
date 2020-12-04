@@ -1,0 +1,25 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckMember {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(() -> check(42));
+    }
+
+    private static Integer check(int toCheck) {
+            int[] ar free;
+            if (ar.length > 3) throw Muli.fail();
+            return member(ar, toCheck);
+    }
+
+    private static Integer member(int[] ar, int toCheck) {
+        for (int i = 0; i < ar.length; i++) {
+            if (ar[i] == toCheck) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}

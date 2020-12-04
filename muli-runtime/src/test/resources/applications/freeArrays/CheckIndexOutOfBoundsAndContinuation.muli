@@ -1,0 +1,23 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckIndexOutOfBoundsAndContinuation {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(CheckIndexOutOfBoundsAndContinuation::check);
+    }
+
+    public class CheckObject {
+        public int val;
+    }
+
+    private static Boolean check() {
+        CheckObject[] objs free;
+        int i free;
+
+        Object temp = objs[i]; // Can be out of bounds.
+
+        return false;
+    }
+}

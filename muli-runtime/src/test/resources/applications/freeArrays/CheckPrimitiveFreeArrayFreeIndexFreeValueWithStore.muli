@@ -1,0 +1,25 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class CheckPrimitiveFreeArrayFreeIndexFreeValueWithStore {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(CheckPrimitiveFreeArrayFreeIndexFreeValueWithStore::check);
+    }
+
+    private static Boolean check() {
+        int[] vals free;
+        int i free;
+        int val free;
+
+        if (i >= vals.length || i < 0) {
+            throw Muli.fail();
+        }
+        vals[i] = val;
+        if (i != 3) {
+            throw Muli.fail();
+        }
+        return vals[3] == val;
+    }
+}

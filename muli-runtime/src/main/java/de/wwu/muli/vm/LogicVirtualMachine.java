@@ -87,6 +87,17 @@ public class LogicVirtualMachine extends SearchingVM {
     // At most one search region instantiation, i.e. the corresponding iterator, is active in the VM at the same time. Store which one.
     private Objectref currentSearchRegion = null;
     private long searchStarted;
+    private long overallExecutionTime = -1;
+
+    public void startMeasuringOverallTime() {
+    	if (overallExecutionTime == -1) {
+    		overallExecutionTime = System.nanoTime();
+		}
+	}
+
+	public long getMeasuredTimeSoFar() {
+    	return System.nanoTime() - overallExecutionTime;
+	}
 
     /**
 	 * Special constructor, which sets the search algorithm and initializes the other fields. It is
@@ -532,7 +543,7 @@ public class LogicVirtualMachine extends SearchingVM {
      * @throws ExceptionInInitializerError If class initialization fails.
      */
     @Override
-    public FreeObjectref getAFreeObjectref(ClassFile classFile) { /// TODO
+    public FreeObjectref getAFreeObjectref(ClassFile classFile) {
         // Get and check the initialized class.
         InitializedClass initializedClass = classFile.getTheInitializedClass(this);
 

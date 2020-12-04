@@ -50,6 +50,7 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
         registerNatives();
+        ((LogicVirtualMachine) VirtualMachine.getLatestVM()).startMeasuringOverallTime();
     }
 
     public static void registerNatives() {
@@ -129,7 +130,7 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
-            returnValue = convertFreeArrayIfNecessary(returnValue);
+            returnValue = convertFreeArrayIfNecessary(returnValue); // We override the current recorded value with a concretized FreeArrayref.
 
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
@@ -165,10 +166,11 @@ public class SolutionIterator extends NativeMethodProvider {
             FreeArrayref array = (FreeArrayref) objectValue;
             Map<Term, Object> elements = array.getFreeArrayElements();
             ArrayList<Object> elementsInArrayList = new ArrayList<>();
+            LogicVirtualMachine vm = (LogicVirtualMachine) VirtualMachine.getLatestVM();
 
             de.wwu.muggl.solvers.Solution variableMappings;
             try {
-                variableMappings = ((SearchingVM) VirtualMachine.getLatestVM()).getSolverManager().getSolution();
+                variableMappings = vm.getSolverManager().getSolution();
             } catch (SolverUnableToDecideException | TimeoutException e) {
                 throw new IllegalStateException(e);
             }
@@ -187,7 +189,8 @@ public class SolutionIterator extends NativeMethodProvider {
                 concretizedRef.putElementIntoFreeArray(IntConstant.getInstance(i), ((IntConstant) elementsInArrayList.get(i)).getValue());
             }
             returnValue.putField(field, concretizedRef);
-            ((LogicVirtualMachine) VirtualMachine.getLatestVM()).getSearchAlgorithm().recordValue(new Value(concretizedRef));
+            vm.getSearchAlgorithm().recordValue(new Value(concretizedRef));
+            Globals.getInst().symbolicExecLogger.info("Execution time to find free array-value with length " + concretizedRef.getLengthTerm() + ": " + vm.getMeasuredTimeSoFar());
         }
 
 
@@ -263,13 +266,14 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     public static boolean replayInverseTrailForNextChoiceVM(Frame frame) {
-        LogicIteratorSearchAlgorithm currentIteratorSearchAlgorithm = ((LogicVirtualMachine) frame.getVm()).getSearchAlgorithm();
+        LogicVirtualMachine vm = ((LogicVirtualMachine) frame.getVm());
+        LogicIteratorSearchAlgorithm currentIteratorSearchAlgorithm = vm.getSearchAlgorithm();
         if (currentIteratorSearchAlgorithm instanceof NoSearchAlgorithm) {
             throw new IllegalStateException("Must be inside an active search region, set by setVMActiveIterator.");
         }
-        boolean hasAnotherChoice = currentIteratorSearchAlgorithm.takeNextDecision(((LogicVirtualMachine) frame.getVm()));
+        boolean hasAnotherChoice = currentIteratorSearchAlgorithm.takeNextDecision(vm);
         if (hasAnotherChoice) {
-            ((LogicVirtualMachine) frame.getVm()).recordSearchStarted();
+            vm.recordSearchStarted();
         }
         // Might be false if search space was fully explored.
         return hasAnotherChoice;

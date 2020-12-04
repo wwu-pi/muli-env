@@ -2,13 +2,23 @@ package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
+import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
+import de.wwu.muggl.solvers.exceptions.TimeoutException;
+import de.wwu.muggl.solvers.expressions.IntConstant;
+import de.wwu.muggl.solvers.expressions.Term;
+import de.wwu.muggl.solvers.expressions.Variable;
 import de.wwu.muggl.vm.Frame;
+import de.wwu.muggl.vm.SearchingVM;
+import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
+import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
+import de.wwu.muggl.vm.initialization.Arrayref;
+import de.wwu.muggl.vm.initialization.FreeArrayref;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
@@ -19,6 +29,8 @@ import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.search.SolutionIterator
@@ -117,6 +129,8 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
+            returnValue = convertFreeArrayIfNecessary(returnValue);
+
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
         }
@@ -132,6 +146,50 @@ public class SolutionIterator extends NativeMethodProvider {
             throw new RuntimeException(e);
         }
         vm.getCurrentFrame().setPc(nextPc);
+
+        return returnValue;
+    }
+
+    private static Objectref convertFreeArrayIfNecessary(Objectref returnValue) {
+        // TODO Find better way to embedd this behavior
+        // TODO This procedure assumes that we always have concrete indices given. We should extend it to symbolic indexes
+            // TODO (sometimes there is redundant information in a FreeArrayref).
+        Map<Field, Object> fields = returnValue.getFields();
+        if (fields.size() != 1) {
+            return returnValue;
+        }
+        Field field = fields.keySet().toArray(new Field[0])[0];
+        Object objectValue = fields.values().toArray()[0];
+        if (objectValue instanceof FreeArrayref) {
+            // Special case: we transform the FreeArrayref into a usual arrayref.
+            FreeArrayref array = (FreeArrayref) objectValue;
+            Map<Term, Object> elements = array.getFreeArrayElements();
+            ArrayList<Object> elementsInArrayList = new ArrayList<>();
+
+            de.wwu.muggl.solvers.Solution variableMappings;
+            try {
+                variableMappings = ((SearchingVM) VirtualMachine.getLatestVM()).getSolverManager().getSolution();
+            } catch (SolverUnableToDecideException | TimeoutException e) {
+                throw new IllegalStateException(e);
+            }
+            for (Map.Entry<Term, Object> entry : elements.entrySet()) {
+                if (entry.getKey() instanceof IntConstant) {
+                    Object value = entry.getValue() instanceof Variable ? variableMappings.getValue((Variable) entry.getValue()) : entry.getValue();
+                    elementsInArrayList.add(
+                            ((IntConstant) entry.getKey()).getValue(),
+                            value);
+                }
+            }
+
+            FreeArrayref concretizedRef =
+                    new FreeArrayref(array.getName(), array.getReferenceValue(), IntConstant.getInstance(elementsInArrayList.size()));
+            for (int i = 0; i < elementsInArrayList.size(); i++) {
+                concretizedRef.putElementIntoFreeArray(IntConstant.getInstance(i), ((IntConstant) elementsInArrayList.get(i)).getValue());
+            }
+            returnValue.putField(field, concretizedRef);
+            ((LogicVirtualMachine) VirtualMachine.getLatestVM()).getSearchAlgorithm().recordValue(new Value(concretizedRef));
+        }
+
 
         return returnValue;
     }

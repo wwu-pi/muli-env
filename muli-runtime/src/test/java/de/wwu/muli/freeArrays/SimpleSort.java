@@ -31,7 +31,7 @@ public class SimpleSort {
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         assertEquals(1, leaves.length);
         FreeArrayref sortedArray = (FreeArrayref) ((Value) leaves[0]).value;
-        System.out.println(sortedArray);
+        assertEquals(sortedArray.getLength(), sortedArray.getFreeArrayElements().size());
         assertEquals(1,  sortedArray.getFreeArrayElement(0));
         assertEquals(5,  sortedArray.getFreeArrayElement(1));
         assertEquals(8,  sortedArray.getFreeArrayElement(2));
@@ -42,6 +42,7 @@ public class SimpleSort {
         assertEquals(42, sortedArray.getFreeArrayElement(7));
         assertEquals(56, sortedArray.getFreeArrayElement(8));
         assertEquals(78, sortedArray.getFreeArrayElement(9));
+        System.out.println(sortedArray);
     }
 
     @After

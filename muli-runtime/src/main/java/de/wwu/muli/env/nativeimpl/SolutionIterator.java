@@ -5,6 +5,7 @@ import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
 import de.wwu.muggl.solvers.expressions.IntConstant;
+import de.wwu.muggl.solvers.expressions.NumericVariable;
 import de.wwu.muggl.solvers.expressions.Term;
 import de.wwu.muggl.solvers.expressions.Variable;
 import de.wwu.muggl.vm.Frame;
@@ -29,6 +30,7 @@ import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -182,9 +184,12 @@ public class SolutionIterator extends NativeMethodProvider {
                             value);
                 }
             }
+            int concretizedLength = array.getLengthTerm() instanceof IntConstant ?
+                    ((IntConstant) array.getLengthTerm()).getIntValue() :
+                    ((IntConstant) variableMappings.getValue((NumericVariable) array.getLengthTerm())).getIntValue();
 
             FreeArrayref concretizedRef =
-                    new FreeArrayref(array.getName(), array.getReferenceValue(), IntConstant.getInstance(elementsInArrayList.size()));
+                    new FreeArrayref(array.getName(), array.getReferenceValue(), IntConstant.getInstance(concretizedLength), true);
             for (int i = 0; i < elementsInArrayList.size(); i++) {
                 concretizedRef.putElementIntoFreeArray(IntConstant.getInstance(i), ((IntConstant) elementsInArrayList.get(i)).getValue());
             }

@@ -11,6 +11,13 @@ public class UseVariable {
     public Map<String, Integer> indexOverMethods = new HashMap<String, Integer>();
     public Method method;
 
+    public UseVariable(){
+
+    }
+    public UseVariable(int pc){
+        this.pc = pc;
+    }
+
     public void setInstructionIndex(int i){
         this.instructionIndex = i;
     }
@@ -55,7 +62,7 @@ public class UseVariable {
             return false;
         } else {
             UseVariable use = (UseVariable) obj;
-            if (this.instructionIndex == use.getInstructionIndex() && this.pc == use.getPc() && this.method.getFullName().equals(use.getMethod().getFullName())) {
+            if (this.instructionIndex == use.getInstructionIndex() && this.pc == use.getPc()){ //&& this.method.getFullName().equals(use.getMethod().getFullName())) {
                 return true;
             } else {
                 return false;

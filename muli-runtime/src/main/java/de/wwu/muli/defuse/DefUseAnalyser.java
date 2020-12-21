@@ -61,7 +61,6 @@ public class DefUseAnalyser {
     public void constructDUGForMethod(Method m, List<Map<String, Integer>> indexes){
         try{
             Instruction[] in = m.getInstructionsAndOtherBytes();
-            ControlGraph cg = m.getControlGraph();
             MugglClassLoader classLoader = m.getClassFile().getClassLoader();
             Constant[] constantPool = m.getClassFile().getConstantPool();
             DefUseChains defUse = new DefUseChains();
@@ -366,5 +365,38 @@ public class DefUseAnalyser {
             }
         }
         return false;
+    }
+
+    public Map<Method, DefUseMethod> transformDefUse(){
+        Map<Method, DefUseMethod> output = new HashMap<>();
+        for(Map.Entry<Method, DefUseChains> pair : defUseChains.entrySet()){
+            Method method = pair.getKey();
+            DefUseChains chains = pair.getValue();
+            DefUseMethod dum = new DefUseMethod();
+            DefUseRegisters uses = new DefUseRegisters();
+            DefUseRegisters defs = new DefUseRegisters();
+            for(DefUseChain chain : chains.getDefUseChains()) {
+                int useIndex = chain.getUse().getPc();
+                int defIndex = chain.getDef().getPc();
+                if(!uses.hasEntry(useIndex)){
+                    DefUseRegister use = new DefUseRegister(defIndex, false);
+                    uses.addRegister(use, useIndex);
+                } else {
+                    uses.addLink(useIndex, defIndex);
+                }
+
+                if(!defs.hasEntry(defIndex)){
+                    DefUseRegister def = new DefUseRegister(useIndex, false);
+                    defs.addRegister(def, defIndex);
+                } else {
+                    defs.addLink(defIndex, useIndex);
+                }
+            }
+            dum.initDefUses();
+            dum.setDefs(defs);
+            dum.setUses(uses);
+            output.put(method, dum);
+        }
+        return output;
     }
 }

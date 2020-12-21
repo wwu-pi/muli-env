@@ -12,7 +12,7 @@ public class NullExecutionListener implements ExecutionListener {
     }
 
     @Override
-    public void afterExecuteInstruction(Instruction instruction) {}
+    public void afterExecuteInstruction(Instruction instruction, Frame frame, int pc) {}
 
     @Override
     public void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, Exception ex) {}

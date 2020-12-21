@@ -277,7 +277,6 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 			// Rethrow.
 			throw e;
 		}
-
 	}
 
 	/**
@@ -289,7 +288,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 	@Override
 	protected void executeInstruction(Instruction instruction) throws ExecutionException {
         Optional<ST> st = instruction.executeMuli(this, this.currentFrame);
-        afterExecuteInstruction(instruction);
+        afterExecuteInstruction(instruction, this.currentFrame, this.pc);
 
         if (!st.isPresent()) {
             return;
@@ -319,8 +318,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		return executionListener.beforeExecuteInstruction(instruction, method, frame);
 	}
 
-	protected void afterExecuteInstruction(Instruction instruction) {
-		executionListener.afterExecuteInstruction(instruction);
+	protected void afterExecuteInstruction(Instruction instruction, Frame frame, int pc) {
+		executionListener.afterExecuteInstruction(instruction, frame, pc);
 	}
 
 	protected void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, ExecutionException e) {
@@ -679,6 +678,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		} finally {
 			super.finalize();
 		}
+		reachedEndEvent();
 	}
 
 	/**

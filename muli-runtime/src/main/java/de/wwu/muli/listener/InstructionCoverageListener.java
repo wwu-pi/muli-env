@@ -20,7 +20,7 @@ public class InstructionCoverageListener implements ExecutionPathListener {
     }
 
     @Override
-    public void executedInstruction(Instruction instruction) {
+    public void executedInstruction(Instruction instruction, Frame frame, int pc) {
         currentPath.addInstruction(instruction);
     }
 

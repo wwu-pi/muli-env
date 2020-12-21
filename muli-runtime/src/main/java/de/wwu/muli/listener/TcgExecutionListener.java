@@ -26,12 +26,12 @@ public class TcgExecutionListener implements ExecutionListener {
         return instruction;
     }
 
-    @Override
-    public void afterExecuteInstruction(Instruction instruction) {
+
+    public void afterExecuteInstruction(Instruction instruction, Frame frame, int pc) {
         /*
          TODO After an instruction was executed, it should be recorded by a DefUseListener or a CoverageListener.
          */
-        executionPathListener.executedInstruction(instruction);
+        executionPathListener.executedInstruction(instruction, frame, pc);
 
     }
 

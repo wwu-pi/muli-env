@@ -9,6 +9,13 @@ public class DefVariable {
     public int pc;
     public Method method;
 
+    public DefVariable(){
+
+    }
+    public DefVariable(int pc){
+        this.pc = pc;
+    }
+
     public void setInstructionIndex(int i){
         this.instructionIndex = i;
     }
@@ -37,7 +44,7 @@ public class DefVariable {
             return false;
         } else {
             DefVariable def = (DefVariable) obj;
-            if (this.instructionIndex == def.getInstructionIndex() && this.pc == def.getPc() && this.method.getFullName().equals(def.getMethod().getFullName())) {
+            if (this.instructionIndex == def.getInstructionIndex() && this.pc == def.getPc()){ //&& this.method.getFullName().equals(def.getMethod().getFullName())) {
                 return true;
             } else {
                 return false;

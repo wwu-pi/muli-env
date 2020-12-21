@@ -8,7 +8,7 @@ public interface ExecutionListener {
 
     Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame);
 
-    void afterExecuteInstruction(Instruction instruction);
+    void afterExecuteInstruction(Instruction instruction, Frame frame, int pc);
 
     void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, Exception ex);
 

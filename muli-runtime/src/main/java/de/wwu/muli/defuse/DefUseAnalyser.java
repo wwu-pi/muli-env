@@ -29,17 +29,13 @@ import java.util.*;
 public class DefUseAnalyser {
 
     private LogicVirtualMachine vm;
-    //private HashSet<DefVariable> defs;
     public Map<Method, DefUseChains> defUseChains;
-    //private HashSet<DefUseChain> defUse;
     private HashSet<Instruction> gotos;
     private HashSet<Instruction> jumpInstructions;
     private HashSet<Method> invokedMethods;
 
     public DefUseAnalyser(LogicVirtualMachine vm) {
         this.vm = vm;
-        //this.defs = new HashSet<DefVariable>();
-        //this.defUse = new HashSet<DefUseChain>();
         this.gotos = new HashSet<Instruction>();
         this.jumpInstructions = new HashSet<Instruction>();
         this.invokedMethods = new HashSet<Method>();
@@ -54,7 +50,6 @@ public class DefUseAnalyser {
 
     public void constructDUGForMethod(Method m){
         constructDUGForMethod(m, null);
-  //      DefUseChainsInitial d = new DefUseChainsInitial(m);
         //Map<Method, DefUseChains> map = d.getDefUseChainsMapping();
     }
 
@@ -78,111 +73,27 @@ public class DefUseAnalyser {
             for(int i =0; i<in.length; i++) {
                 if(in[i] instanceof Store) {
                     // Definition of Variable
-                    Store defInstruction = (Store) in[i];
-                    DefVariable def = new DefVariable();
-                    def.setInstructionIndex(defInstruction.getLocalVariableIndex());
-                    def.setPc(i);
-                    def.setMethod(m);
-                    if(!defExists(def, defs)) {
-                        defs.add(def);
-                    }
+                    getDefVariable(in, i, m, defs);
                 } else if(in[i] instanceof Astore || in[i] instanceof Putfield) {
-                    // Special case von def -> Wert in Array schreiben
-                    int back = i-1;
-                    while(back>=0) {
-                        if(in[back] instanceof JumpInvocation) {
-                            Method invokedMethod = ((JumpInvocation) in[back])
-                                    .getInvokedMethod(constantPool, classLoader);
-                            int numberParameter = invokedMethod.getParameterTypesAsArray().length;
-                            back = back - numberParameter - 1;
-                            continue;
-                        } else if(in[back] instanceof ALoad){
-                            ALoad loadInstruction = (ALoad) in[back];
-                            DefVariable def = new DefVariable();
-                            def.setInstructionIndex(loadInstruction.getLocalVariableIndex());
-                            def.setPc(i);
-                            def.setMethod(m);
-                            if(!defExists(def, defs)) {
-                                defs.add(def);
-                            }
-                            break;
-                        } else {
-                            back--;
-                        }
-                    }
+                    // Special case of def -> write value in array or field of object
+                    getObjectDefs(in, i, defs, constantPool, classLoader, m);
                 } else if(in[i] instanceof Load) {
                     // Usage of Variable
-                    // Todo eigentlich wird nur geladen, überprüfen ob auch benutzt wird?
-                    Load useInstruction = (Load) in[i];
-                    if(useInstruction instanceof ALoad){
-                        if(isNotUseLoad(in, i)){
-                            continue;
-                        }
-                    }
-                    UseVariable use = new UseVariable();
-                    use.setInstructionIndex(useInstruction.getLocalVariableIndex());
-                    use.setPc(i);
-                    use.setMethod(m);
-                    if(indexes != null && indexes.size() > useInstruction.getLocalVariableIndex()){
-                        use.setIndexOverMethods(indexes.get(useInstruction.getLocalVariableIndex()));
-                    } else {
-                        use.addMethodIndex(m.getName(), useInstruction.getLocalVariableIndex());
-                    }
+                    UseVariable use = getUseVariable(in, i, m);
                     DefVariable def = findDef(use, defs);
                     if(def != null) {
                         DefUseChain chain = new DefUseChain(def, use);
                         defUse.addChain(chain);
                     }
                 } else if(in[i] instanceof JumpConditional) {
-                    JumpConditional jumpInstruction = (JumpConditional) in[i];
-                    Instruction jump = (Instruction) jumpInstruction;
-                    if(jumpInstructions.contains(jump)) {
-                        continue;
-                    } else {
-                        jumpInstructions.add(jump);
-                    }
-                    int endIf = jumpInstruction.getJumpTarget();
-                    DefUseChains defUseIf = processConditionalJump(i+1, m, defs);
-                    i = endIf -1;
-                    if(defUseChains.containsKey(m)) {
-                        DefUseChains chain = defUseChains.get(m);
-                        chain.mergeChains(defUseIf);
-                        defUseChains.put(m, chain);
-                    } else {
-                        defUseChains.put(m, defUseIf);
-                    }
+                    // process conditional Jumps recursively
+                    i = getConditionalJump(in, i, m, defs);
                 } else if(in[i] instanceof Goto) {
-                    // Sprung zu einer anderen Instruction
-                    Goto instruction = (Goto) in[i];
-                    int index = instruction.getJumpIncrement();
-                    index = index + i ;
-                    if (index >= Limitations.MAX_CODE_LENGTH) {
-                        index -= Limitations.MAX_CODE_LENGTH;
-                    }
-                    // Sichergehen dass nur einmal zurück gesprungen wird -> keine endlos-Schleife
-                    if(!gotos.contains(instruction)) {
-                        gotos.add(instruction);
-                        i = index -1;
-                    }
+                    // Jump to different Instruction
+                    i = getGotoInstr(in, i);
                 } else if (in[i] instanceof JumpInvocation) {
-                    // neue Methodenaufruf
-                    JumpInvocation jump = (JumpInvocation) in[i];
-                    Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
-                    int numberParameter = invokedMethod.getParameterTypesAsArray().length;
-                    List<Map<String, Integer>> paramterIndexes= new ArrayList<Map<String, Integer>>();
-                    int c = 0;
-                    /*for(int n = numberParameter; n > 0; n--) {
-                        UseVariable use = findUse(i-numberParameter, m.getName(), defUse);
-                        Map<String, Integer> indexesP = use.getIndexOverMethods();
-                        indexesP.put(invokedMethod.getName(), c);
-                        paramterIndexes.add(c, indexesP);
-                        c++;
-                    }*/
-                    if(!invokedMethods.contains(invokedMethod)) {
-                        invokedMethods.add(invokedMethod);
-                        constructDUGForMethod(invokedMethod, paramterIndexes);
-
-                    }
+                    // new method invokation
+                    getMethodInvok(in, i, constantPool, classLoader);
                 }
             }
             if(defUseChains.containsKey(m)) {
@@ -208,57 +119,13 @@ public class DefUseAnalyser {
             for (int i = start; i < in.length; i++) {
                 if (in[i] instanceof Store) {
                     // Definition of Variable
-                    Store defInstruction = (Store) in[i];
-                    DefVariable def = new DefVariable();
-                    def.setInstructionIndex(defInstruction.getLocalVariableIndex());
-                    def.setPc(i);
-                    def.setMethod(m);
-                    if (!defExists(def, condDefs)) {
-                        condDefs.add(def);
-                    }
+                    getDefVariable(in, i, m, condDefs);
                 } else if (in[i] instanceof Astore || in[i] instanceof Putfield) {
                     // Special case von def -> Wert in Array schreiben
-                    Astore arrayInstruction = (Astore) in[i];
-                    int back = i - 1;
-                    while (back > 0) {
-                        if (in[back] instanceof JumpInvocation) {
-                            Method invokedMethod = null;
-                            invokedMethod = ((JumpInvocation) in[back])
-                                        .getInvokedMethod(constantPool, classLoader);
-                            int numberParameter = invokedMethod.getParameterTypesAsArray().length;
-                            back = back - numberParameter - 1;
-                        } else if (in[back] instanceof ALoad) {
-                            ALoad loadInstruction = (ALoad) in[back];
-                            DefVariable def = new DefVariable();
-                            def.setInstructionIndex(loadInstruction.getLocalVariableIndex());
-                            def.setPc(i);
-                            def.setMethod(m);
-                            if (!defExists(def, condDefs)) {
-                                condDefs.add(def);
-                            }
-                            break;
-                        } else {
-                            back--;
-                        }
-                    }
+                    getObjectDefs(in, i, condDefs, constantPool, classLoader, m);
                 } else if (in[i] instanceof Load) {
                     // Usage of Variable
-                    // Todo eigentlich wird nur geladen, überprüfen ob auch benutzt wird?
-                    Load useInstruction = (Load) in[i];
-                    if (useInstruction instanceof ALoad) {
-                        if (isNotUseLoad(in, i)) {
-                            continue;
-                        }
-                    }
-                    UseVariable use = new UseVariable();
-                    use.setInstructionIndex(useInstruction.getLocalVariableIndex());
-                    use.setPc(i);
-                    use.setMethod(m);
-                    //if(indexes != null && indexes.size() > useInstruction.getLocalVariableIndex()){
-                    //    use.setIndexOverMethods(indexes.get(useInstruction.getLocalVariableIndex()));
-                    //} else {
-                    //    use.addMethodIndex(m.getName(), useInstruction.getLocalVariableIndex());
-                    //}
+                    UseVariable use = getUseVariable(in, i, m);
                     DefVariable def = findDef(use, condDefs);
                     if (def == null) {
                         def = findDef(use, defs);
@@ -268,45 +135,17 @@ public class DefUseAnalyser {
                         defUse.addChain(chain);
                     }
                 } else if (in[i] instanceof JumpConditional) {
-                    JumpConditional jumpInstruction = (JumpConditional) in[i];
-                    Instruction jump = (Instruction) jumpInstruction;
-                    if(jumpInstructions.contains(jump)) {
-                        continue;
-                    } else {
-                        jumpInstructions.add(jump);
-                    }
-                    int endIf = jumpInstruction.getJumpTarget();
-                    i = endIf - 1;
-                    DefUseChains defUseIf = processConditionalJump(i+1, m, defs);
-                    if(defUseChains.containsKey(m)) {
-                        DefUseChains chain = defUseChains.get(m);
-                        chain.mergeChains(defUseIf);
-                        defUseChains.put(m, chain);
-                    } else {
-                        defUseChains.put(m, defUseIf);
-                    }
+                    // process conditional Jumps recursively
+                    HashSet<DefVariable> allDefs = new HashSet<DefVariable>();
+                    allDefs.addAll(defs);
+                    allDefs.addAll(condDefs);
+                    i = getConditionalJump(in, i, m, allDefs);
                 } else if (in[i] instanceof Goto) {
-                    // Sprung zu einer anderen Instruction
-                    Goto instruction = (Goto) in[i];
-                    int index = instruction.getJumpIncrement();
-                    index = index + i;
-                    if (index >= Limitations.MAX_CODE_LENGTH) {
-                        index -= Limitations.MAX_CODE_LENGTH;
-                    }
-                    // Sichergehen dass nur einmal zurück gesprungen wird -> keine endlos-Schleife
-                    if (!gotos.contains(instruction)) {
-                        gotos.add(instruction);
-                        i = index - 1;
-                    }
+                    // Jump to different Instruction
+                    i = getGotoInstr(in, i);
                 } else if (in[i] instanceof JumpInvocation) {
-                    // neue Methodenaufruf
-                    JumpInvocation jump = (JumpInvocation) in[i];
-                    Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
-                    List<Map<String, Integer>> paramterIndexes = new ArrayList<Map<String, Integer>>();
-                    if (!invokedMethods.contains(invokedMethod)) {
-                        invokedMethods.add(invokedMethod);
-                        constructDUGForMethod(invokedMethod, paramterIndexes);
-                     }
+                    // new method invokation
+                    getMethodInvok(in, i, constantPool, classLoader);
                 }
             }
             return defUse;
@@ -315,8 +154,18 @@ public class DefUseAnalyser {
         }
     }
 
+    /***
+     * Find variable definition for a given variable usage. Returns the definition with the
+     * highest pc, i.e. the latest definition.
+     * @param use variable usage
+     * @param defs set of definitions
+     * @return variable definition
+     */
     public DefVariable findDef(UseVariable use, HashSet<DefVariable> defs) {
         DefVariable output = null;
+        if(use == null){
+            return output;
+        }
         //for(Map.Entry<String, Integer> entry: use.getIndexOverMethods().entrySet()) {
             for(DefVariable def: defs){
                 if(def.getInstructionIndex() == use.getInstructionIndex() && def.getMethod().getName().equals(use.getMethod().getName())){
@@ -342,9 +191,14 @@ public class DefUseAnalyser {
             }
         }
         return output;
-
     }
 
+    /**
+     * Check if variable definition exists
+     * @param def variable definition
+     * @param defs set of variable defitions
+     * @return boolean
+     */
     public boolean defExists(DefVariable def, HashSet<DefVariable> defs){
         for(DefVariable d: defs){
             if(def.equals(d)){
@@ -354,6 +208,13 @@ public class DefUseAnalyser {
         return false;
     }
 
+    /**
+     * Checks whether the ALoad instruction is part of a Store instruction and not a simple
+     * variable usage
+     * @param in instruction array
+     * @param index current pc of ALoad instruction
+     * @return boolean
+     */
     public boolean isNotUseLoad(Instruction[] in, int index){
         for(int i = index + 1; i < in.length; i++) {
             if(in[i] instanceof ALoad) {
@@ -367,6 +228,183 @@ public class DefUseAnalyser {
         return false;
     }
 
+    /**
+     * Define the Variable Definition and add it to definitions
+     * @param in instruction array
+     * @param i current pc
+     * @param m current method
+     * @param defs set of variable definitions
+     */
+    protected void getDefVariable(Instruction[] in, int i, Method m, HashSet<DefVariable> defs){
+        Store defInstruction = (Store) in[i];
+        DefVariable def = new DefVariable();
+        def.setInstructionIndex(defInstruction.getLocalVariableIndex());
+        def.setPc(i);
+        def.setMethod(m);
+        if (!defExists(def, defs)) {
+            defs.add(def);
+        }
+    }
+
+    /**
+     * Define variable usage if it is not related to an object definition
+     * @param in instruction array
+     * @param i pc of current instruction
+     * @param m current method
+     * @return use variable
+     */
+    protected UseVariable getUseVariable(Instruction[] in, int i, Method m){
+        // Todo eigentlich wird nur geladen, überprüfen ob auch benutzt wird?
+        Load useInstruction = (Load) in[i];
+        if (useInstruction instanceof ALoad) {
+            if (isNotUseLoad(in, i)) {
+                return null;
+            }
+        }
+        UseVariable use = new UseVariable();
+        use.setInstructionIndex(useInstruction.getLocalVariableIndex());
+        use.setPc(i);
+        use.setMethod(m);
+        //if(indexes != null && indexes.size() > useInstruction.getLocalVariableIndex()){
+        //    use.setIndexOverMethods(indexes.get(useInstruction.getLocalVariableIndex()));
+        //} else {
+        //    use.addMethodIndex(m.getName(), useInstruction.getLocalVariableIndex());
+        //}
+        return use;
+    }
+
+    /**
+     * Process conditional jump instruction. If jump was already considered, it is ignored.
+     * Otherwise the defUse chains beginning at the conditional section are recursively processed
+     * with a new method invokation and the pc jumps to the end of the conditional section.
+     * @param in instruction array
+     * @param i pc of current instruction
+     * @param m current method
+     * @param defs previous variable definitions
+     * @return new pc after jump
+     */
+    protected int getConditionalJump(Instruction[] in, int i, Method m, HashSet<DefVariable> defs){
+        JumpConditional jumpInstruction = (JumpConditional) in[i];
+        Instruction jump = (Instruction) jumpInstruction;
+        // jump was already considered
+        if(jumpInstructions.contains(jump)) {
+            return i;
+        } else {
+            jumpInstructions.add(jump);
+        }
+        int endIf = jumpInstruction.getJumpTarget();
+        DefUseChains defUseIf = processConditionalJump(i+1, m, defs);
+        i = endIf -1;
+        // Merge defuse chains with and without condition
+        if(defUseChains.containsKey(m)) {
+            DefUseChains chain = defUseChains.get(m);
+            chain.mergeChains(defUseIf);
+            defUseChains.put(m, chain);
+        } else {
+            defUseChains.put(m, defUseIf);
+        }
+        return i;
+    }
+
+    /**
+     * Process goto instructions. Calculates new pc and if the instruction was not visited before,
+     * sets it as new pc
+     * @param in instruction array
+     * @param i pc of current instruction
+     * @return new pc after jump
+     */
+    protected int getGotoInstr(Instruction[] in, int i){
+        Goto instruction = (Goto) in[i];
+        int index = instruction.getJumpIncrement();
+        index = index + i;
+        if (index >= Limitations.MAX_CODE_LENGTH) {
+            index -= Limitations.MAX_CODE_LENGTH;
+        }
+        // Sichergehen dass nur einmal zurück gesprungen wird -> keine endlos-Schleife
+        if (!gotos.contains(instruction)) {
+            gotos.add(instruction);
+            i = index - 1;
+        }
+        return i;
+    }
+
+    /**
+     * Process method invokations. Method is loaded and recusively processed.
+     * @param in instruction array
+     * @param i pc of current instruction
+     * @param constantPool constant pool of class
+     * @param classLoader class loader of class
+     */
+    protected void getMethodInvok(Instruction[] in, int i, Constant[] constantPool, MugglClassLoader classLoader) {
+        try {
+            JumpInvocation jump = (JumpInvocation) in[i];
+            Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+            List<Map<String, Integer>> paramterIndexes = new ArrayList<Map<String, Integer>>();
+            /*int c = 0;
+            int numberParameter = invokedMethod.getParameterTypesAsArray().length;
+            for(int n = numberParameter; n > 0; n--) {
+                UseVariable use = findUse(i-numberParameter, m.getName(), defUse);
+                Map<String, Integer> indexesP = use.getIndexOverMethods();
+                indexesP.put(invokedMethod.getName(), c);
+                paramterIndexes.add(c, indexesP);
+                c++;
+            }*/
+            if (!invokedMethods.contains(invokedMethod)) {
+                invokedMethods.add(invokedMethod);
+                constructDUGForMethod(invokedMethod, paramterIndexes);
+
+            }
+        } catch(Exception e){
+
+        }
+    }
+
+    /**
+     * Processes Objects and Array definitions. Because Astore does not give any reference to the
+     * object which is stored but gets the reference from the stack, a workaround is implemented to
+     * find the reference when it is pushed to the stack. Method invokations and their pushed parameters
+     * are considered.
+     * @param in instruction array
+     * @param i pc of current instruction
+     * @param defs set of variable definitions
+     * @param constantPool array of class constants
+     * @param classLoader class loader
+     * @param m current method
+     */
+    protected void getObjectDefs(Instruction[] in, int i, HashSet<DefVariable> defs, Constant[] constantPool,
+                                 MugglClassLoader classLoader, Method m){
+        try {
+            int back = i - 1;
+            while (back >= 0) {
+                if (in[back] instanceof JumpInvocation) {
+                    Method invokedMethod = ((JumpInvocation) in[back])
+                            .getInvokedMethod(constantPool, classLoader);
+                    int numberParameter = invokedMethod.getParameterTypesAsArray().length;
+                    back = back - numberParameter - 1;
+                    continue;
+                } else if (in[back] instanceof ALoad) {
+                    ALoad loadInstruction = (ALoad) in[back];
+                    DefVariable def = new DefVariable();
+                    def.setInstructionIndex(loadInstruction.getLocalVariableIndex());
+                    def.setPc(i);
+                    def.setMethod(m);
+                    if (!defExists(def, defs)) {
+                        defs.add(def);
+                    }
+                    break;
+                } else {
+                    back--;
+                }
+            }
+        } catch (Exception e){
+
+        }
+    }
+
+    /**
+     * Transform the defuse chains in defs and uses as needed.
+     * @return
+     */
     public Map<Method, DefUseMethod> transformDefUse(){
         Map<Method, DefUseMethod> output = new HashMap<>();
         for(Map.Entry<Method, DefUseChains> pair : defUseChains.entrySet()){

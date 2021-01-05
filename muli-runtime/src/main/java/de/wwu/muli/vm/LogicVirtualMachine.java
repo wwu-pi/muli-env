@@ -168,7 +168,8 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
 		this.executionListener = new TcgExecutionListener();
-		executionListener.setDefUseListener(this);}
+		//executionListener.setDefUseListener(this);
+		}
 
 	public ExecutionListener getExecutionListener() {
 		return executionListener;
@@ -850,6 +851,7 @@ public class LogicVirtualMachine extends VirtualMachine implements SearchingVM {
 
     public void setCurrentSearchRegion(Objectref currentSearchRegion) {
         this.currentSearchRegion = currentSearchRegion;
+        this.executionListener.setDefUseListener(this);
     }
 
     public void recordSearchStarted() {

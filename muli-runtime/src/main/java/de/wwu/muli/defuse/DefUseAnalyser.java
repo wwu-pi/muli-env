@@ -9,6 +9,8 @@ import de.wwu.muggl.instructions.general.Astore;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.instructions.interfaces.control.JumpInvocation;
+import de.wwu.muggl.vm.classfile.ClassFile;
+import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.instructions.interfaces.data.VariableDefining;
 import de.wwu.muggl.instructions.interfaces.data.VariableUsing;
 import de.wwu.muggl.symbolic.flow.controlflow.ControlGraph;
@@ -20,6 +22,8 @@ import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.ExecutionException;
+import de.wwu.muggl.vm.initialization.InitializedClass;
+import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
@@ -44,8 +48,24 @@ public class DefUseAnalyser {
 
     public void initializeDUG(){
         Method m = this.vm.getInitialMethod();
-        constructDUGForMethod(m);
-        System.out.println("hallo");
+        HashMap<Field, Object> d = this.vm.getCurrentSearchRegion().getFields();
+        ClassFile ref = null;
+        for(Field field : d.keySet()){
+            if(field.getName().equals("searchRegion")){
+                ref = ((Objectref) d.get(field)).getInitializedClass().getClassFile();
+            }
+        }
+        Method method = ref.getMethodByNameAndDescriptor("get", "()Ljava/lang/Object;");
+        try{
+            JumpInvocation jump = (JumpInvocation) (method.getInstructionsAndOtherBytes()[0]);
+            MugglClassLoader classLoader = method.getClassFile().getClassLoader();
+            Constant[] constantPool = method.getClassFile().getConstantPool();
+            Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+            constructDUGForMethod(invokedMethod);
+            System.out.println("hallo");
+        } catch (Exception e){
+            System.out.println("Fehler");
+        }
     }
 
     public void constructDUGForMethod(Method m){

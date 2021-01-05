@@ -14,7 +14,9 @@ public class TcgExecutionListener implements ExecutionListener {
     }
 
     public void setDefUseListener(LogicVirtualMachine vm) {
-        executionPathListener = new DefUseListener(vm);
+        if(executionPathListener == null) {
+            executionPathListener = new DefUseListener(vm);
+        }
     }
 
     @Override
@@ -31,7 +33,9 @@ public class TcgExecutionListener implements ExecutionListener {
         /*
          TODO After an instruction was executed, it should be recorded by a DefUseListener or a CoverageListener.
          */
-        executionPathListener.executedInstruction(instruction, frame, pc);
+        if(executionPathListener != null) {
+            executionPathListener.executedInstruction(instruction, frame, pc);
+        }
 
     }
 

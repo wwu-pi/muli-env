@@ -22,6 +22,18 @@ public class DefUseMethod {
         this.defUses = new DefUseChains();
     }
 
+    public DefUseChains getDefUses(){
+        return defUses;
+    }
+
+    public DefUseRegisters getDefs(){
+        return defs;
+    }
+
+    public DefUseRegisters getUses(){
+        return uses;
+    }
+
     public void visitDefUse(int instruction){
         visitDef(instruction);
         visitUse(instruction);
@@ -30,6 +42,18 @@ public class DefUseMethod {
     public void visitDef(int instruction){
         if(defs.hasEntry(instruction)) {
             defs.setVisited(instruction);
+            DefUseRegister r = defs.getRegister(instruction);
+            for(int link : r.link){
+                DefUseRegister rUses = uses.getRegister(link);
+                if(rUses.visited) {
+                    DefVariable def = new DefVariable(instruction);
+                    UseVariable use = new UseVariable(link);
+                    DefUseChain chain = new DefUseChain(def, use);
+                    if(!defUses.getDefUseChains().contains(chain)) {
+                        defUses.addChain(chain);
+                    }
+                }
+            }
         }
     }
 
@@ -50,5 +74,13 @@ public class DefUseMethod {
                 }
             }
         }
+    }
+
+    public String toString(){
+        String output = "";
+        output += "Defs: " + defs.toString() + "\r\n";
+        output += "Uses: " + uses.toString() + "\r\n";
+        output += "DefUse: " + defUses.toString();
+        return output;
     }
 }

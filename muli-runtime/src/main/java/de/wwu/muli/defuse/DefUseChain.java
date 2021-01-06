@@ -36,4 +36,10 @@ public class DefUseChain {
     public int hashCode() {
         return Objects.hash(this.getDef(), this.getUse());
     }
+
+    public String toString(){
+        String output = "";
+        output += "   Def: pc=" + def.getPc() + ", Use: pc=" + use.getPc();
+        return output;
+    }
 }

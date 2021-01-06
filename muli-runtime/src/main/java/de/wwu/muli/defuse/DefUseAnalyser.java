@@ -425,8 +425,8 @@ public class DefUseAnalyser {
      * Transform the defuse chains in defs and uses as needed.
      * @return
      */
-    public Map<Method, DefUseMethod> transformDefUse(){
-        Map<Method, DefUseMethod> output = new HashMap<>();
+    public Map<Object, Object> transformDefUse(){
+        Map<Object, Object> output = new HashMap<>();
         for(Map.Entry<Method, DefUseChains> pair : defUseChains.entrySet()){
             Method method = pair.getKey();
             DefUseChains chains = pair.getValue();
@@ -444,7 +444,12 @@ public class DefUseAnalyser {
                 }
 
                 if(!defs.hasEntry(defIndex)){
-                    DefUseRegister def = new DefUseRegister(useIndex, false);
+                    DefUseRegister def;
+                    if(defIndex == -1){
+                        def = new DefUseRegister(useIndex, true);
+                    } else {
+                        def = new DefUseRegister(useIndex, false);
+                    }
                     defs.addRegister(def, defIndex);
                 } else {
                     defs.addLink(defIndex, useIndex);

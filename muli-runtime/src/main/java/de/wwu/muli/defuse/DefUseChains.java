@@ -18,8 +18,20 @@ public class DefUseChains {
         defUseChains.add(chain);
     }
 
+    public int getChainSize(){
+        return defUseChains.size();
+    }
+
     public void mergeChains(DefUseChains chain) {
         HashSet<DefUseChain> mChain = chain.getDefUseChains();
         defUseChains.addAll(mChain);
+    }
+
+    public String toString(){
+        String output = "";
+        for(DefUseChain chain : defUseChains){
+            output += "\r\n"+chain.toString();
+        }
+        return output;
     }
 }

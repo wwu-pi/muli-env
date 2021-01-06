@@ -29,4 +29,8 @@ public class InstructionCoverageListener implements ExecutionPathListener {
         currentPath = new CoveragePath();
     }
 
+    public Map<Object, Object> getResult(){
+        return null;
+    }
+
 }

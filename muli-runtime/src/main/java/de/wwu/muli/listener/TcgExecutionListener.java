@@ -4,6 +4,8 @@ import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muli.vm.LogicVirtualMachine;
+import de.wwu.muli.defuse.DefUseMethod;
+import java.util.Map;
 
 public class TcgExecutionListener implements ExecutionListener {
 
@@ -17,6 +19,10 @@ public class TcgExecutionListener implements ExecutionListener {
         if(executionPathListener == null) {
             executionPathListener = new DefUseListener(vm);
         }
+    }
+
+    public Map<Object, Object> getResult(){
+        return executionPathListener.getResult();
     }
 
     @Override

@@ -3,6 +3,9 @@ package de.wwu.muli.listener;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
+import de.wwu.muli.defuse.DefUseMethod;
+
+import java.util.Map;
 
 public class NullExecutionListener implements ExecutionListener {
 
@@ -19,6 +22,11 @@ public class NullExecutionListener implements ExecutionListener {
 
     @Override
     public void backtrack() {}
+
+    @Override
+    public Map<Object, Object> getResult() {
+        return null;
+    }
 
     @Override
     public void setCoverageListener() {}

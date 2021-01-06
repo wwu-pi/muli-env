@@ -13,7 +13,16 @@ public class DefUseRegister {
         this.visited = visited;
     }
 
-    public void addLink(int link){
+    public void addLink(int link) {
         this.link.add(link);
+    }
+
+    public String toString(){
+        String output = "Visited: "+visited+"; Links:";
+        for(int i: link){
+            output += ""+i+",";
+        }
+        String output2 = output.substring(0,output.lastIndexOf(","));
+        return output2;
     }
 }

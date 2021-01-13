@@ -1,9 +1,9 @@
 package de.wwu.muli.defuse;
-import de.wwu.muggl.symbolic.flow.defUseChains.structures.Def;
-import de.wwu.muggl.vm.classfile.structures.Method;
 
-import java.util.HashSet;
-
+/**
+ * Class representing the analyzed variable definitions and usages for each method and incrementally
+ * keeps track of the passed defUse chains
+ */
 public class DefUseMethod {
 
     private DefUseRegisters defs;
@@ -39,6 +39,11 @@ public class DefUseMethod {
         visitUse(instruction);
     }
 
+    /**
+     * If it is a definition, it is set to visited. If related usages have also been already passed,
+     * the corresponding defuse chain is added.
+     * @param instruction instruction pc
+     */
     public void visitDef(int instruction){
         if(defs.hasEntry(instruction)) {
             defs.setVisited(instruction);
@@ -57,10 +62,16 @@ public class DefUseMethod {
         }
     }
 
+    /**
+     * If it is a usage, it is set to visited. If related definitions have also been already passed,
+     * the corresponding defuse chain is added.
+     * @param instruction instruction pc
+     */
     public void visitUse(int instruction){
         if(uses.hasEntry(instruction)) {
             DefUseRegister r = uses.registers.get(instruction);
             uses.setVisited(instruction);
+            // only consider the last visited definition
             for(int link : r.link.descendingSet()){
                 DefUseRegister rDefs = defs.registers.get(link);
                 if(rDefs.visited) {

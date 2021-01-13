@@ -2,6 +2,9 @@ package de.wwu.muli.defuse;
 
 import java.util.Objects;
 
+/**
+ * Class representing one instance of a defuse chain containing a variable definition and usage
+ */
 public class DefUseChain {
     private DefVariable def;
     private UseVariable use;

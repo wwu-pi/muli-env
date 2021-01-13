@@ -4,6 +4,9 @@ import de.wwu.muggl.vm.classfile.structures.Method;
 
 import java.util.Objects;
 
+/**
+ * Class representing one variable definition while analyzing the bytecode
+ */
 public class DefVariable {
     public int instructionIndex;
     public int pc;

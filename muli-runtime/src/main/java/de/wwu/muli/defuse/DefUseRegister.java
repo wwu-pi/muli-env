@@ -2,9 +2,14 @@ package de.wwu.muli.defuse;
 
 import java.util.TreeSet;
 
+/**
+ * Structure to represent variable definitions and usages while executing the program.
+ */
 public class DefUseRegister {
 
+    // has this definition/ usage already been passed
     public boolean visited;
+    // Link to related usages or definitions for defuses
     public TreeSet<Integer> link;
 
     public DefUseRegister(int link, boolean visited) {

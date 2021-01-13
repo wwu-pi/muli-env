@@ -3,6 +3,9 @@ package de.wwu.muli.defuse;
 import java.util.Map;
 import java.util.HashMap;
 
+/**
+ * Class to enclose all definitions or usages for one method
+ */
 public class DefUseRegisters {
     public Map<Integer, DefUseRegister> registers = new HashMap<>();
 

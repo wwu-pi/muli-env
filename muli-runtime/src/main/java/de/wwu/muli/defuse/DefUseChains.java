@@ -2,6 +2,9 @@ package de.wwu.muli.defuse;
 
 import java.util.HashSet;
 
+/**
+ * Class collecting defuse chains
+ */
 public class DefUseChains {
 
     private HashSet<DefUseChain> defUseChains = new HashSet<DefUseChain>();

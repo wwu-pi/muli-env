@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 import de.wwu.muggl.vm.classfile.structures.Method;
 
+/**
+ * Class representing one variable usage while analyzing the bytecode
+ */
 public class UseVariable {
     public int instructionIndex;
     public int pc;

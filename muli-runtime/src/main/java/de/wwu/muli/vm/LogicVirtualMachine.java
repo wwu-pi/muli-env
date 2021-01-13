@@ -179,8 +179,7 @@ public class LogicVirtualMachine extends SearchingVM {
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
 		this.executionListener = new TcgExecutionListener();
-		//executionListener.setDefUseListener(this);
-		}
+	}
 
 	public ExecutionListener getExecutionListener() {
 		return executionListener;

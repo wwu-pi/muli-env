@@ -5,6 +5,8 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muli.vm.LogicVirtualMachine;
 import de.wwu.muli.defuse.DefUseMethod;
+
+import java.util.HashMap;
 import java.util.Map;
 
 public class TcgExecutionListener implements ExecutionListener {
@@ -22,6 +24,9 @@ public class TcgExecutionListener implements ExecutionListener {
     }
 
     public Map<Object, Object> getResult(){
+        if (executionPathListener == null) {
+            return new HashMap<>();
+        }
         return executionPathListener.getResult();
     }
 
@@ -57,6 +62,8 @@ public class TcgExecutionListener implements ExecutionListener {
 
     @Override
     public void reachedEndEvent() {
-        executionPathListener.reachedEndEvent();
+        if (executionPathListener != null) {
+            executionPathListener.reachedEndEvent();
+        }
     }
 }

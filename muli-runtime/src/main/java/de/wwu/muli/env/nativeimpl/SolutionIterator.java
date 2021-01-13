@@ -134,7 +134,7 @@ public class SolutionIterator extends NativeMethodProvider {
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
             returnValue = convertFreeArrayIfNecessary(returnValue); // We override the current recorded value with a concretized FreeArrayref.
 
-            /// TODO Uncomment vm.reachedEndEvent();
+            vm.reachedEndEvent();
             // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
             // TODO A stream of test cases would only make sense without test case reduction
         } catch (ConversionException e) {

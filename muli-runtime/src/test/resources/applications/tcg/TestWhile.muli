@@ -1,0 +1,29 @@
+package applications.tcg;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import java.lang.Object;
+
+public class TestWhile {
+
+    public static void main(String[] args) {
+        Solution[] solution = Muli.getAllSolutions(Class::whileTest, SearchStrategy.DepthFirstSearch);
+        //System.out.println(solution.value);
+    }
+
+}
+
+
+class Class{
+    static int[] whileTest(){
+        int[] x = {1,2};
+        while(x[0] != 5){
+            x[0] = 5;
+            if(x[1] != 2){
+                x[1] = 2;
+            }
+        }
+        return x;
+    }
+}

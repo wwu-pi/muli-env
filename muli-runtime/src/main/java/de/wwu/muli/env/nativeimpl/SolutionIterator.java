@@ -58,11 +58,11 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void registerNatives() {
         // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapSolutionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class),
-                MethodType.methodType(Solution.class, Object.class));
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), /// TODO breaking // TODO
+                MethodType.methodType(Solution.class, Object.class, Boolean.class, Boolean.class)); /// TODO breaking // TODO
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class),
-                MethodType.methodType(Solution.class, Throwable.class));
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), /// TODO breaking // TODO
+                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, Boolean.class)); /// TODO breaking // TODO
 
         // Active search region / corresponding iterator.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
@@ -83,7 +83,7 @@ public class SolutionIterator extends NativeMethodProvider {
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
-    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject) {
+    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs, Object generateTest) { /// TODO Breaking // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
@@ -134,6 +134,9 @@ public class SolutionIterator extends NativeMethodProvider {
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
             returnValue = convertFreeArrayIfNecessary(returnValue); // We override the current recorded value with a concretized FreeArrayref.
 
+            /// TODO Uncomment vm.reachedEndEvent();
+            // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
+            // TODO A stream of test cases would only make sense without test case reduction
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
         }
@@ -202,8 +205,8 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
-    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException) {
-        LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { /// TODO Breaking // TODO wrap inputs
+        LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
             CLASS_SOLUTION.getTheInitializedClass(vm);
@@ -232,7 +235,7 @@ public class SolutionIterator extends NativeMethodProvider {
         Objectref returnValue;
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
-            returnValue = (Objectref)  conversion.toMuggl(new ExceptionSolution(solutionException), false);
+            returnValue = (Objectref) conversion.toMuggl(new ExceptionSolution(solutionException), false);
         } catch (ConversionException e) {
             throw new RuntimeException("Could not create Muggl VM object from Java object", e);
         }

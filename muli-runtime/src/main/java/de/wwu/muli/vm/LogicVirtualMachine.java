@@ -37,6 +37,9 @@ import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
+import de.wwu.muli.listener.ExecutionListener;
+import de.wwu.muli.listener.NullExecutionListener;
+import de.wwu.muli.listener.TcgExecutionListener;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
@@ -98,6 +101,12 @@ public class LogicVirtualMachine extends SearchingVM {
 	public long getMeasuredTimeSoFar() {
     	return System.nanoTime() - overallExecutionTime;
 	}
+
+	/**
+	 * A listener which is invoked before and after instructions are executed and if an exception
+	 * is thrown during the execution of the instruction.
+	 */
+	protected TcgExecutionListener executionListener;
 
     /**
 	 * Special constructor, which sets the search algorithm and initializes the other fields. It is
@@ -169,6 +178,12 @@ public class LogicVirtualMachine extends SearchingVM {
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
+		this.executionListener = new TcgExecutionListener();
+		//executionListener.setDefUseListener(this);
+		}
+
+	public ExecutionListener getExecutionListener() {
+		return executionListener;
 	}
 
     public Object labelSolutionObject(Object solutionObject) {
@@ -274,7 +289,6 @@ public class LogicVirtualMachine extends SearchingVM {
 			// Rethrow.
 			throw e;
 		}
-
 	}
 
 	/**
@@ -286,6 +300,8 @@ public class LogicVirtualMachine extends SearchingVM {
 	@Override
 	protected void executeInstruction(Instruction instruction) throws ExecutionException {
         Optional<ST> st = instruction.executeMuli(this, this.currentFrame);
+        afterExecuteInstruction(instruction, this.currentFrame, this.pc);
+
         if (!st.isPresent()) {
             return;
         }
@@ -305,6 +321,22 @@ public class LogicVirtualMachine extends SearchingVM {
             throw new IllegalStateException("Instruction " + instruction + " returned an unsupported result type: " + result);
         }
     }
+
+    public void reachedEndEvent() {
+		executionListener.reachedEndEvent();
+	}
+
+	protected Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame) {
+		return executionListener.beforeExecuteInstruction(instruction, method, frame);
+	}
+
+	protected void afterExecuteInstruction(Instruction instruction, Frame frame, int pc) {
+		executionListener.afterExecuteInstruction(instruction, frame, pc);
+	}
+
+	protected void treatExceptionDuringInstruction(Instruction instruction, Method method, Frame frame, ExecutionException e) {
+		executionListener.treatExceptionDuringInstruction(instruction, method, frame, e);
+	}
 
     /**
      * SolutionIterator recorded and returned a solution, so reset the counter.
@@ -664,6 +696,7 @@ public class LogicVirtualMachine extends SearchingVM {
 		} finally {
 			super.finalize();
 		}
+		reachedEndEvent();
 	}
 
 	/**
@@ -835,6 +868,7 @@ public class LogicVirtualMachine extends SearchingVM {
 
     public void setCurrentSearchRegion(Objectref currentSearchRegion) {
         this.currentSearchRegion = currentSearchRegion;
+        this.executionListener.setDefUseListener(this);
     }
 
     public void recordSearchStarted() {

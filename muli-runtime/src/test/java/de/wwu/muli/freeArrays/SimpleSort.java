@@ -32,16 +32,16 @@ public class SimpleSort {
         assertEquals(1, leaves.length);
         FreeArrayref sortedArray = (FreeArrayref) ((Value) leaves[0]).value;
         assertEquals(sortedArray.getLength(), sortedArray.getFreeArrayElements().size());
-        assertEquals(1,  sortedArray.getFreeArrayElement(0));
-        assertEquals(5,  sortedArray.getFreeArrayElement(1));
-        assertEquals(8,  sortedArray.getFreeArrayElement(2));
-        assertEquals(12, sortedArray.getFreeArrayElement(3));
-        assertEquals(17, sortedArray.getFreeArrayElement(4));
-        assertEquals(27, sortedArray.getFreeArrayElement(5));
-        assertEquals(39, sortedArray.getFreeArrayElement(6));
-        assertEquals(42, sortedArray.getFreeArrayElement(7));
-        assertEquals(56, sortedArray.getFreeArrayElement(8));
-        assertEquals(78, sortedArray.getFreeArrayElement(9));
+        assertEquals(IntConstant.getInstance(1),  sortedArray.getFreeArrayElement(0));
+        assertEquals(IntConstant.getInstance(5),  sortedArray.getFreeArrayElement(1));
+        assertEquals(IntConstant.getInstance(8),  sortedArray.getFreeArrayElement(2));
+        assertEquals(IntConstant.getInstance(12), sortedArray.getFreeArrayElement(3));
+        assertEquals(IntConstant.getInstance(17), sortedArray.getFreeArrayElement(4));
+        assertEquals(IntConstant.getInstance(27), sortedArray.getFreeArrayElement(5));
+        assertEquals(IntConstant.getInstance(39), sortedArray.getFreeArrayElement(6));
+        assertEquals(IntConstant.getInstance(42), sortedArray.getFreeArrayElement(7));
+        assertEquals(IntConstant.getInstance(56), sortedArray.getFreeArrayElement(8));
+        assertEquals(IntConstant.getInstance(78), sortedArray.getFreeArrayElement(9));
         System.out.println(sortedArray);
     }
 

@@ -43,7 +43,7 @@ public class SolutionIterator extends NativeMethodProvider {
     private static final String handledClassFQ = de.wwu.muli.search.SolutionIterator.class.getCanonicalName();
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
-    public static boolean labelSolutions = false;
+    public static boolean labelSolutions = true;
     private static int solutionCounter = 0;
     private static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
@@ -118,7 +118,7 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
-            returnValue = convertFreeArrayIfNecessary(returnValue); // We override the current recorded value with a concretized FreeArrayref.
+            //returnValue = convertFreeArrayIfNecessary(returnValue); // We override the current recorded value with a concretized FreeArrayref. TODO Better way for joining with cloning?
 
             vm.reachedEndEvent();
             // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
@@ -138,66 +138,6 @@ public class SolutionIterator extends NativeMethodProvider {
             throw new RuntimeException(e);
         }
         vm.getCurrentFrame().setPc(nextPc);
-
-        return returnValue;
-    }
-
-    private static Objectref convertFreeArrayIfNecessary(Objectref returnValue) {
-        // TODO Find better way to embedd this behavior
-        // TODO This procedure assumes that we always have concrete indices given. We should extend it to symbolic indexes
-            // TODO (sometimes there is redundant information in a FreeArrayref).
-        if (!returnValue.getName().equals(Solution.class.getName())) {
-            return returnValue;
-        }
-        Map<Field, Object> fields = returnValue.getFields();
-        Field field = null;
-        Object objectValue = null;
-        for (Map.Entry<Field, Object> entry : fields.entrySet()) {
-            if (entry.getKey().getName().equals("value")) {
-                field = entry.getKey();
-                objectValue = entry.getValue();
-            }
-        }
-
-        if (field == null || objectValue == null) {
-            throw new IllegalStateException("Name of value field in " + Solution.class.getName() + " changed.");
-        }
-
-        if (objectValue instanceof FreeArrayref) {
-            // Special case: we transform the FreeArrayref into a usual arrayref.
-            FreeArrayref array = (FreeArrayref) objectValue;
-            Map<Term, Object> elements = array.getFreeArrayElements();
-            ArrayList<Object> elementsInArrayList = new ArrayList<>();
-            LogicVirtualMachine vm = (LogicVirtualMachine) VirtualMachine.getLatestVM();
-
-            de.wwu.muggl.solvers.Solution variableMappings;
-            try {
-                variableMappings = vm.getSolverManager().getSolution();
-            } catch (SolverUnableToDecideException | TimeoutException e) {
-                throw new IllegalStateException(e);
-            }
-            for (Map.Entry<Term, Object> entry : elements.entrySet()) {
-                if (entry.getKey() instanceof IntConstant) {
-                    Object value = entry.getValue() instanceof Variable ? variableMappings.getValue((Variable) entry.getValue()) : entry.getValue();
-                    elementsInArrayList.add(
-                            ((IntConstant) entry.getKey()).getValue(),
-                            value);
-                }
-            }
-            int concretizedLength = array.getLengthTerm() instanceof IntConstant ?
-                    ((IntConstant) array.getLengthTerm()).getIntValue() :
-                    ((IntConstant) variableMappings.getValue((NumericVariable) array.getLengthTerm())).getIntValue();
-
-            FreeArrayref concretizedRef =
-                    new FreeArrayref(array.getName(), array.getReferenceValue(), IntConstant.getInstance(concretizedLength), true);
-            for (int i = 0; i < elementsInArrayList.size(); i++) {
-                concretizedRef.putElementIntoFreeArray(IntConstant.getInstance(i), ((IntConstant) elementsInArrayList.get(i)).getValue());
-            }
-            returnValue.putField(field, concretizedRef);
-            vm.getSearchAlgorithm().recordValue(new Value(concretizedRef));
-            Globals.getInst().symbolicExecLogger.info("Execution time to find free array-value with length " + concretizedRef.getLengthTerm() + ": " + vm.getMeasuredTimeSoFar());
-        }
-
 
         return returnValue;
     }

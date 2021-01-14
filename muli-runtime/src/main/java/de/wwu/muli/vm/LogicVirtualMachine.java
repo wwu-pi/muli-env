@@ -11,22 +11,18 @@ import de.wwu.muggl.instructions.general.Load;
 import de.wwu.muggl.instructions.general.Switch;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
+import de.wwu.muggl.solvers.Solution;
 import de.wwu.muggl.solvers.SolverManager;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
-import de.wwu.muggl.solvers.expressions.ConstraintExpression;
-import de.wwu.muggl.solvers.expressions.IntConstant;
-import de.wwu.muggl.solvers.expressions.NumericConstant;
-import de.wwu.muggl.solvers.expressions.Term;
+import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.symbolic.generating.Generator;
 import de.wwu.muggl.symbolic.searchAlgorithms.choice.ChoicePoint;
 import de.wwu.muggl.symbolic.searchAlgorithms.depthFirst.trailelements.*;
 import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
-import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
-import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
@@ -42,16 +38,12 @@ import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
 import de.wwu.muli.listener.ExecutionListener;
-import de.wwu.muli.listener.NullExecutionListener;
 import de.wwu.muli.listener.TcgExecutionListener;
 import de.wwu.muli.searchtree.Choice;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.searchtree.ST;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -198,48 +190,9 @@ public class LogicVirtualMachine extends SearchingVM {
         try {
             solution = this.getSolverManager().getSolution();
             if (solutionObject instanceof Objectref) {
-                Objectref solutionObject2 = this.getAnObjectref(((Objectref) solutionObject).getInitializedClass().getClassFile());
-                HashMap<Field, Object> fields = ((Objectref) solutionObject).getFields();
-                HashMap<Field, Object> fields2 = ((Objectref) solutionObject2).getFields();
-                fields.entrySet().forEach((entry) -> {
-                    if (entry.getValue() instanceof Term) {
-                        Term value = (Term) entry.getValue();
-                        Term simplified = value.insert(solution, false);
-                        Object newValue = simplified;
-                        if (simplified.isConstant()) {
-                            newValue = ((NumericConstant) simplified).getIntValue();
-                        }
-                        fields2.put(entry.getKey(), newValue);
-                    } else {
-                        fields2.put(entry.getKey(), entry.getValue());
-                    }
-                });
-                solutionObject = solutionObject2;
+            	solutionObject = labelObjectref((Objectref) solutionObject, solution);
             } else if (solutionObject instanceof Arrayref) {
-
-                Arrayref ar = (Arrayref) solutionObject;
-                Object[] elements = ar.getRawElements();
-                Arrayref result = new Arrayref(ar);
-                boolean substitutedPrimitives = false;
-                boolean simplificationOfTermsSuccessful = true;
-                for (int i = 0; i < elements.length; i++) {
-                    Object newValue = elements[i];
-                    if (elements[i] instanceof Term) {
-                        Term value = (Term) elements[i];
-                        Term simplified = value.insert(solution, false);
-
-                        if (simplified.isConstant()) {
-                        	substitutedPrimitives = true;
-                            newValue = ((NumericConstant) simplified).getIntValue();
-                        } else {
-                        	simplificationOfTermsSuccessful = false;
-                            newValue = simplified;
-                        }
-                    }
-                    result.putElement(i, newValue);
-                }
-                replaceReferenceValueOfArray(result, substitutedPrimitives, simplificationOfTermsSuccessful);
-                solutionObject = result;
+            	solutionObject = labelArrayref((Arrayref) solutionObject, solution);
             }
         } catch (TimeoutException | SolverUnableToDecideException e) {
             throw new RuntimeException(e);
@@ -248,22 +201,87 @@ public class LogicVirtualMachine extends SearchingVM {
         return solutionObject;
     }
 
-    protected void replaceReferenceValueOfArray(Arrayref result,
-												boolean substitutedPrimitives,
-												boolean simplificationOfTermsSuccessful) {
-		if (substitutedPrimitives) {
-			if (!simplificationOfTermsSuccessful) {
-				throw new RuntimeException("Simplification failed.");
+    protected Arrayref labelArrayref(Arrayref ar, Solution solution) {
+		if (ar instanceof FreeArrayref) { /// TODO Test labeling for free array
+			FreeArrayref freeAr = (FreeArrayref) ar;
+			Term lengthTerm = freeAr.getLengthTerm();
+			Map<Term, Object> freeArElements = freeAr.getFreeArrayElements();
+			IntConstant length = (IntConstant) lengthTerm.insert(solution, false);
+			ArrayList<Object> elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), null));
+			for (Map.Entry<Term, Object> entry : freeArElements.entrySet()) {
+				Term k = entry.getKey();
+				int index = getFreeIndexFromSolution(k, solution);
+				Object val = entry.getValue();
+				if (val instanceof Objectref) {
+					val = labelObjectref((Objectref) val, solution);
+				} else if (val instanceof Arrayref) {
+					val = labelArrayref((Arrayref) val, solution);
+				} else { // Primitive value
+					val = labelPrimitive(val, solution);
+				}
+				elementsInArrayList.set(index, val);
 			}
-			try {
-				InitializedClass newClass =
-						new InitializedClass(getClassLoader().getClassAsClassFile("java.lang.Integer"), this);
-				Objectref newReferenceValue = new Objectref(newClass, true);
-				result.setReferenceValue(newReferenceValue);
-			} catch (ClassFileException e) {
-				throw new RuntimeException(e);
+
+			return freeAr.concretizeWith(elementsInArrayList, length);
+
+		} else { // One of normal Arrayrefs /// TODO Test labeling for array
+			// We only have to replace the values for fixed values.
+			for (int i = 0; i < ar.getLength(); i++) {
+				Object val = ar.getElement(i);
+				if (val instanceof Objectref) {
+					val = labelObjectref((Objectref) val, solution);
+				} else if (val instanceof Arrayref) {
+					val = labelArrayref((Arrayref) val, solution);
+				} else { // Primitive value
+					val = labelPrimitive(val, solution);
+				}
+				ar.putElement(i, val);
 			}
+			return ar;
 		}
+	}
+
+	protected Objectref labelObjectref(Objectref solutionObject, Solution solution) {
+		Objectref solutionObject2 = this.getAnObjectref((solutionObject).getInitializedClass().getClassFile());
+		HashMap<Field, Object> fields = (solutionObject).getFields();
+		HashMap<Field, Object> fields2 = (solutionObject2).getFields();
+		fields.entrySet().forEach((entry) -> {
+			Object labelledPrimitive = labelPrimitive(entry.getValue(), solution);
+			fields2.put(entry.getKey(), labelledPrimitive);
+		});
+		return solutionObject2;
+	}
+
+	protected Object labelPrimitive(Object k, Solution solution) {
+		if (k instanceof Term) {
+			Term simplified = ((Term) k).insert(solution, false);
+			if (simplified.isConstant()) {
+				return simplified;
+			} else {
+				throw new IllegalStateException("Should be constant after labelling.");
+			}
+		} else {
+			return k;
+		}
+	}
+
+	protected int getFreeIndexFromSolution(Term k, Solution solution) {
+		int index = -1;
+		if (k instanceof IntConstant) {
+			index = ((IntConstant) k).getIntValue();
+		} else if (k instanceof NumericVariable) {
+			NumericVariable nv = (NumericVariable) k;
+			if (!nv.isInteger()) {
+				throw new IllegalStateException("Free array index must be an integer variable or an integer constant.");
+			}
+			index = ((IntConstant) solution.getValue(nv)).getIntValue();
+		} else {
+			throw new IllegalStateException("Free array index must be an integer variable or an integer constant.");
+		}
+		if (index < 0) {
+			throw new IllegalStateException("Index must be positive.");
+		}
+		return index;
 	}
 
     /**

@@ -58,11 +58,11 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void registerNatives() {
         // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapSolutionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), /// TODO breaking // TODO
-                MethodType.methodType(Solution.class, Object.class, Boolean.class, Boolean.class)); /// TODO breaking // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Object.class, Boolean.class, Boolean.class)); // TODO
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), /// TODO breaking // TODO
-                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, Boolean.class)); /// TODO breaking // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
+                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, Boolean.class)); // TODO
 
         // Active search region / corresponding iterator.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
@@ -83,7 +83,7 @@ public class SolutionIterator extends NativeMethodProvider {
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
-    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs, Object generateTest) { /// TODO Breaking // TODO wrap inputs
+    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs, Object generateTest) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
@@ -160,12 +160,23 @@ public class SolutionIterator extends NativeMethodProvider {
         // TODO Find better way to embedd this behavior
         // TODO This procedure assumes that we always have concrete indices given. We should extend it to symbolic indexes
             // TODO (sometimes there is redundant information in a FreeArrayref).
-        Map<Field, Object> fields = returnValue.getFields();
-        if (fields.size() != 1) {
+        if (!returnValue.getName().equals(Solution.class.getName())) {
             return returnValue;
         }
-        Field field = fields.keySet().toArray(new Field[0])[0];
-        Object objectValue = fields.values().toArray()[0];
+        Map<Field, Object> fields = returnValue.getFields();
+        Field field = null;
+        Object objectValue = null;
+        for (Map.Entry<Field, Object> entry : fields.entrySet()) {
+            if (entry.getKey().getName().equals("value")) {
+                field = entry.getKey();
+                objectValue = entry.getValue();
+            }
+        }
+
+        if (field == null || objectValue == null) {
+            throw new IllegalStateException("Name of value field in " + Solution.class.getName() + " changed.");
+        }
+
         if (objectValue instanceof FreeArrayref) {
             // Special case: we transform the FreeArrayref into a usual arrayref.
             FreeArrayref array = (FreeArrayref) objectValue;
@@ -205,7 +216,7 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
-    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { /// TODO Breaking // TODO wrap inputs
+    public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { // TODO wrap inputs
         LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.

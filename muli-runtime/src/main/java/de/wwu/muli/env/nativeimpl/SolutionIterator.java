@@ -104,21 +104,7 @@ public class SolutionIterator extends NativeMethodProvider {
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
 
-        // Try cloning the solution in order to prevent its contents from being backtracked later on.
-        try {
-            if (solutionObject instanceof Objectref) {
-                solutionObject = ((Objectref) solutionObject).clone();
-            } else {
-                // TODO add further known cases. But most of the results are Objectrefs anyway...
-                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
-            }
-        } catch (CloneNotSupportedException e) {
-            // Nevermind. At least we tried.
-            if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
-                Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
-            }
-        }
-
+        solutionObject = cloneSolution(solutionObject);
 
         // Store Value node in ST.
         Value val = new Value(solutionObject);
@@ -214,6 +200,26 @@ public class SolutionIterator extends NativeMethodProvider {
 
 
         return returnValue;
+    }
+
+    protected static Object cloneSolution(Object solutionObject) {
+        // Try cloning the solution in order to prevent its contents from being backtracked later on.
+        try {
+            if (solutionObject instanceof Objectref) {
+                solutionObject = ((Objectref) solutionObject).clone();
+            } else if (solutionObject instanceof Arrayref) {
+                /// TODO Breaking solutionObject = Arrayref.getSolutionArrayrefFrom((Arrayref) solutionObject);// ((Arrayref) solutionObject).clone();
+                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
+            } else {
+                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
+            }
+        } catch (CloneNotSupportedException e) {
+            // Nevermind. At least we tried.
+            if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
+                Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
+            }
+        }
+        return solutionObject;
     }
 
     public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { // TODO wrap inputs

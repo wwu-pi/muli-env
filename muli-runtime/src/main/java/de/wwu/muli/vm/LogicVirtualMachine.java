@@ -185,15 +185,14 @@ public class LogicVirtualMachine extends SearchingVM {
 	}
 
     public Object labelSolutionObject(Object solutionObject) {
+		if (solutionObject == null) {
+			return null;
+		}
         // Label found solution.
         de.wwu.muggl.solvers.Solution solution;
         try {
             solution = this.getSolverManager().getSolution();
-            if (solutionObject instanceof Objectref) {
-            	solutionObject = labelObjectref((Objectref) solutionObject, solution);
-            } else if (solutionObject instanceof Arrayref) {
-            	solutionObject = labelArrayref((Arrayref) solutionObject, solution);
-            }
+            solutionObject = label(solutionObject, solution, new HashMap<>());
         } catch (TimeoutException | SolverUnableToDecideException e) {
             throw new RuntimeException(e);
         }
@@ -201,58 +200,69 @@ public class LogicVirtualMachine extends SearchingVM {
         return solutionObject;
     }
 
-    protected Arrayref labelArrayref(Arrayref ar, Solution solution) {
-		if (ar instanceof FreeArrayref) { /// TODO Test labeling for free array
+    protected Object label(Object toLabel, Solution solution, Map<Object, Object> alreadyLabelled) {
+		if (toLabel == null) {
+			return null;
+		}
+		Object labelledVal = alreadyLabelled.get(toLabel);
+		if (labelledVal != null) {
+			return labelledVal;
+		}
+		if (toLabel instanceof Objectref) {
+			return labelObjectref((Objectref) toLabel, solution, alreadyLabelled);
+		} else if (toLabel instanceof Arrayref) {
+			return labelArrayref((Arrayref) toLabel, solution, alreadyLabelled);
+		} else { // Primitive value
+			return labelPrimitive(toLabel, solution, alreadyLabelled);
+		}
+	}
+
+    protected Arrayref labelArrayref(Arrayref ar, Solution solution, Map<Object, Object> alreadyLabelled) {
+		alreadyLabelled.put(ar, ar);
+		if (ar instanceof FreeArrayref) {
 			FreeArrayref freeAr = (FreeArrayref) ar;
 			Term lengthTerm = freeAr.getLengthTerm();
 			Map<Term, Object> freeArElements = freeAr.getFreeArrayElements();
 			IntConstant length = (IntConstant) lengthTerm.insert(solution, false);
+			alreadyLabelled.put(lengthTerm, length);
 			ArrayList<Object> elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), null));
 			for (Map.Entry<Term, Object> entry : freeArElements.entrySet()) {
 				Term k = entry.getKey();
-				int index = getFreeIndexFromSolution(k, solution);
-				Object val = entry.getValue();
-				if (val instanceof Objectref) {
-					val = labelObjectref((Objectref) val, solution);
-				} else if (val instanceof Arrayref) {
-					val = labelArrayref((Arrayref) val, solution);
-				} else { // Primitive value
-					val = labelPrimitive(val, solution);
-				}
-				elementsInArrayList.set(index, val);
+				IntConstant index = ((IntConstant) label(k, solution, alreadyLabelled));
+				alreadyLabelled.put(k, index);
+				Object val = label(entry.getValue(), solution, alreadyLabelled);
+				alreadyLabelled.put(entry.getValue(), val);
+				elementsInArrayList.set(index.getIntValue(), val);
 			}
+			freeAr.concretizeWith(elementsInArrayList, length);
+			return freeAr;
 
-			return freeAr.concretizeWith(elementsInArrayList, length);
-
-		} else { // One of normal Arrayrefs /// TODO Test labeling for array
+		} else { // One of normal Arrayrefs
 			// We only have to replace the values for fixed values.
 			for (int i = 0; i < ar.getLength(); i++) {
-				Object val = ar.getElement(i);
-				if (val instanceof Objectref) {
-					val = labelObjectref((Objectref) val, solution);
-				} else if (val instanceof Arrayref) {
-					val = labelArrayref((Arrayref) val, solution);
-				} else { // Primitive value
-					val = labelPrimitive(val, solution);
-				}
+				Object val = label(ar.getElement(i), solution, alreadyLabelled);
+				alreadyLabelled.put(ar.getElement(i), val);
 				ar.putElement(i, val);
 			}
 			return ar;
 		}
 	}
 
-	protected Objectref labelObjectref(Objectref solutionObject, Solution solution) {
-		Objectref solutionObject2 = this.getAnObjectref((solutionObject).getInitializedClass().getClassFile());
-		HashMap<Field, Object> fields = (solutionObject).getFields();
-		HashMap<Field, Object> fields2 = (solutionObject2).getFields();
-		fields.entrySet().forEach((entry) -> {
-			Object labelledPrimitive = labelPrimitive(entry.getValue(), solution);
-			fields2.put(entry.getKey(), labelledPrimitive);
-		});
-		return solutionObject2;
+	protected Objectref labelObjectref(Objectref solutionObject, Solution solution, Map<Object,Object> alreadyLabelled) {
+		alreadyLabelled.put(solutionObject, solutionObject);
+		HashMap<Field, Object> fields = solutionObject.getFields();
+		if (solutionObject instanceof FreeObjectref) {
+			/// TODO Copy
+		}
+		for (Map.Entry<Field, Object> entry : fields.entrySet()) {
+			Object labelledValue = label(entry.getValue(), solution, alreadyLabelled);
+			alreadyLabelled.put(entry.getValue(), labelledValue);
+			solutionObject.putField(entry.getKey(), labelledValue);
+		}
+		return solutionObject;
 	}
 
-	protected Object labelPrimitive(Object k, Solution solution) {
+	protected Object labelPrimitive(Object k, Solution solution, Map<Object,Object> alreadyLabelled) {
 		if (k instanceof Term) {
 			Term simplified = ((Term) k).insert(solution, false);
 			if (simplified.isConstant()) {
@@ -263,25 +273,6 @@ public class LogicVirtualMachine extends SearchingVM {
 		} else {
 			return k;
 		}
-	}
-
-	protected int getFreeIndexFromSolution(Term k, Solution solution) {
-		int index = -1;
-		if (k instanceof IntConstant) {
-			index = ((IntConstant) k).getIntValue();
-		} else if (k instanceof NumericVariable) {
-			NumericVariable nv = (NumericVariable) k;
-			if (!nv.isInteger()) {
-				throw new IllegalStateException("Free array index must be an integer variable or an integer constant.");
-			}
-			index = ((IntConstant) solution.getValue(nv)).getIntValue();
-		} else {
-			throw new IllegalStateException("Free array index must be an integer variable or an integer constant.");
-		}
-		if (index < 0) {
-			throw new IllegalStateException("Index must be positive.");
-		}
-		return index;
 	}
 
     /**

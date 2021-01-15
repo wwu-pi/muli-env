@@ -1,0 +1,82 @@
+package applications.copying;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+
+public class CheckClass {
+    public int val;
+    public CheckClass nestedClass;
+    public OtherClass nestedOtherClass;
+}
+
+public class OtherClass {
+    public int val;
+}
+
+public class ObjectPaths {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(ObjectPaths::check);
+        boolean foundFirst = false, foundSecond = false, foundThird = false, foundFourth = false;
+        for (Solution s : solutions) {
+            CheckClass result = (CheckClass) s.value;
+
+            if (result.val > 2 && result.nestedClass.val <=5 && result.nestedOtherClass.val >= 3) {
+                System.out.println("Expected result found! Nr. 1.");
+                foundFirst = true;
+            } else if (result.val == 2 && result.nestedClass.val <= 4 && result.nestedOtherClass.val >= 3) {
+                System.out.println("Expected result found! Nr. 2.");
+                foundSecond = true;
+            } else if (result.val == 2 && result.nestedClass.val == 5 && result.nestedOtherClass.val > 3) {
+                System.out.println("Expected result found! Nr. 3.");
+                foundThird = true;
+            } else if (result.val == 2 && result.nestedClass.val == 5 && result.nestedOtherClass.val == 3) {
+                System.out.println("Expected result found! Nr. 4.");
+                foundFourth = true;
+            } else {
+                throw new IllegalStateException("Failure to find valid result!");
+            }
+        }
+        if (!foundFirst || !foundSecond || !foundThird || !foundFourth) {
+            throw new IllegalStateException("Failure to find all results!");
+        }
+    }
+
+    private static CheckClass check() {
+        int val0 free;
+        int val1 free;
+        int val2 free;
+        CheckClass result = new CheckClass();
+        result.val = val0;
+        result.nestedClass = new CheckClass();
+        result.nestedClass.val = val1;
+        result.nestedOtherClass = new OtherClass();
+        result.nestedOtherClass.val = val2;
+        if (val0 < 2) {
+            throw Muli.fail();
+        } else if (val1 > 5) {
+            throw Muli.fail();
+        } else if (val2 < 3) {
+            throw Muli.fail();
+        }
+
+        if (val0 > 2) {
+            // One result with val0 > 2, val1 <= 5, val2 >= 3.
+            return result;
+        }
+        // Otherwise val0 == 2.
+        if (val1 <= 4) {
+            // One result with val0 == 2, val1 <= 4, val2 >= 3.
+            return result;
+        }
+        // Otherwise val1 == 5
+        if (val2 > 3) {
+            // One result with val0==2, val1==5, val2>3.
+            return result;
+        }
+        // Otherwise val2 == 3.
+        // One result with val0==2, val1==5, val2==3.
+        return result;
+
+    }
+}

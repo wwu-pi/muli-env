@@ -1,0 +1,47 @@
+package applications.copying;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class ArrayPaths {
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(ArrayPaths::check);
+        boolean foundFirst = false, foundSecond = false, foundThird = false;
+        for (Solution s : solutions) {
+            int[] result = (int[]) s.value;
+            if (result == null) {
+                System.out.println("Expected result found! Nr. 1.");
+                foundFirst = true;
+            } else if (result[0] == 1 && result[1] == 2 && result[2] == 5) {
+                System.out.println("Expected result found! Nr. 2.");
+                foundSecond = true;
+            } else if (result[0] == 1 && result[1] == 2 && result[2] == 6) {
+                System.out.println("Expected result found! Nr. 3.");
+                foundThird = true;
+            }
+        }
+        if (!foundFirst || !foundSecond || !foundThird) {
+            throw new IllegalStateException("Failure to find all results!");
+        }
+    }
+
+
+    private static int[] check() {
+        int val free;
+        if (val == 3) {
+            throw Muli.fail();
+        }
+
+        int[] result = new int[] {1,2,3};
+
+        result[2] = val;
+
+        if (val == 5) {
+            return result;
+        } else if (val == 6) {
+            val = -6;
+            return result; // Array should not have changed.
+        }
+        return null;
+    }
+
+}

@@ -4,10 +4,7 @@ import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
-import de.wwu.muggl.solvers.expressions.IntConstant;
-import de.wwu.muggl.solvers.expressions.NumericVariable;
-import de.wwu.muggl.solvers.expressions.Term;
-import de.wwu.muggl.solvers.expressions.Variable;
+import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
@@ -18,9 +15,7 @@ import de.wwu.muggl.vm.execution.ConversionException;
 import de.wwu.muggl.vm.execution.MugglToJavaConversion;
 import de.wwu.muggl.vm.execution.NativeMethodProvider;
 import de.wwu.muggl.vm.execution.NativeWrapper;
-import de.wwu.muggl.vm.initialization.Arrayref;
-import de.wwu.muggl.vm.initialization.FreeArrayref;
-import de.wwu.muggl.vm.initialization.Objectref;
+import de.wwu.muggl.vm.initialization.*;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
@@ -32,6 +27,7 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -101,10 +97,12 @@ public class SolutionIterator extends NativeMethodProvider {
         SolutionIterator.totalSearchTime += timeSpent;
         SolutionIterator.totalSolutionCount++;
 
+        // We clone first to not alter the objects used after backtracking during labelling
+        solutionObject = cloneSolution(solutionObject);
+
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
 
-        solutionObject = cloneSolution(solutionObject);
 
         // Store Value node in ST.
         Value val = new Value(solutionObject);
@@ -118,7 +116,6 @@ public class SolutionIterator extends NativeMethodProvider {
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
             returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
-            //returnValue = convertFreeArrayIfNecessary(returnValue); // We override the current recorded value with a concretized FreeArrayref. TODO Better way for joining with cloning?
 
             vm.reachedEndEvent();
             // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
@@ -144,22 +141,80 @@ public class SolutionIterator extends NativeMethodProvider {
 
     protected static Object cloneSolution(Object solutionObject) {
         // Try cloning the solution in order to prevent its contents from being backtracked later on.
-        try {
-            if (solutionObject instanceof Objectref) {
-                solutionObject = ((Objectref) solutionObject).clone();
-            } else if (solutionObject instanceof Arrayref) {
-                /// TODO Breaking solutionObject = Arrayref.getSolutionArrayrefFrom((Arrayref) solutionObject);// ((Arrayref) solutionObject).clone();
-                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
-            } else {
-                throw new CloneNotSupportedException("Don't know how to clone a " + solutionObject.getClass().getName());
-            }
-        } catch (CloneNotSupportedException e) {
-            // Nevermind. At least we tried.
-            if (Globals.getInst().symbolicExecLogger.isDebugEnabled()) {
-                Globals.getInst().symbolicExecLogger.debug("Unable to clone " + solutionObject + ", contents might suffer from backtracking. Exception was: " + e);
-            }
+        return cloneVal(solutionObject, new HashMap<>());
+    }
+
+    protected static Object cloneVal(Object val, Map<Object, Object> alreadyCloned) {
+        if (val == null) {
+            return null;
         }
-        return solutionObject;
+        Object alreadyInResults = alreadyCloned.get(val);
+        if (alreadyInResults != null) {
+            return alreadyInResults;
+        }
+        // We add new values in the cloneObjectref, cloneArrayref, and clonePrimitive methods
+        // to avoid circular dependencies. The "hull", e.g., an empty Objectref, is immediately added.
+        if (val instanceof Objectref) {
+            return cloneObjectref((Objectref) val, alreadyCloned);
+        } else if (val instanceof Arrayref) {
+            return cloneArrayref((Arrayref) val, alreadyCloned);
+        } else { // Is primitive
+            return clonePrimitive(val, alreadyCloned);
+        }
+    }
+
+    protected static Objectref cloneObjectref(Objectref o, Map<Object, Object> alreadyCloned) {
+        if (o instanceof FreeObjectref) {
+            /// TODO
+            throw new IllegalStateException("Not yet implemented.");
+        }
+        Objectref result = VirtualMachine.getLatestVM().getAnObjectref(o.getInitializedClass().getClassFile());
+        alreadyCloned.put(o, result);
+        for (Map.Entry<Field, Object> entry : o.getFields().entrySet()) {
+            Object val = entry.getValue();
+            Object clonedVal = cloneVal(val, alreadyCloned);
+            result.putField(entry.getKey(), clonedVal);
+        }
+        return result;
+    }
+
+    protected static Arrayref cloneArrayref(Arrayref a, Map<Object, Object> alreadyCloned) {
+        if (a instanceof FreeArrayref) {
+            FreeArrayref fa = new FreeArrayref((FreeArrayref) a);
+            alreadyCloned.put(a, fa);
+            Term copiedLengthTerm = (Term) cloneVal(fa.getLengthTerm(), alreadyCloned);
+            Map<Term, Object> copiedElements = new HashMap<>();
+            for (Map.Entry<Term, Object> entry : fa.getFreeArrayElements().entrySet()) {
+                Term key = (Term) cloneVal(entry.getKey(), alreadyCloned);
+                Object val = cloneVal(entry.getValue(), alreadyCloned);
+                copiedElements.put(key, val);
+            }
+            fa.setFreeArrayElements(copiedElements);
+            fa.setLengthTerm(copiedLengthTerm);
+            return fa;
+        }
+
+        Arrayref result;
+        if (a instanceof ModifieableArrayref) {
+            result = new ModifieableArrayref((ModifieableArrayref) a);
+        } else {
+            result = new Arrayref(a);
+        }
+        alreadyCloned.put(a, result);
+        for (int i = 0; i < a.getLength(); i++) {
+            Object clonedVal = cloneVal(a.getElement(i), alreadyCloned);
+            result.putElement(i, clonedVal);
+        }
+        return result;
+    }
+
+    protected static Object clonePrimitive(Object p, Map<Object, Object> alreadyCloned) {
+        if (p instanceof Number || p instanceof Term) {
+            alreadyCloned.put(p, p);
+            return p;
+        } else {
+            throw new IllegalStateException("Not supported: " + p.getClass());
+        }
     }
 
     public static Objectref wrapExceptionAndFullyBacktrackVM(Frame frame, Object solutionException, Object wrapInputs, Object generateTest) { // TODO wrap inputs
@@ -178,6 +233,9 @@ public class SolutionIterator extends NativeMethodProvider {
         vm.resetInstructionsExecutedSinceLastSolution();
         SolutionIterator.totalSearchTime += vm.recordSearchEnded();
         SolutionIterator.totalSolutionCount++;
+
+        // We clone first to not alter the objects used after backtracking during labelling
+        solutionException = cloneSolution(solutionException);
 
         // Label solution if enabled.
         solutionException = maybeLabel(vm, solutionException);

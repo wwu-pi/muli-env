@@ -10,6 +10,37 @@ public class FreeObjectPaths {
 
     public static void main(String[] args) {
         Solution<Object>[] solutions = Muli.getAllSolutions(FreeObjectPaths::check);
+
+        int numberNull = 0;
+        boolean foundFirst = false, foundSecond = false, foundThird = false;
+        for (Solution s : solutions) {
+            A a = (A) s.value;
+            if (a == null) {
+                numberNull++;
+            } else if (a instanceof C) {
+                C c = (C) a;
+                if (c.val == 5 || c.bval == 6 || c.cval != 7) {
+                    throw new IllegalStateException("Illegal value found for a C: " + c);
+                }
+                foundFirst = true;
+            } else if (a instanceof B) {
+                B b = (B) a;
+                if (b.val == 5 || b.bval != 6) {
+                    throw new IllegalStateException("Illegal value found for a B: " + b);
+                }
+                foundSecond = true;
+            } else if (a instanceof A) {
+                if (a.val != 5) {
+                    throw new IllegalStateException("Illegal value found for an A: " + a);
+                }
+                foundThird = true;
+            } else {
+                throw new IllegalStateException("Illegal value found: " + a);
+            }
+        }
+        if(!foundFirst || !foundSecond || !foundThird || 3 != numberNull) {
+            throw new IllegalStateException("Not all values found!");
+        }
     }
 
     private static A check() {

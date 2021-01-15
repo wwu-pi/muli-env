@@ -4,9 +4,11 @@ import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.execution.nativeWrapping.TestablePrintStreamWrapper;
+import de.wwu.muggl.vm.initialization.FreeObjectref;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
+import de.wwu.muli.searchtree.Exception;
 import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.searchtree.Value;
 import org.junit.Test;
@@ -17,8 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ObjectCopying {
 
@@ -76,5 +77,68 @@ public class ObjectCopying {
         assertTrue(foundSecond);
         assertTrue(foundThird);
         assertTrue(foundFourth);
+    }
+
+    @Test
+    public void test_objectLabeling1() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.copying.FreeObjectPaths");
+        assertEquals(1, foundTrees.length);
+        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        Set<Object> exceptions = Arrays.stream(leaves).filter(x -> x instanceof Exception).collect(Collectors.toSet());
+        // Java doing Java things
+        Set<Value> values = (Set<Value>) (Object) Arrays.stream(leaves).filter(x -> x instanceof Value).collect(Collectors.toSet());
+        assertEquals(6, values.size());
+        boolean foundFirst = false, foundSecond = false, foundThird = false;
+        int foundNull = 0;
+        for (Value val : values) {
+            FreeObjectref a = (FreeObjectref) val.value;
+            if (a == null) {
+                foundNull++;
+                continue;
+            }
+            Map<Field, Object> fields = a.getFields();
+            Set<String> possibleTypes = a.getPossibleTypes();
+            if (possibleTypes.size() == 3) {
+                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.A")).count());
+                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.B")).count());
+                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.C")).count());
+                fields.keySet().stream().forEach(f -> {
+                    if (f.getName().equals("val")) {
+                        assertEquals(5, ((IntConstant) fields.get(f)).getIntValue());
+                    }
+                });
+                foundFirst = true;
+            } else if (possibleTypes.size() == 2) {
+                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.B")).count());
+                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.C")).count());
+                fields.keySet().stream().forEach(f -> {
+                    if (f.getName().equals("val")) {
+                        assertNotEquals(5, ((IntConstant) fields.get(f)).getIntValue());
+                    } else if (f.getName().equals("bval")) {
+                        assertEquals(6, ((IntConstant) fields.get(f)).getIntValue());
+                    }
+                });
+                foundSecond = true;
+            } else if (possibleTypes.size() == 1) {
+                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.C")).count());
+                fields.keySet().stream().forEach(f -> {
+                    if (f.getName().equals("val")) {
+                        assertNotEquals(5, ((IntConstant) fields.get(f)).getIntValue());
+                    } else if (f.getName().equals("bval")) {
+                        assertNotEquals(6, ((IntConstant) fields.get(f)).getIntValue());
+                    } else if (f.getName().equals("cval")) {
+                        assertEquals(7, ((IntConstant) fields.get(f)).getIntValue());
+                    }
+                });
+                foundThird = true;
+            } else {
+                fail("Illegal value: " + a);
+            }
+        }
+        assertTrue(foundFirst);
+        assertTrue(foundSecond);
+        assertTrue(foundThird);
+        assertEquals(3, foundNull);
+
     }
 }

@@ -50,4 +50,28 @@ public class ArrayCopying {
         assertTrue(foundSecond);
         assertTrue(foundThird);
     }
+
+    @Test
+    public void test_arrayLabeling1() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.copying.FreeArrayPaths");
+        assertEquals(1, foundTrees.length);
+        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        Set<Object> exceptions = Arrays.stream(leaves).filter(x -> x instanceof Exception).collect(Collectors.toSet());
+        assertEquals(0, exceptions.size());
+        Set<Value> values = (Set<Value>) (Object) Arrays.stream(leaves).filter(x -> x instanceof Value).collect(Collectors.toSet());
+        assertEquals(2, values.size());
+        boolean foundFirst = false, foundSecond = false;
+        for (Value val : values) {
+            Arrayref ar = (Arrayref) val.value;
+            int v0 = ((IntConstant) ar.getElement(0)).getIntValue();
+            int v1 = ((IntConstant) ar.getElement(1)).getIntValue();
+            if (v0 == 3 && v1 == 2) {
+                foundFirst = true;
+            } else if (v0 == -5 && v1 == 5) {
+                foundSecond = true;
+            }
+        }
+        assertTrue(foundFirst);
+        assertTrue(foundSecond);
+    }
 }

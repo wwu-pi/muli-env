@@ -53,7 +53,6 @@ public class DefUseAnalyser {
             Constant[] constantPool = method.getClassFile().getConstantPool();
             Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
             constructDUGForMethod(invokedMethod);
-            System.out.println("hallo");
         } catch (Exception e){
             System.out.println("Fehler");
         }

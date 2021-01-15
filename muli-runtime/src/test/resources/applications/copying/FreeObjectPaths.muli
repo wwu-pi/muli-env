@@ -1,0 +1,31 @@
+package applications.copying;
+
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.copying.pojo.A;
+import applications.copying.pojo.B;
+import applications.copying.pojo.C;
+
+public class FreeObjectPaths {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutions(FreeObjectPaths::check);
+    }
+
+    private static A check() {
+        A a = new A();
+        B b = new B();
+        C c = new C();
+        A result free;
+
+        if (result.val == 5) {
+            return result;
+        } else if ((result instanceof B) && ((B) result).bval == 6) {
+            return result;
+        } else if ((result instanceof C) && ((C) result).cval == 7) {
+            return result;
+        } else {
+            return null;
+        }
+    }
+}

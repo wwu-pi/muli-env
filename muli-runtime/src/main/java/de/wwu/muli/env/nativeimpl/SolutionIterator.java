@@ -2,6 +2,7 @@ package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
+import de.wwu.muggl.instructions.general.Logic;
 import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
 import de.wwu.muggl.solvers.exceptions.TimeoutException;
 import de.wwu.muggl.solvers.expressions.*;
@@ -29,6 +30,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.search.SolutionIterator
@@ -164,11 +166,12 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     protected static Objectref cloneObjectref(Objectref o, Map<Object, Object> alreadyCloned) {
+        Objectref result;
         if (o instanceof FreeObjectref) {
-            /// TODO
-            throw new IllegalStateException("Not yet implemented.");
+            result = new FreeObjectref((FreeObjectref) o);
+        } else {
+            result = VirtualMachine.getLatestVM().getAnObjectref(o.getInitializedClass().getClassFile());
         }
-        Objectref result = VirtualMachine.getLatestVM().getAnObjectref(o.getInitializedClass().getClassFile());
         alreadyCloned.put(o, result);
         for (Map.Entry<Field, Object> entry : o.getFields().entrySet()) {
             Object val = entry.getValue();

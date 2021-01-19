@@ -23,6 +23,7 @@ import de.wwu.muggl.vm.Application;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.classfile.ClassFile;
+import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Attribute;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
@@ -252,7 +253,24 @@ public class LogicVirtualMachine extends SearchingVM {
 		alreadyLabelled.put(solutionObject, solutionObject);
 		HashMap<Field, Object> fields = solutionObject.getFields();
 		if (solutionObject instanceof FreeObjectref) {
-			/// TODO Copy
+			FreeObjectref fo = (FreeObjectref) solutionObject;
+			// Get available types:
+			ArrayList<String> pts = new ArrayList<>(fo.getPossibleTypes());
+			Set<String> dts = fo.getDisallowedTypes();
+			pts.removeAll(dts);
+			// Check if default type is possible
+			if (!pts.contains(fo.getInitializedClass().getClassFile().getName())) {
+				// Take an arbitrary type for labelling; since this is satisfiable (no backtracking occurred) there should be at least one element here.
+				String concreteType = pts.get(0);
+				// Replace staticReference field
+				InitializedClass concreteClass;
+				try {
+					concreteClass = getClassLoader().getClassAsClassFile(concreteType).getInitializedClass();
+				} catch (ClassFileException e) {
+					throw new RuntimeException("Concrete class could not be loaded.", e);
+				}
+				fo.setConcreteStaticReference(concreteClass);
+			}
 		}
 		for (Map.Entry<Field, Object> entry : fields.entrySet()) {
 			Object labelledValue = label(entry.getValue(), solution, alreadyLabelled);
@@ -267,6 +285,14 @@ public class LogicVirtualMachine extends SearchingVM {
 			Term simplified = ((Term) k).insert(solution, false);
 			if (simplified.isConstant()) {
 				return simplified;
+			} else if (k instanceof NumericVariable && !solution.containsVariable((NumericVariable) k)) {
+				// Has not been connected to any constraints, replace by default value
+				NumericVariable nv = (NumericVariable) k;
+				if (nv.isInteger()) {
+					return IntConstant.getInstance(0);
+				} else {
+					return DoubleConstant.getInstance(0.0);
+				}
 			} else {
 				throw new IllegalStateException("Should be constant after labelling.");
 			}

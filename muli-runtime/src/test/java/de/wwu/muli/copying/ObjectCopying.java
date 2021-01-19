@@ -87,45 +87,39 @@ public class ObjectCopying {
         Set<Object> exceptions = Arrays.stream(leaves).filter(x -> x instanceof Exception).collect(Collectors.toSet());
         // Java doing Java things
         Set<Value> values = (Set<Value>) (Object) Arrays.stream(leaves).filter(x -> x instanceof Value).collect(Collectors.toSet());
-        assertEquals(6, values.size());
-        boolean foundFirst = false, foundSecond = false, foundThird = false;
-        int foundNull = 0;
+        assertEquals(3, values.stream().filter(x -> x.value!=null).count());
+        boolean foundFirst = false, foundSecond = false, foundThird = false, foundNull = false;
         for (Value val : values) {
             FreeObjectref a = (FreeObjectref) val.value;
             if (a == null) {
-                foundNull++;
+                foundNull = true;
                 continue;
             }
             Map<Field, Object> fields = a.getFields();
             Set<String> possibleTypes = a.getPossibleTypes();
-            if (possibleTypes.size() == 3) {
-                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.A")).count());
-                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.B")).count());
-                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.C")).count());
+            assertEquals(1, possibleTypes.size());
+            if (possibleTypes.contains("applications.copying.pojo.A")) {
                 fields.keySet().stream().forEach(f -> {
                     if (f.getName().equals("val")) {
                         assertEquals(5, ((IntConstant) fields.get(f)).getIntValue());
                     }
                 });
                 foundFirst = true;
-            } else if (possibleTypes.size() == 2) {
-                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.B")).count());
-                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.C")).count());
+            } else if (possibleTypes.contains("applications.copying.pojo.B")) {
                 fields.keySet().stream().forEach(f -> {
                     if (f.getName().equals("val")) {
-                        assertNotEquals(5, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(8, ((IntConstant) fields.get(f)).getIntValue());
                     } else if (f.getName().equals("bval")) {
                         assertEquals(6, ((IntConstant) fields.get(f)).getIntValue());
                     }
                 });
                 foundSecond = true;
-            } else if (possibleTypes.size() == 1) {
-                assertEquals(1, possibleTypes.stream().filter(x -> x.equals("applications.copying.pojo.C")).count());
+            } else if (possibleTypes.contains("applications.copying.pojo.C")) {
                 fields.keySet().stream().forEach(f -> {
                     if (f.getName().equals("val")) {
-                        assertNotEquals(5, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(10, ((IntConstant) fields.get(f)).getIntValue());
                     } else if (f.getName().equals("bval")) {
-                        assertNotEquals(6, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(9, ((IntConstant) fields.get(f)).getIntValue());
                     } else if (f.getName().equals("cval")) {
                         assertEquals(7, ((IntConstant) fields.get(f)).getIntValue());
                     }
@@ -138,7 +132,7 @@ public class ObjectCopying {
         assertTrue(foundFirst);
         assertTrue(foundSecond);
         assertTrue(foundThird);
-        assertEquals(3, foundNull);
+        assertTrue(foundNull);
 
     }
 }

@@ -10,52 +10,55 @@ public class FreeObjectPaths {
 
     public static void main(String[] args) {
         Solution<Object>[] solutions = Muli.getAllSolutions(FreeObjectPaths::check);
-
-        int numberNull = 0;
-        boolean foundFirst = false, foundSecond = false, foundThird = false;
+        boolean foundFirst = false, foundSecond = false, foundThird = false, foundNull = false;
         for (Solution s : solutions) {
             A a = (A) s.value;
             if (a == null) {
-                numberNull++;
+                foundNull = true;
+                System.out.println("Found null.");
             } else if (a instanceof C) {
                 C c = (C) a;
-                if (c.val == 5 || c.bval == 6 || c.cval != 7) {
-                    throw new IllegalStateException("Illegal value found for a C: " + c);
+                if (c.val != 10 || c.bval != 9 || c.cval != 7) {
+                    throw new IllegalStateException("Illegal value found for a C: " + c.toString());
                 }
                 foundFirst = true;
+                System.out.println("Found C.");
             } else if (a instanceof B) {
                 B b = (B) a;
-                if (b.val == 5 || b.bval != 6) {
-                    throw new IllegalStateException("Illegal value found for a B: " + b);
+                if (b.val != 8 || b.bval != 6) {
+                    throw new IllegalStateException("Illegal value found for a B: " + b.toString());
                 }
                 foundSecond = true;
+                System.out.println("Found B.");
             } else if (a instanceof A) {
                 if (a.val != 5) {
-                    throw new IllegalStateException("Illegal value found for an A: " + a);
+                    throw new IllegalStateException("Illegal value found for an A: " + a.toString());
                 }
                 foundThird = true;
+                System.out.println("Found A.");
             } else {
-                throw new IllegalStateException("Illegal value found: " + a);
+                throw new IllegalStateException("Illegal value found: " + a.toString());
             }
         }
-        if(!foundFirst || !foundSecond || !foundThird || 3 != numberNull) {
+        if (!foundFirst || !foundSecond || !foundThird || !foundNull) {
             throw new IllegalStateException("Not all values found!");
         }
     }
 
     private static A check() {
-        A a = new A();
-        B b = new B();
-        C c = new C();
-        A result free;
+        A a = new A(); B b = new B(); C c = new C(); A result free;
 
-        if (result.val == 5) {
+        if (!(result instanceof B) && result.val == 5)  {
+            System.out.println("Returning A!");
             return result;
-        } else if ((result instanceof B) && ((B) result).bval == 6) {
+        } else if (!(result instanceof C) && (result instanceof B) && ((B) result).val == 8 && ((B) result).bval == 6) {
+            System.out.println("Returning B!");
             return result;
-        } else if ((result instanceof C) && ((C) result).cval == 7) {
+        } else if ((result instanceof C) && ((C) result).cval == 7 && ((C) result).bval == 9 && ((C) result).val == 10) {
+            System.out.println("Returning C!");
             return result;
         } else {
+            System.out.println("Returning null!");
             return null;
         }
     }

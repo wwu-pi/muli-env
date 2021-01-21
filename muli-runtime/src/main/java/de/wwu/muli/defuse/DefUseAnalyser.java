@@ -48,13 +48,23 @@ public class DefUseAnalyser {
         }
         Method method = ref.getMethodByNameAndDescriptor("get", "()Ljava/lang/Object;");
         try{
-            JumpInvocation jump = (JumpInvocation) (method.getInstructionsAndOtherBytes()[0]);
+            Instruction[] instructions = method.getInstructionsAndOtherBytes();
+            JumpInvocation jump = null;
+            for(Instruction in : instructions){
+                if(in instanceof JumpInvocation){
+                    jump = (JumpInvocation) (in);
+                    break;
+                }
+            }
+            if(jump == null){
+                throw new Exception();
+            }
             MugglClassLoader classLoader = method.getClassFile().getClassLoader();
             Constant[] constantPool = method.getClassFile().getConstantPool();
             Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
             constructDUGForMethod(invokedMethod);
         } catch (Exception e){
-            System.out.println("Fehler");
+            System.out.println("No Search Region found");
         }
     }
 

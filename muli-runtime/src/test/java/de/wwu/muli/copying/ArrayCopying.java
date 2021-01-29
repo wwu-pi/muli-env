@@ -35,9 +35,9 @@ public class ArrayCopying {
                 foundFirst = true;
             } else {
                 Object[] elements = result.getRawElements();
-                int e0 = ((IntConstant) elements[0]).getValue();
-                int e1 = ((IntConstant) elements[1]).getValue();
-                int e2 = ((IntConstant) elements[2]).getValue();
+                int e0 = (Integer) elements[0];
+                int e1 = (Integer) elements[1];
+                int e2 = (Integer) elements[2];
                 if (e0 == 1 && e1 == 2 && e2 == 5) {
                     foundSecond = true;
                 }
@@ -63,8 +63,8 @@ public class ArrayCopying {
         boolean foundFirst = false, foundSecond = false;
         for (Value val : values) {
             Arrayref ar = (Arrayref) val.value;
-            int v0 = ((IntConstant) ar.getElement(0)).getIntValue();
-            int v1 = ((IntConstant) ar.getElement(1)).getIntValue();
+            int v0 = (Integer) ar.getElement(0);
+            int v1 = (Integer) ar.getElement(1);
             if (v0 == 3 && v1 == 2) {
                 foundFirst = true;
             } else if (v0 == -5 && v1 == 5) {

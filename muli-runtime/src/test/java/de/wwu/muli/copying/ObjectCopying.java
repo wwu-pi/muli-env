@@ -1,6 +1,5 @@
 package de.wwu.muli.copying;
 
-import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.execution.nativeWrapping.TestablePrintStreamWrapper;
@@ -42,19 +41,19 @@ public class ObjectCopying {
             Map<Field, Object> fields = checkclass.getFields();
             for (Map.Entry<Field, Object> entry : fields.entrySet()) {
                 if (entry.getKey().getName().equals("val")) {
-                    int v0 = ((IntConstant) entry.getValue()).getIntValue();
+                    int v0 = (Integer) entry.getValue();
                     vals[i][0] = v0;
                 } else if (entry.getKey().getName().equals("nestedClass")) {
                     Objectref nc = (Objectref) entry.getValue();
                     Map<Field, Object> nfs = nc.getFields();
                     Field valField = nfs.keySet().stream().filter(f -> f.getName().equals("val")).collect(Collectors.toList()).get(0);
-                    int v1 = ((IntConstant) nfs.get(valField)).getIntValue();
+                    int v1 = (Integer) nfs.get(valField);
                     vals[i][1] = v1;
                 } else {
                     Objectref nc = (Objectref) entry.getValue();
                     Map<Field, Object> nfs = nc.getFields();
                     Field valField = nfs.keySet().stream().filter(f -> f.getName().equals("val")).collect(Collectors.toList()).get(0);
-                    int v2 = ((IntConstant) nfs.get(valField)).getIntValue();
+                    int v2 = (Integer) nfs.get(valField);
                     vals[i][2] = v2;
                 }
             }
@@ -102,27 +101,27 @@ public class ObjectCopying {
             if (possibleTypes.contains("applications.copying.pojo.A")) {
                 fields.keySet().stream().forEach(f -> {
                     if (f.getName().equals("val")) {
-                        assertEquals(5, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(5, fields.get(f));
                     }
                 });
                 foundFirst = true;
             } else if (possibleTypes.contains("applications.copying.pojo.B")) {
                 fields.keySet().stream().forEach(f -> {
                     if (f.getName().equals("val")) {
-                        assertEquals(8, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(8, fields.get(f));
                     } else if (f.getName().equals("bval")) {
-                        assertEquals(6, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(6, fields.get(f));
                     }
                 });
                 foundSecond = true;
             } else if (possibleTypes.contains("applications.copying.pojo.C")) {
                 fields.keySet().stream().forEach(f -> {
                     if (f.getName().equals("val")) {
-                        assertEquals(10, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(10, fields.get(f));
                     } else if (f.getName().equals("bval")) {
-                        assertEquals(9, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(9, fields.get(f));
                     } else if (f.getName().equals("cval")) {
-                        assertEquals(7, ((IntConstant) fields.get(f)).getIntValue());
+                        assertEquals(7, fields.get(f));
                     }
                 });
                 foundThird = true;

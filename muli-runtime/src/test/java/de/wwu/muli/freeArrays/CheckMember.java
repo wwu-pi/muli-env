@@ -1,6 +1,5 @@
 package de.wwu.muli.freeArrays;
 
-import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.initialization.Objectref;
@@ -39,7 +38,7 @@ public class CheckMember {
                         if (valAsSet.size() != 1) {
                             throw new IllegalStateException("Should not occur.");
                         }
-                        Integer value = ((IntConstant) valAsSet.toArray()[0]).getValue();
+                        Integer value = (Integer) valAsSet.toArray()[0];
                         if (value == -1) {
                             numberNotFound++;
                         }

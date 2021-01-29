@@ -178,7 +178,7 @@ public class LogicVirtualMachine extends SearchingVM {
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
-		this.executionListener = new TcgExecutionListener();
+		this.executionListener = new TcgExecutionListener(); // TODO Should be set with methodName of tested method?
 	}
 
 	public ExecutionListener getExecutionListener() {
@@ -229,11 +229,11 @@ public class LogicVirtualMachine extends SearchingVM {
 			ArrayList<Object> elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), null));
 			for (Map.Entry<Term, Object> entry : freeArElements.entrySet()) {
 				Term k = entry.getKey();
-				IntConstant index = ((IntConstant) label(k, solution, alreadyLabelled));
+				Integer index = (Integer) label(k, solution, alreadyLabelled);
 				alreadyLabelled.put(k, index);
 				Object val = label(entry.getValue(), solution, alreadyLabelled);
 				alreadyLabelled.put(entry.getValue(), val);
-				elementsInArrayList.set(index.getIntValue(), val);
+				elementsInArrayList.set(index, val);
 			}
 			freeAr.concretizeWith(elementsInArrayList, length);
 			return freeAr;
@@ -284,14 +284,19 @@ public class LogicVirtualMachine extends SearchingVM {
 		if (k instanceof Term) {
 			Term simplified = ((Term) k).insert(solution, false);
 			if (simplified.isConstant()) {
+				if (simplified instanceof IntConstant) {
+					return ((IntConstant) simplified).getValue();
+				} else if (simplified instanceof DoubleConstant) {
+					return ((DoubleConstant) simplified).getDoubleValue();
+				}
 				return simplified;
 			} else if (k instanceof NumericVariable && !solution.containsVariable((NumericVariable) k)) {
 				// Has not been connected to any constraints, replace by default value
 				NumericVariable nv = (NumericVariable) k;
 				if (nv.isInteger()) {
-					return IntConstant.getInstance(0);
+					return 0;
 				} else {
-					return DoubleConstant.getInstance(0.0);
+					return 0.0;
 				}
 			} else {
 				throw new IllegalStateException("Should be constant after labelling.");

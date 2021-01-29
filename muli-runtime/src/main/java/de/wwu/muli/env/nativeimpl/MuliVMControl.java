@@ -2,6 +2,7 @@ package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.configuration.Options;
+import de.wwu.muggl.instructions.general.Logic;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
@@ -15,6 +16,7 @@ import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.ExecutionMode;
 import de.wwu.muli.SearchStrategy;
 import de.wwu.muli.iteratorsearch.*;
+import de.wwu.muli.listener.TcgListener;
 import de.wwu.muli.search.NoFurtherSolutionsIndicator;
 import de.wwu.muli.searchtree.Fail;
 import de.wwu.muli.solution.MuliFailException;
@@ -78,6 +80,11 @@ public class MuliVMControl extends NativeMethodProvider {
                 MethodType.methodType(Object.class, Frame.class, Object.class, Object.class, Object.class, Object.class, Object.class),
                 MethodType.methodType(String.class, String.class, String.class, String.class, String.class, String.class));
 
+        // set method name for test case generation
+        NativeWrapper.registerNativeMethod(MuliVMControl.class, handledClassFQ, "setMethodForTCG",
+                MethodType.methodType(void.class, Frame.class, Object.class),
+                MethodType.methodType(void.class, String.class));
+
         Globals.getInst().logger.debug("MuliVMControl native method handlers registered");
     }
 
@@ -125,6 +132,11 @@ public class MuliVMControl extends NativeMethodProvider {
 
         Globals.getInst().symbolicExecLogger.debug("Registered search strategy successfully.");
 
+    }
+
+    public static void setMethodForTCG(Frame frame, Object methodName) {
+        LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
+        ((TcgListener) vm.getExecutionListener()).setMethod((String) SolutionIterator.getValFromObjectref((Objectref) methodName)); // TODO refactor.
     }
 
     public static void fail(Frame frame) {

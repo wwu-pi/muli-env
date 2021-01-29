@@ -1,0 +1,83 @@
+package applications.copying;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.copying.pojo.A;
+import applications.copying.pojo.B;
+import applications.copying.pojo.C;
+
+public class ObjectInputs {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutionsWithTestCases(ObjectInputs::checkDriver, ObjectInputs.class.getName() + ".check");
+        for (Solution s : solutions) {
+            TestCase t = s.testCase;
+            A a = (A) t.getInput("a");
+            int i = (Integer) t.getInput("i");
+            int result = (Integer) s.value;
+            if (result == 1) {
+                if (!(a instanceof C) || ((C) a).cval != 3) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
+                }
+            } else if (result == 2) {
+                if (!(a instanceof C) || ((C) a).cval == 3 || ((C) a).cval == 2) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
+                }
+            } else if (result == 3) {
+                if (!(a instanceof C) || ((C) a).cval == 3 || ((C) a).cval != 2) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
+                }
+            } else if (result == 4) {
+                if (!(a instanceof B) || i != 0) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
+                }
+            } else if (result == 5) {
+                if (!(a instanceof B) || i == 0) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
+                }
+            } else if (result == 6) {
+                if (i != 2) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", i: " + i);
+                }
+            } else if (result == 7) {
+                if (i == 2) {
+                    throw new IllegalStateException("Wrong input value for result = " + result + ", i: " + i);
+                }
+            } else {
+                throw new IllegalStateException("Unknown result: " + result);
+            }
+        }
+    }
+    private static int checkDriver() {
+        A a = new A(); B b = new B(); C c = new C();
+        A inputObject free;
+        int i free;
+        return check(inputObject, i);
+    }
+
+    private static int check(A a, int i) {
+        if (a instanceof C) { // Input must be instanceof C.
+            C c = (C) a;
+            if (c.cval == 3) {
+                return 1; // Input's cval must be 3.
+            } else if (c.cval != 2) {
+                c.cval = 2; // Input's cval must not be 2.
+                return 2;
+            } else {
+                return 3; // Input's cval must be 2.
+            }
+        } else if (a instanceof B) { // Input must be instanceof B.
+            if (i == 0) {
+                return 4; // i must be 0.
+            } else {
+                return 5; // i must not be 0.
+            }
+        }
+
+        if (i == 2) {
+            i = 1; // i as input must not be 1.
+            return 6;
+        }
+
+        return 7;
+    }
+}

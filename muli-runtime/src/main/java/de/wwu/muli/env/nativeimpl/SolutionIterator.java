@@ -2,12 +2,8 @@ package de.wwu.muli.env.nativeimpl;
 
 import de.wwu.muggl.configuration.Globals;
 import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
-import de.wwu.muggl.instructions.general.Logic;
-import de.wwu.muggl.solvers.exceptions.SolverUnableToDecideException;
-import de.wwu.muggl.solvers.exceptions.TimeoutException;
 import de.wwu.muggl.solvers.expressions.*;
 import de.wwu.muggl.vm.Frame;
-import de.wwu.muggl.vm.SearchingVM;
 import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
@@ -20,17 +16,14 @@ import de.wwu.muggl.vm.initialization.*;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
+import de.wwu.muli.listener.TcgListener;
 import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Provider for native methods of muli-cp's de.wwu.muli.search.SolutionIterator
@@ -50,17 +43,18 @@ public class SolutionIterator extends NativeMethodProvider {
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
         CLASS_SOLUTION = classLoader.getClassAsClassFile(Solution.class.getCanonicalName());
         registerNatives();
-        ((LogicVirtualMachine) VirtualMachine.getLatestVM()).startMeasuringOverallTime();
+        LogicVirtualMachine vm =  ((LogicVirtualMachine) VirtualMachine.getLatestVM());
+        vm.startMeasuringOverallTime();
     }
 
     public static void registerNatives() {
         // Solutions - store and retrieve.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapSolutionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
-                MethodType.methodType(Solution.class, Object.class, Boolean.class, Boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class),
+                MethodType.methodType(Solution.class, Object.class, Boolean.class, String.class));
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "wrapExceptionAndFullyBacktrackVM",
-                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class), // TODO
-                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, Boolean.class)); // TODO
+                MethodType.methodType(Objectref.class, Frame.class, Object.class, Object.class, Object.class),
+                MethodType.methodType(Solution.class, Throwable.class, Boolean.class, String.class));
 
         // Active search region / corresponding iterator.
         NativeWrapper.registerNativeMethod(SolutionIterator.class, handledClassFQ, "getVMActiveIterator",
@@ -81,8 +75,33 @@ public class SolutionIterator extends NativeMethodProvider {
         Globals.getInst().logger.debug("MuliSolutionIterators native method handlers registered");
     }
 
-    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object wrapInputs, Object generateTest) { // TODO wrap inputs
+    public static Object getValFromObjectref(Objectref val) {
+        for (Map.Entry<Field, Object> entry : val.getFields().entrySet()) {
+            if (!entry.getKey().getName().equals("value")) {
+                throw new IllegalStateException("Should be an Objectref of Boolean which only has the field value.");
+            }
+            if (entry.getKey().getType().equals("char[]")) {
+                Object[] chars = ((Arrayref) entry.getValue()).getRawElements();
+                return Arrays.toString(chars)
+                        .replaceAll(",", "")
+                        .replaceAll("]", "")
+                        .replaceAll("\\[", "")
+                        .replaceAll(" ", ""); // TODO Refactor.
+            } else {
+                return ((Integer) entry.getValue()) == 1;
+            }
+        }
+        throw new IllegalStateException("Should not occur.");
+    }
+
+    public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object generateTest, Object methodToTest) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
+        boolean getTest = (Boolean) getValFromObjectref((Objectref) generateTest);
+        String method = null;
+        if (getTest) {
+            method = (String) getValFromObjectref((Objectref) methodToTest);
+        }
+
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
             CLASS_SOLUTION.getTheInitializedClass(vm);
@@ -105,7 +124,6 @@ public class SolutionIterator extends NativeMethodProvider {
         // Label solution if enabled.
         solutionObject = maybeLabel(vm, solutionObject);
 
-
         // Store Value node in ST.
         Value val = new Value(solutionObject);
         vm.getSearchAlgorithm().recordValue(val);
@@ -117,7 +135,18 @@ public class SolutionIterator extends NativeMethodProvider {
         Objectref returnValue;
         try {
             final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
-            returnValue = (Objectref) conversion.toMuggl(new Solution(solutionObject), false);
+            Solution solution;
+            if (getTest) {
+                TcgListener tcgListener = (TcgListener) vm.getExecutionListener();
+                LinkedHashMap<String, Object> inputs = copyAndLabelEach(vm, tcgListener.getInputs());
+
+                solution = new Solution(solutionObject, inputs, tcgListener.getClassName(), tcgListener.getMethodName(), tcgListener.getCover());
+            } else {
+                solution = new Solution(solutionObject);
+            }
+            returnValue = (Objectref) conversion.toMuggl(solution, false);
+
+
 
             vm.reachedEndEvent();
             // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
@@ -141,12 +170,24 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
+    protected static LinkedHashMap<String, Object> copyAndLabelEach(LogicVirtualMachine vm, LinkedHashMap<String, Object> toCopy) {
+        LinkedHashMap<String, Object> copy = new LinkedHashMap<>();
+        Map<Object, Object> alreadyCopied = new HashMap<>();
+        for (Map.Entry<String, Object> entry : toCopy.entrySet()) {
+            Object copiedVal = cloneVal(entry.getValue(), alreadyCopied);
+            Object copiedAndLabelledVal = maybeLabel(vm, copiedVal);
+            copy.put(entry.getKey(), copiedAndLabelledVal);
+        }
+
+        return copy;
+    }
+
     protected static Object cloneSolution(Object solutionObject) {
         // Try cloning the solution in order to prevent its contents from being backtracked later on.
         return cloneVal(solutionObject, new HashMap<>());
     }
 
-    protected static Object cloneVal(Object val, Map<Object, Object> alreadyCloned) {
+    public static Object cloneVal(Object val, Map<Object, Object> alreadyCloned) {
         if (val == null) {
             return null;
         }

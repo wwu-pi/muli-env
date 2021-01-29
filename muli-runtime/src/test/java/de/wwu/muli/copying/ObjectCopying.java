@@ -85,6 +85,7 @@ public class ObjectCopying {
         assertEquals(1, foundTrees.length);
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         Set<Object> exceptions = Arrays.stream(leaves).filter(x -> x instanceof Exception).collect(Collectors.toSet());
+        assertEquals(0, exceptions.size());
         // Java doing Java things
         Set<Value> values = (Set<Value>) (Object) Arrays.stream(leaves).filter(x -> x instanceof Value).collect(Collectors.toSet());
         assertEquals(3, values.stream().filter(x -> x.value!=null).count());

@@ -1,0 +1,76 @@
+package applications.copying;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class NestedObjects {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutionsWithTestCases(NestedObjects::checkDriver, NestedObjects.class.getName() + ".check");
+        boolean foundFirst = false, foundSecond = false, foundThird = false;
+
+        for (Solution s : solutions) {
+            NestedClass0 n = (NestedClass0) s.value;
+            TestCase t = s.testCase;
+            NestedClass0 in = (NestedClass0) t.getInput("n");
+            if (n.nested.nested.val == 2) {
+                foundFirst = in.nested.nested.val == 1;
+            } else {
+                if (n.nested.nested.val != 3) {
+                    throw new IllegalStateException("Value of n.nested.nested.val should be 3.");
+                }
+
+                if (n.nested.val == 5) {
+                    foundSecond = in.nested.val == 4;
+                } else {
+                    if (n.nested.val != 6) {
+                        throw new IllegalStateException("Value of n.nested.val should be 6.");
+                    }
+                    foundThird = n.val == 7 && in.val == 7;
+                }
+            }
+        }
+
+        if (!(foundFirst && foundSecond && foundThird)) {
+            throw new IllegalStateException("Not all results have been found.");
+        }
+    }
+
+    class NestedClass0 {
+        public int val;
+        public NestedClass1 nested;
+    }
+
+    class NestedClass1 {
+        public NestedClass2 nested;
+        public int val;
+    }
+
+    class NestedClass2 {
+        public int val;
+        /// TODO Add cyclical NestedClass2 --> fix free initialization behavior.
+    }
+
+    private static NestedClass0 checkDriver() {
+        NestedClass0 in free;
+        return check(in);
+    }
+
+    private static NestedClass0 check(NestedClass0 n) {
+        if (n.nested.nested.val == 1) {
+            n.nested.nested.val = 2;
+        } else {
+            n.nested.nested.val = 3;
+
+            if (n.nested.val == 4) {
+                n.nested.val = 5;
+            } else {
+                n.nested.val = 6;
+
+                if (n.val != 7) {
+                    throw Muli.fail();
+                }
+            }
+        }
+        return n;
+    }
+}

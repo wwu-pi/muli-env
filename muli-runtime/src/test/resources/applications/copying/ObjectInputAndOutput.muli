@@ -1,0 +1,101 @@
+package applications.copying;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import applications.copying.pojo.A;
+import applications.copying.pojo.B;
+import applications.copying.pojo.C;
+
+
+public class ObjectInputAndOutput {
+
+    public static void main(String[] args) {
+        Solution<Object>[] solutions = Muli.getAllSolutionsWithTestCases(ObjectInputAndOutput::checkDriver, ObjectInputAndOutput.class.getName() + ".check");
+        boolean foundFirst = false, foundSecond = false, foundThird = false,
+            foundFourth = false, foundFifth = false, foundSixth = false;
+
+        for (Solution s : solutions) {
+            A a = (A) s.value;
+            TestCase t = s.testCase;
+            A ia = (A) t.getInput("a");
+            int fixed = (Integer) t.getInput("fixed");
+            if (fixed != 42) {
+                throw new IllegalStateException("Fixed value is wrong.");
+            }
+
+            if (a instanceof C) {
+                C c = (C) a;
+                C ic = (C) ia;
+                if (c.cval == 2 && ic.cval == 1) {
+                    foundFirst = true;
+                } else if (c.cval == 3 && ic.cval != 1) {
+                    foundSecond = true;
+                }
+                if (ic.bval != 3) {
+                    throw new IllegalStateException("ic.bval must be 3 here.");
+                }
+                if (c.bval != 4) {
+                    System.out.println("Here9");
+                    throw new IllegalStateException("c.bval must be 4 here.");
+                }
+            } else if (a instanceof B) {
+                B b = (B) a;
+                B ib = (B) ia;
+                if (b.val == 6 && ib.val != 5) {
+                    foundThird = true;
+                } else if (ib.val == 5 && b.val != 6) {
+                    foundFourth = true;
+                }
+            } else if (a instanceof A) {
+                if (a.val == 8 && ia.val == 7) {
+                    foundFifth = true;
+                } else {
+                    foundSixth = true;
+                }
+            }
+        }
+
+        if (!(foundFirst && foundSecond && foundThird && foundFourth && foundFifth && foundSixth)) {
+            throw new IllegalStateException("Not all results have been found.");
+        }
+    }
+
+    private static A checkDriver() {
+        A a = new A(); B b = new B(); C c = new C();
+        A in free;
+        return check(in, 42);
+    }
+
+    private static A check(A a, int fixed) {
+        if (a instanceof C) {
+            C c = (C) a;
+            if (c.val == 2 || c.val == 3) {
+                throw Muli.fail();
+            }
+            if (c.cval == 1) {
+                c.cval = 2;
+            } else {
+                c.cval = 3;
+            }
+            if (c.bval != 3) {
+                throw Muli.fail();
+            }
+            c.bval = 4;
+        } else if (a instanceof B) {
+            B b = (B) a;
+            if (b.val == 6) {
+                throw Muli.fail();
+            }
+            if (b.val != 5) {
+                b.val = 6;
+            }
+        } else {
+            if (a.val == 8) {
+                throw Muli.fail();
+            }
+            if (a.val == 7) {
+                a.val = 8;
+            }
+        }
+        return a;
+    }
+}

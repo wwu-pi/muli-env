@@ -9,42 +9,62 @@ public class ObjectInputs {
 
     public static void main(String[] args) {
         Solution<Object>[] solutions = Muli.getAllSolutionsWithTestCases(ObjectInputs::checkDriver, ObjectInputs.class.getName() + ".check");
+        boolean foundFirst = false, foundSecond = false, foundThird = false, foundFourth = false,
+            foundFifth = false, foundSixth = false, foundSeventh = false;
         for (Solution s : solutions) {
             TestCase t = s.testCase;
             A a = (A) t.getInput("a");
             int i = (Integer) t.getInput("i");
             int result = (Integer) s.value;
+
             if (result == 1) {
                 if (!(a instanceof C) || ((C) a).cval != 3) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
                 }
+                foundFirst = true;
+                System.out.println("First solution has been found.");
             } else if (result == 2) {
                 if (!(a instanceof C) || ((C) a).cval == 3 || ((C) a).cval == 2) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
                 }
+                foundSecond = true;
+                System.out.println("Second solution has been found.");
             } else if (result == 3) {
                 if (!(a instanceof C) || ((C) a).cval == 3 || ((C) a).cval != 2) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
                 }
+                foundThird = true;
+                System.out.println("Third solution has been found.");
             } else if (result == 4) {
                 if (!(a instanceof B) || i != 0) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
                 }
+                foundFourth = true;
+                System.out.println("Fourth solution has been found.");
             } else if (result == 5) {
                 if (!(a instanceof B) || i == 0) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", a: " + a.toString());
                 }
+                foundFifth = true;
+                System.out.println("Fifth solution has been found.");
             } else if (result == 6) {
                 if (i != 2) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", i: " + i);
                 }
+                foundSixth = true;
+                System.out.println("Sixth solution has been found.");
             } else if (result == 7) {
                 if (i == 2) {
                     throw new IllegalStateException("Wrong input value for result = " + result + ", i: " + i);
                 }
+                foundSeventh = true;
+                System.out.println("Seventh solution has been found.");
             } else {
                 throw new IllegalStateException("Unknown result: " + result);
             }
+        }
+        if (!(foundFirst && foundSecond && foundThird && foundFourth && foundFifth && foundSixth && foundSeventh)) {
+            throw new IllegalStateException("Not all results have been found!");
         }
     }
     private static int checkDriver() {

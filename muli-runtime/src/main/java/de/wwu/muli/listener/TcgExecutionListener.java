@@ -1,6 +1,7 @@
 package de.wwu.muli.listener;
 
 import de.wwu.muggl.instructions.interfaces.Instruction;
+import de.wwu.muggl.solvers.expressions.IntConstant;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.structures.Method;
@@ -8,8 +9,6 @@ import de.wwu.muggl.vm.initialization.FreeArrayref;
 import de.wwu.muggl.vm.initialization.FreeObjectref;
 import de.wwu.muli.env.nativeimpl.SolutionIterator;
 import de.wwu.muli.vm.LogicVirtualMachine;
-import de.wwu.muli.defuse.DefUseMethod;
-import sun.awt.image.ImageWatched;
 
 import java.util.*;
 
@@ -83,13 +82,17 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
                 for (Map.Entry<Field, Object> newInitializedForSubclass : originalFields.entrySet()) {
                     if (!copyFields.containsKey(newInitializedForSubclass.getKey())) {
                         Field newField = newInitializedForSubclass.getKey();
-                        copyFields.put(newField, original.getCachedVariables().get(newField));
+                        Object val = original.getMemorizedVariables().get(newField);
+                        if (newField.isPrimitiveType() && val == null) {
+                            val = IntConstant.ZERO; // TODO enable for other primitives as well.
+                        }
+                        copyFields.put(newField, val);
                     }
                 }
             } else if (copyMatching.getKey() instanceof FreeArrayref) {
                 FreeArrayref original = (FreeArrayref) copyMatching.getKey();
                 FreeArrayref copy = (FreeArrayref) copyMatching.getValue();
-                // TODO Get oldest available Arrayref
+                copy.setFreeArrayElements(original.getOriginalElements());
             }
         }
 

@@ -175,8 +175,8 @@ public class SolutionIterator extends NativeMethodProvider {
         Map<Object, Object> alreadyCopied = new HashMap<>();
         for (Map.Entry<String, Object> entry : toCopy.entrySet()) {
             Object copiedVal = cloneVal(entry.getValue(), alreadyCopied);
-            Object copiedAndLabelledVal = maybeLabel(vm, copiedVal);
-            copy.put(entry.getKey(), copiedAndLabelledVal);
+            Object copiedAndLabeledVal = maybeLabel(vm, copiedVal);
+            copy.put(entry.getKey(), copiedAndLabeledVal);
         }
 
         return copy;
@@ -188,8 +188,8 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     public static Object cloneVal(Object val, Map<Object, Object> alreadyCloned) {
-        if (val == null) {
-            return null;
+        if (val == null || val instanceof FreeObjectrefInitialisers.LAZY_FIELD_MARKER) {
+            return val;
         }
         Object alreadyInResults = alreadyCloned.get(val);
         if (alreadyInResults != null) {

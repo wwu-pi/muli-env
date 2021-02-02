@@ -55,7 +55,8 @@ public class ObjectInputAndOutput {
         }
 
         if (!(foundFirst && foundSecond && foundThird && foundFourth && foundFifth && foundSixth)) {
-            throw new IllegalStateException("Not all results have been found.");
+            throw new IllegalStateException("Not all results have been found. found1: " + foundFirst + ", 2: " + foundSecond
+                + ", 3: " + foundThird + ", 4: " + foundFourth + ", 5: " + foundFifth + ", 6: " + foundSixth);
         }
     }
 

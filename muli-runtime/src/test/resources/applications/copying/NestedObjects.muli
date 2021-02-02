@@ -7,7 +7,6 @@ public class NestedObjects {
     public static void main(String[] args) {
         Solution<Object>[] solutions = Muli.getAllSolutionsWithTestCases(NestedObjects::checkDriver, NestedObjects.class.getName() + ".check");
         boolean foundFirst = false, foundSecond = false, foundThird = false;
-
         for (Solution s : solutions) {
             NestedClass0 n = (NestedClass0) s.value;
             TestCase t = s.testCase;
@@ -28,26 +27,36 @@ public class NestedObjects {
                     foundThird = n.val == 7 && in.val == 7;
                 }
             }
-        }
+            if (n.nested.nested.nested.nested.nested.nested.val != 8 || in.nested.nested.nested.nested.nested.nested.val != 8) {
+                throw new IllegalStateException("The two values should equal to 8.");
+            }
 
+            if (n.nested.nested.nested.nested.nested.val != 10 ||
+                in.nested.nested.nested.nested.nested.val  != 9) {
+                    throw new IllegalStateException("The two values should be 10 and 9 respectively, are: "
+                        + n.nested.nested.nested.nested.nested.val + " and " + in.nested.nested.nested.nested.nested.val);
+            }
+
+        }
         if (!(foundFirst && foundSecond && foundThird)) {
-            throw new IllegalStateException("Not all results have been found.");
+            throw new IllegalStateException("Not all results have been found. found1: " + foundFirst + ", 2: " + foundSecond
+                + ", 3: " + foundThird + ".");
         }
     }
 
-    class NestedClass0 {
+    static class NestedClass0 {
         public int val;
         public NestedClass1 nested;
     }
 
-    class NestedClass1 {
+    static class NestedClass1 {
         public NestedClass2 nested;
         public int val;
     }
 
-    class NestedClass2 {
+    static class NestedClass2 {
         public int val;
-        /// TODO Add cyclical NestedClass2 --> fix free initialization behavior.
+        public NestedClass2 nested;
     }
 
     private static NestedClass0 checkDriver() {
@@ -71,6 +80,17 @@ public class NestedObjects {
                 }
             }
         }
+
+        if (n.nested.nested.nested.nested.nested.val == 9) {
+            n.nested.nested.nested.nested.nested.val = 10;
+        } else {
+            throw Muli.fail();
+        }
+
+        if (n.nested.nested.nested.nested.nested.nested.val != 8) {
+            throw Muli.fail();
+        }
+
         return n;
     }
 }

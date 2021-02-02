@@ -45,8 +45,6 @@ public class MixedCopying {
 
     @Test
     public void test_mixedLabeling2() throws InterruptedException, ClassFileException {
-        /// TODO Free Objects's variables should be initialized lazily.
-        /// TODO Then, FreeObject's initialized values must be stored (see putfield / getfield)
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.copying.ObjectInputAndOutput");
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).filter(x -> x instanceof Value).toArray();
         assertEquals(6, leaves.length);

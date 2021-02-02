@@ -35,6 +35,7 @@ import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.impl.symbolic.SymbolicExecutionException;
 import de.wwu.muggl.vm.initialization.*;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
+import de.wwu.muli.env.nativeimpl.SolutionIterator;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.NoSearchAlgorithm;
 import de.wwu.muli.iteratorsearch.structures.StackToTrailWithInverse;
@@ -201,38 +202,38 @@ public class LogicVirtualMachine extends SearchingVM {
         return solutionObject;
     }
 
-    protected Object label(Object toLabel, Solution solution, Map<Object, Object> alreadyLabelled) {
+    protected Object label(Object toLabel, Solution solution, Map<Object, Object> alreadyLabeled) {
 		if (toLabel == null) {
 			return null;
 		}
-		Object labelledVal = alreadyLabelled.get(toLabel);
-		if (labelledVal != null) {
-			return labelledVal;
+		Object labeledVal = alreadyLabeled.get(toLabel);
+		if (labeledVal != null) {
+			return labeledVal;
 		}
 		if (toLabel instanceof Objectref) {
-			return labelObjectref((Objectref) toLabel, solution, alreadyLabelled);
+			return labelObjectref((Objectref) toLabel, solution, alreadyLabeled);
 		} else if (toLabel instanceof Arrayref) {
-			return labelArrayref((Arrayref) toLabel, solution, alreadyLabelled);
+			return labelArrayref((Arrayref) toLabel, solution, alreadyLabeled);
 		} else { // Primitive value
-			return labelPrimitive(toLabel, solution, alreadyLabelled);
+			return labelPrimitive(toLabel, solution, alreadyLabeled);
 		}
 	}
 
-    protected Arrayref labelArrayref(Arrayref ar, Solution solution, Map<Object, Object> alreadyLabelled) {
-		alreadyLabelled.put(ar, ar);
+    protected Arrayref labelArrayref(Arrayref ar, Solution solution, Map<Object, Object> alreadyLabeled) {
+		alreadyLabeled.put(ar, ar);
 		if (ar instanceof FreeArrayref) {
 			FreeArrayref freeAr = (FreeArrayref) ar;
 			Term lengthTerm = freeAr.getLengthTerm();
 			Map<Term, Object> freeArElements = freeAr.getFreeArrayElements();
 			IntConstant length = (IntConstant) lengthTerm.insert(solution, false);
-			alreadyLabelled.put(lengthTerm, length);
+			alreadyLabeled.put(lengthTerm, length);
 			ArrayList<Object> elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), null));
 			for (Map.Entry<Term, Object> entry : freeArElements.entrySet()) {
 				Term k = entry.getKey();
-				Integer index = (Integer) label(k, solution, alreadyLabelled);
-				alreadyLabelled.put(k, index);
-				Object val = label(entry.getValue(), solution, alreadyLabelled);
-				alreadyLabelled.put(entry.getValue(), val);
+				Integer index = (Integer) label(k, solution, alreadyLabeled);
+				alreadyLabeled.put(k, index);
+				Object val = label(entry.getValue(), solution, alreadyLabeled);
+				alreadyLabeled.put(entry.getValue(), val);
 				elementsInArrayList.set(index, val);
 			}
 			freeAr.concretizeWith(elementsInArrayList, length);
@@ -241,16 +242,16 @@ public class LogicVirtualMachine extends SearchingVM {
 		} else { // One of normal Arrayrefs
 			// We only have to replace the values for fixed values.
 			for (int i = 0; i < ar.getLength(); i++) {
-				Object val = label(ar.getElement(i), solution, alreadyLabelled);
-				alreadyLabelled.put(ar.getElement(i), val);
+				Object val = label(ar.getElement(i), solution, alreadyLabeled);
+				alreadyLabeled.put(ar.getElement(i), val);
 				ar.putElement(i, val);
 			}
 			return ar;
 		}
 	}
 
-	protected Objectref labelObjectref(Objectref solutionObject, Solution solution, Map<Object,Object> alreadyLabelled) {
-		alreadyLabelled.put(solutionObject, solutionObject);
+	protected Objectref labelObjectref(Objectref solutionObject, Solution solution, Map<Object,Object> alreadyLabeled) {
+		alreadyLabeled.put(solutionObject, solutionObject);
 		HashMap<Field, Object> fields = solutionObject.getFields();
 		if (solutionObject instanceof FreeObjectref) {
 			FreeObjectref fo = (FreeObjectref) solutionObject;
@@ -273,14 +274,24 @@ public class LogicVirtualMachine extends SearchingVM {
 			}
 		}
 		for (Map.Entry<Field, Object> entry : fields.entrySet()) {
-			Object labelledValue = label(entry.getValue(), solution, alreadyLabelled);
-			alreadyLabelled.put(entry.getValue(), labelledValue);
-			solutionObject.putField(entry.getKey(), labelledValue);
+			Object labeledValue;
+			if (entry.getValue() instanceof FreeObjectrefInitialisers.LAZY_FIELD_MARKER) {
+				Object substitute = ((FreeObjectrefInitialisers.LAZY_FIELD_MARKER) entry.getValue()).getSubstituteFor();
+				if (entry.getKey().isPrimitiveType() && substitute == null) {
+					labeledValue = IntConstant.ZERO;
+				} else {
+					labeledValue = label(substitute, solution, alreadyLabeled);
+				}
+			} else {
+				labeledValue = label(entry.getValue(), solution, alreadyLabeled);
+			}
+			alreadyLabeled.put(entry.getValue(), labeledValue);
+			solutionObject.putField(entry.getKey(), labeledValue);
 		}
 		return solutionObject;
 	}
 
-	protected Object labelPrimitive(Object k, Solution solution, Map<Object,Object> alreadyLabelled) {
+	protected Object labelPrimitive(Object k, Solution solution, Map<Object,Object> alreadyLabeled) {
 		if (k instanceof Term) {
 			Term simplified = ((Term) k).insert(solution, false);
 			if (simplified.isConstant()) {

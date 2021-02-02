@@ -10,10 +10,12 @@ import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpConditional;
 import de.wwu.muggl.instructions.interfaces.control.JumpInvocation;
 import de.wwu.muggl.vm.classfile.ClassFile;
+import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
 import de.wwu.muggl.vm.classfile.Limitations;
 import de.wwu.muggl.vm.classfile.structures.Constant;
 import de.wwu.muggl.vm.classfile.structures.Method;
+import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.vm.LogicVirtualMachine;
@@ -99,7 +101,7 @@ public class DefUseAnalyser {
                     getObjectDefs(in, i, defs, constantPool, classLoader, m);
                 } else if(in[i] instanceof Load) {
                     // Usage of Variable
-                    UseVariable use = getUseVariable(in, i, m);
+                    UseVariable use = getUseVariable(in, i, m, constantPool, classLoader);
                     DefVariable def = findDef(use, defs);
                     if(def != null) {
                         DefUseChain chain = new DefUseChain(def, use);
@@ -113,7 +115,7 @@ public class DefUseAnalyser {
                     i = getGotoInstr(in, i);
                 } else if (in[i] instanceof JumpInvocation) {
                     // new method invokation
-                    getMethodInvok(in, i, constantPool, classLoader);
+                    getMethodInvok(in, i, constantPool, classLoader, m, defUse);
                 }
             }
             if(defUseChains.containsKey(m)) {
@@ -145,7 +147,7 @@ public class DefUseAnalyser {
                     getObjectDefs(in, i, condDefs, constantPool, classLoader, m);
                 } else if (in[i] instanceof Load) {
                     // Usage of Variable
-                    UseVariable use = getUseVariable(in, i, m);
+                    UseVariable use = getUseVariable(in, i, m, constantPool, classLoader);
                     DefVariable def = findDef(use, condDefs);
                     if (def == null) {
                         def = findDef(use, defs);
@@ -165,7 +167,7 @@ public class DefUseAnalyser {
                     i = getGotoInstr(in, i);
                 } else if (in[i] instanceof JumpInvocation) {
                     // new method invokation
-                    getMethodInvok(in, i, constantPool, classLoader);
+                    getMethodInvok(in, i, constantPool, classLoader, m, defUse);
                 }
             }
             return defUse;
@@ -204,10 +206,13 @@ public class DefUseAnalyser {
 
     public UseVariable findUse(int pc, String method, DefUseChains chains){
         UseVariable output = null;
-        for(DefUseChain chain: chains.getDefUseChains()) {
-            UseVariable use = chain.getUse();
-            if(pc == use.getPc() && method.equals(use.getMethod().getName())){
-                output = use;
+        for(int i = pc; i >= 0; i--){
+            for(DefUseChain chain: chains.getDefUseChains()) {
+                UseVariable use = chain.getUse();
+                if(i == use.getPc() && method.equals(use.getMethod().getName())){
+                    output = use;
+                    break;
+                }
             }
         }
         return output;
@@ -235,14 +240,36 @@ public class DefUseAnalyser {
      * @param index current pc of ALoad instruction
      * @return boolean
      */
-    public boolean isNotUseLoad(Instruction[] in, int index){
+    public boolean isNotUseLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader){
         for(int i = index + 1; i < in.length; i++) {
             if(in[i] instanceof ALoad) {
-                return false;
+                if(!isMethodInvLoad(in, i, constantPool, classLoader)){
+                    return false;
+                }
             } else if(in[i] instanceof Astore) {
                 return true;
             } else if(in[i] instanceof Putfield){
                 return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isMethodInvLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader){
+        int loads = 1;
+        for(int i = index + 1; i < in.length; i++) {
+            if(in[i] instanceof Load) {
+                loads++;
+            } else if(in[i] instanceof JumpInvocation){
+                try {
+                    JumpInvocation jump = (JumpInvocation) in[i];
+                    Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+                    int numberParameter = invokedMethod.getParameterTypesAsArray().length;
+                    return loads <= numberParameter;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             }
         }
         return false;
@@ -273,11 +300,11 @@ public class DefUseAnalyser {
      * @param m current method
      * @return use variable
      */
-    protected UseVariable getUseVariable(Instruction[] in, int i, Method m){
+    protected UseVariable getUseVariable(Instruction[] in, int i, Method m,  Constant[] constantPool, MugglClassLoader classLoader){
         // Todo eigentlich wird nur geladen, überprüfen ob auch benutzt wird?
         Load useInstruction = (Load) in[i];
         if (useInstruction instanceof ALoad) {
-            if (isNotUseLoad(in, i)) {
+            if (isNotUseLoad(in, i, constantPool, classLoader)) {
                 return null;
             }
         }
@@ -288,7 +315,7 @@ public class DefUseAnalyser {
         //if(indexes != null && indexes.size() > useInstruction.getLocalVariableIndex()){
         //    use.setIndexOverMethods(indexes.get(useInstruction.getLocalVariableIndex()));
         //} else {
-        //    use.addMethodIndex(m.getName(), useInstruction.getLocalVariableIndex());
+            use.addMethodIndex(m.getFullName(), useInstruction.getLocalVariableIndex());
         //}
         return use;
     }
@@ -296,7 +323,7 @@ public class DefUseAnalyser {
     /**
      * Process conditional jump instruction. If jump was already considered, it is ignored.
      * Otherwise the defUse chains beginning at the conditional section are recursively processed
-     * with a new method invokation and the pc jumps to the end of the conditional section.
+     * with a new method invocation and the pc jumps to the end of the conditional section.
      * @param in instruction array
      * @param i pc of current instruction
      * @param m current method
@@ -349,26 +376,30 @@ public class DefUseAnalyser {
     }
 
     /**
-     * Process method invokations. Method is loaded and recusively processed.
+     * Process method invocations. Method is loaded and recursively processed.
      * @param in instruction array
      * @param i pc of current instruction
      * @param constantPool constant pool of class
      * @param classLoader class loader of class
      */
-    protected void getMethodInvok(Instruction[] in, int i, Constant[] constantPool, MugglClassLoader classLoader) {
+    protected void getMethodInvok(Instruction[] in, int i, Constant[] constantPool, MugglClassLoader classLoader,
+                                  Method m, DefUseChains defUse) {
         try {
             JumpInvocation jump = (JumpInvocation) in[i];
             Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+            if(invokedMethod.getClassFile().getName().startsWith("java.")){
+                return;
+            }
             List<Map<String, Integer>> paramterIndexes = new ArrayList<Map<String, Integer>>();
-            /*int c = 0;
+            int c = 1;
             int numberParameter = invokedMethod.getParameterTypesAsArray().length;
             for(int n = numberParameter; n > 0; n--) {
                 UseVariable use = findUse(i-numberParameter, m.getName(), defUse);
                 Map<String, Integer> indexesP = use.getIndexOverMethods();
-                indexesP.put(invokedMethod.getName(), c);
-                paramterIndexes.add(c, indexesP);
+                indexesP.put(invokedMethod.getFullName(), c);
+                //paramterIndexes.add(c, indexesP);
                 c++;
-            }*/
+            }
             if (!invokedMethods.contains(invokedMethod)) {
                 invokedMethods.add(invokedMethod);
                 constructDUGForMethod(invokedMethod, paramterIndexes);

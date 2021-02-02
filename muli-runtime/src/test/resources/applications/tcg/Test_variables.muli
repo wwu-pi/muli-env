@@ -1,37 +1,42 @@
 package applications.tcg;
 
-import java.util.List;
+import java.util.*;
 import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 
-public class Test {
+public class TestVariables {
 
     public static void main(String[] args) {
-        Solution[] solution = Muli.getAllSolutions(Test2::ifTest, SearchStrategy.BreadthFirstSearch);
+        Solution[] solution = Muli.getAllSolutions(Variables::ifTest, SearchStrategy.BreadthFirstSearch);
         //System.out.println(solution.value);
     }
 
 }
 
 
-class Test2{
+class Variables{
     static int ifTest(){
-        Orange i = new Orange();
-        int x free;
-        if(x == 5){
-            x = i.increment(x);
-        } else {
-            x = 5;
-        }
-        return x;
-    }
-}
+        //int i free;
+        //int x free;
+        //int y free;
+        List b = new ArrayList<Integer>();
+        int c = 1;
+        while(c<5) {
+            b.add(c);
+            c = increment(c);
 
-class Orange{
+        }
+        b.get(0);
+        //int z = 7;
+        //for(int b = 0; b < 3; b++) {
+        //    i = c;
+        //}
+        return 1;
+    }
 
     static int increment(int x){
-        int y = x + 1;
-        return y;
+            int y = x + 1;
+            return y;
     }
 }

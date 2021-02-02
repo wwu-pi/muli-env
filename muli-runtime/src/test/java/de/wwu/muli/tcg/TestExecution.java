@@ -157,4 +157,9 @@ public class TestExecution {
             System.out.println(defuseMethod.toString());
         }
     }
+
+    @Test
+    public final void testVariables() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TestVariables");
+    }
 }

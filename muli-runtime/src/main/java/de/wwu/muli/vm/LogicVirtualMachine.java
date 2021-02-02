@@ -449,7 +449,7 @@ public class LogicVirtualMachine extends SearchingVM {
         assert localVariablesTableAttribute != null;
         for (LocalVariableTable localVariable : localVariablesTableAttribute.getLocalVariableTable())
         {
-            if (localVariable.getIndex() != freeVariableIndex) {
+            if (localVariable.getIndex() != freeVariableIndex || localVariable.getStartPc()+3 != this.getPc()) {
                 continue;
             }
             name = localVariable.getName();

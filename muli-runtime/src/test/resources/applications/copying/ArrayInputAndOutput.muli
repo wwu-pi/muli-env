@@ -30,8 +30,8 @@ public class ArrayInputAndOutput {
                     if (result[0] != 2 || result[1] != -12) {
                         throw new IllegalStateException("Result has illegal values at indexes given result[2] == 7.");
                     }
-                    if (ar[0] == -2 || ar[1] == -12 || ar[2] != 6) {
-                        throw new IllegalStateException("Input has illegal values for result[2] == 5: ar[0] == " + ar[0]
+                    if (ar[0] == 2 || ar[1] == -12 || ar[2] != 6) {
+                        throw new IllegalStateException("Input has illegal values for result[2] == 7: ar[0] == " + ar[0]
                                                     + ", ar[1] == " + ar[1] + ", ar[2] == " + ar[2]);
                     }
                     foundThird = true;
@@ -63,13 +63,10 @@ public class ArrayInputAndOutput {
                 if (ar[2] == 5) {
                     throw Muli.fail();
                 }
-                if (i == 0 || i == 1) {
-                    throw Muli.fail();
-                }
                 ar[i] = 5;
                 return ar;
             } else {
-                if (ar[2] != 6) {
+                if (ar[0] == 2 || ar[1] == -12 || ar[2] != 6) {
                     throw Muli.fail();
                 }
                 ar[0] = 2;

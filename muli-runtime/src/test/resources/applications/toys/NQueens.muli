@@ -37,11 +37,9 @@ public class NQueens {
   public static void main(String[] args) {
   Solution<Object> solution = Muli.getOneSolution(NQueens::solve);
   Queen[] result = (Queen[])solution.value;
-  //List<Solution<Object>> solutions = Muli.getAllSolutions(NQueens::solve);
-  //Queen[] result = (Queen[])(solutions.get(0).value);
-    //for (Queen q: result) {
-    //    System.out.println("(" + q.x + "," + q.y + ")");
-    //}
+  for (Queen q: result) {
+    System.out.println("(" + q.x + "," + q.y + ")");
+  }
   }
 
   private static Queen[] solve() {

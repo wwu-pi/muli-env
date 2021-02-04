@@ -275,8 +275,8 @@ public class LogicVirtualMachine extends SearchingVM {
 		}
 		for (Map.Entry<Field, Object> entry : fields.entrySet()) {
 			Object labeledValue;
-			if (entry.getValue() instanceof FreeObjectrefInitialisers.LAZY_FIELD_MARKER) {
-				Object substitute = ((FreeObjectrefInitialisers.LAZY_FIELD_MARKER) entry.getValue()).getSubstituteFor();
+			if (entry.getValue() instanceof FreeObjectrefInitialisers.LazyFieldMarker) {
+				Object substitute = ((FreeObjectrefInitialisers.LazyFieldMarker) entry.getValue()).getSubstituteFor();
 				if (entry.getKey().isPrimitiveType() && substitute == null) {
 					labeledValue = IntConstant.ZERO;
 				} else {
@@ -669,8 +669,7 @@ public class LogicVirtualMachine extends SearchingVM {
                     continue;
                 }
                 if (!objectref.hasValueFor(field)) {
-                    String type = field.getDescriptor();
-                    Object representation = FreeObjectrefInitialisers.createRepresentationForFreeVariableOrField(this, classFile, type, field.getName());
+                    Object representation = FreeObjectrefInitialisers.initializeLazyMarker(objectref, field);
                     objectref.putField(field, representation);
                 }
                 break;

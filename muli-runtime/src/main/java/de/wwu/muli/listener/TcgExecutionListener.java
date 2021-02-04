@@ -17,9 +17,9 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
 
     protected String className;
     protected String methodName;
-    protected LinkedHashMap<String, Object> trackInputs = null;
+    protected LinkedHashMap<String, Object> trackInputs;
     protected ExecutionPathListener executionPathListener;
-    protected Map<Object, Object> alreadyCloned = new HashMap<>();
+    protected Map<Object, Object> alreadyCloned;
 
 
     public void setCoverageListener() {
@@ -54,10 +54,11 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
             String[] parameterNames = method.getParameterNames();
             int noArgs = method.getNumberOfArguments();
             Object[] localVariables = frame.getLocalVariables();
+            alreadyCloned = new HashMap<>();
             for (int i = 0; i < noArgs; i++) {
                 Object val = localVariables[i];
                 if ((localVariables[i] instanceof Objectref && !(localVariables[i] instanceof FreeObjectref))
-                    || localVariables[i] instanceof Arrayref && !(localVariables[i] instanceof FreeArrayref)) {
+                    || (localVariables[i] instanceof Arrayref && !(localVariables[i] instanceof FreeArrayref))) {
                     // We only have the information to restore inputs for free references, for concrete references
                     // we directly store the inputs.
                     val = SolutionIterator.cloneVal(val, alreadyCloned);
@@ -75,8 +76,8 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
         LinkedHashMap<String, Object> restoredInputs = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : trackInputs.entrySet()) {
             Object inputClone = SolutionIterator.cloneVal(entry.getValue(), alreadyCloned);
-            restoredInputs.put(entry.getKey(), inputClone);
             propagateInformationFromOutputToInput(inputClone, alreadyCloned);
+            restoredInputs.put(entry.getKey(), inputClone);
         }
 
         return restoredInputs;
@@ -85,7 +86,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     private void propagateInformationFromOutputToInput(Object inputCopy, Map<Object, Object> alreadyCloned) {
         if (inputCopy instanceof FreeArrayref) {
             FreeArrayref copy = (FreeArrayref) inputCopy;
-            Map<Term, Object> copiedOriginalElements = new HashMap<>();
+            LinkedHashMap<Term, Object> copiedOriginalElements = new LinkedHashMap<>();
             for (Map.Entry<Term, Object> o : copy.getOriginalElements().entrySet()) {
                 // We clone again to be sure. If the original values are not used for the current branch, we might change
                 // objects which are later used.
@@ -106,6 +107,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
             }
         } else if (inputCopy instanceof FreeObjectref) {
             FreeObjectref freeObjectInputCopy = (FreeObjectref) inputCopy;
+
             // We propagate the information of memorized variables to get the initial values.
             Map<Field, Object> memorizedVariables = freeObjectInputCopy.getMemorizedVariables();
             for (Map.Entry<Field, Object> memorized : memorizedVariables.entrySet()) {
@@ -118,18 +120,15 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
             }
             // The previous steps ensures that the copy has the initial values of fields which were added due to
             // class constraints.
-            // Now, for all fields which were free initialized by means of a FreeObjectrefInitialisers.LAZY_FIELD_MARKER
-            // we must replace this LAZY_FIELD_MARKER by the initial value it was substituted for.
-            for (Map.Entry<Field, FreeObjectrefInitialisers.LAZY_FIELD_MARKER> entry : freeObjectInputCopy.getSubstitutedMarkers().entrySet()) {
+            // Now, for all fields which were free initialized by means of a FreeObjectrefInitialisers.LazyFieldMarker
+            // we must replace this LazyFieldMarker by the initial value it was substituted for.
+            for (Map.Entry<Field, FreeObjectrefInitialisers.LazyFieldMarker> entry : freeObjectInputCopy.getSubstitutedMarkers().entrySet()) {
                 Field field = entry.getKey();
-                FreeObjectrefInitialisers.LAZY_FIELD_MARKER marker = entry.getValue();
+                FreeObjectrefInitialisers.LazyFieldMarker marker = entry.getValue();
                 Object val = marker.getSubstituteFor();
-                if (field.isPrimitiveType() && val == null) {
-                    val = IntConstant.ZERO; // TODO Enable for other types.
-                }
                 val = SolutionIterator.cloneVal(val, alreadyCloned);
                 if (val instanceof FreeObjectref) {
-                    propagateInformationFromOutputToInput((FreeObjectref) val, alreadyCloned);
+                    propagateInformationFromOutputToInput(val, alreadyCloned);
                 }
                 freeObjectInputCopy.putField(field, val);
             }

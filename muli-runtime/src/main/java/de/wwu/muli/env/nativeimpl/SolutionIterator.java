@@ -114,10 +114,8 @@ public class SolutionIterator extends NativeMethodProvider {
         }
         vm.resetInstructionsExecutedSinceLastSolution();
         long timeSpent = vm.recordSearchEnded();
-        // System.out.print(timeSpent + ",");
         SolutionIterator.totalSearchTime += timeSpent;
         SolutionIterator.totalSolutionCount++;
-
         // We clone first to not alter the objects used after backtracking during labelling
         solutionObject = cloneSolution(solutionObject);
 
@@ -188,7 +186,7 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     public static Object cloneVal(Object val, Map<Object, Object> alreadyCloned) {
-        if (val == null || val instanceof FreeObjectrefInitialisers.LAZY_FIELD_MARKER) {
+        if (val == null || val instanceof FreeObjectrefInitialisers.LazyFieldMarker) {
             return val;
         }
         Object alreadyInResults = alreadyCloned.get(val);
@@ -227,7 +225,7 @@ public class SolutionIterator extends NativeMethodProvider {
             FreeArrayref fa = new FreeArrayref((FreeArrayref) a);
             alreadyCloned.put(a, fa);
             Term copiedLengthTerm = (Term) cloneVal(fa.getLengthTerm(), alreadyCloned);
-            Map<Term, Object> copiedElements = new HashMap<>();
+            LinkedHashMap<Term, Object> copiedElements = new LinkedHashMap<>();
             for (Map.Entry<Term, Object> entry : fa.getFreeArrayElements().entrySet()) {
                 Term key = (Term) cloneVal(entry.getKey(), alreadyCloned);
                 Object val = cloneVal(entry.getValue(), alreadyCloned);

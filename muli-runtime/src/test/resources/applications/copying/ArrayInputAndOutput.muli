@@ -64,6 +64,11 @@ public class ArrayInputAndOutput {
                     throw Muli.fail();
                 }
                 ar[i] = 5;
+                // This bit is actually an important check: The IntConstant '2' of the array ar has become stale
+                // due to the free variable 'i'. The direct access tries to return a value ar[2] != 5
+                // Since this yields an ArraySelect-constraint, the constraint system would be unsatisfiable.
+                // This assignment checks whether the stale index '2' was properly replaced.
+                int x = ar[2];
                 return ar;
             } else {
                 if (ar[0] == 2 || ar[1] == -12 || ar[2] != 6) {

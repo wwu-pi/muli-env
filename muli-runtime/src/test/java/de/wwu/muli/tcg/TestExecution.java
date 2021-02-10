@@ -23,7 +23,7 @@ public class TestExecution {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.Test");
         Map<Object, Object> defUse = TestableMuliRunner.getCoverageMap();
         // number of invoked methods
-        assertEquals(4, defUse.size());
+        assertEquals(3, defUse.size());
         for(Object m: defUse.keySet()){
             DefUseMethod defuseMethod = (DefUseMethod) defUse.get(m);
             Method method = (Method) m;
@@ -156,5 +156,10 @@ public class TestExecution {
             System.out.println("Method: "+method.getFullName());
             System.out.println(defuseMethod.toString());
         }
+    }
+
+    @Test
+    public final void testVariables() throws InterruptedException, ClassFileException {
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TestVariables");
     }
 }

@@ -1,0 +1,64 @@
+package applications.freeArrays;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+
+public class SimpleSortAlternative {
+
+    public static void main(String[] args) {
+        Solution<Object> result = Muli.getOneSolution(SimpleSortAlternative::sort);
+        Solution<int[]> a = (Solution<int[]>) result;
+        for (int i = 0; i < a.value.length; i++) {
+            System.out.println(a.value[i]);
+        }
+    }
+    public static int[] sort() {
+        int[] bBeforeFree = {1, 42, 17, 56, 78, 5, 27, 39, 12, 8};
+        int n = bBeforeFree.length;
+        int[] b free;
+        if (b.length != n) throw Muli.fail();
+        int[] idx free;
+        if (idx.length != n) throw Muli.fail();
+        boolean failed = false;
+        for (int i = 0; i < n; i++) {
+            if (idx[i] < 0 || idx[i] >= n) {
+                failed = true; break;
+            }
+            boolean innerFailed = false;
+            for (int j = 0; j < n; j++) {
+                if (i != j && idx[i] == idx[j]) {
+                    innerFailed = true; break;
+                }
+            }
+            if (innerFailed) {
+                failed = true; break;
+            }
+        }
+        if (failed) {
+            throw Muli.fail();
+        }
+        if (failed) {
+            throw Muli.fail();
+        }
+        for (int i = 0; i < n; i++) { // TODO This is currently a workaround until free indexes are enabled for usual arrays
+            b[i] = bBeforeFree[i];
+        }
+        int[] a free;
+        if (a.length != n) throw Muli.fail();
+        for (int i = 0; i < n; i++) {
+            a[idx[i]] = b[i];
+        }
+
+        for (int i=0; i < n-1; i++) {
+            if (a[i] > a[i+1]) {
+                failed = true; break;
+            }
+             }
+
+        return a;
+    }
+
+    private static void ensureSize(int[] arr, int n) {
+        if (arr.length != n) throw Muli.fail();
+    }
+}

@@ -1,5 +1,6 @@
 package de.wwu.muli.defuse;
 
+import de.wwu.muggl.instructions.InvalidInstructionInitialisationException;
 import de.wwu.muggl.instructions.bytecode.ALoad;
 import de.wwu.muggl.instructions.bytecode.Goto;
 import de.wwu.muggl.instructions.bytecode.Putfield;
@@ -18,6 +19,7 @@ import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
+import de.wwu.muli.Muli;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 
@@ -39,8 +41,7 @@ public class DefUseAnalyser {
         this.defUseChains = new HashMap<Method, DefUseChains>();
     }
 
-    public void initializeDUG(){
-        Method m = this.vm.getInitialMethod();
+    public void initializeDUG() throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
         HashMap<Field, Object> d = this.vm.getCurrentSearchRegion().getFields();
         ClassFile ref = null;
         for(Field field : d.keySet()){
@@ -49,131 +50,117 @@ public class DefUseAnalyser {
             }
         }
         Method method = ref.getMethodByNameAndDescriptor("get", "()Ljava/lang/Object;");
-        try{
-            Instruction[] instructions = method.getInstructionsAndOtherBytes();
-            JumpInvocation jump = null;
-            for(Instruction in : instructions){
-                if(in instanceof JumpInvocation){
-                    jump = (JumpInvocation) (in);
-                    break;
-                }
+        Instruction[] instructions = method.getInstructionsAndOtherBytes();
+        JumpInvocation jump = null;
+        for(Instruction in : instructions){
+            if(in instanceof JumpInvocation){
+                jump = (JumpInvocation) (in);
+                break;
             }
-            if(jump == null){
-                throw new Exception();
-            }
-            MugglClassLoader classLoader = method.getClassFile().getClassLoader();
-            Constant[] constantPool = method.getClassFile().getConstantPool();
-            Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
-            constructDUGForMethod(invokedMethod);
-        } catch (Exception e){
-            System.out.println("No Search Region found");
         }
+        if(jump == null){
+            throw new IllegalStateException();
+        }
+        MugglClassLoader classLoader = method.getClassFile().getClassLoader();
+        Constant[] constantPool = method.getClassFile().getConstantPool();
+        Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+        constructDUGForMethod(invokedMethod);
     }
 
-    public void constructDUGForMethod(Method m){
-        constructDUGForMethod(m, null);
-        //Map<Method, DefUseChains> map = d.getDefUseChainsMapping();
-    }
-
-    public void constructDUGForMethod(Method m, List<Map<String, Integer>> indexes){
-        try{
-            Instruction[] in = m.getInstructionsAndOtherBytes();
-            MugglClassLoader classLoader = m.getClassFile().getClassLoader();
-            Constant[] constantPool = m.getClassFile().getConstantPool();
-            DefUseChains defUse = new DefUseChains();
-            HashSet<DefVariable> defs = new HashSet<DefVariable>();
-            int parameters = m.getNumberOfParameters();
-            for (int k = 0; k < parameters; k++){
-                DefVariable def = new DefVariable();
-                def.setInstructionIndex(k);
-                def.setPc(-1);
-                def.setMethod(m);
-                if(!defExists(def, defs)) {
-                    defs.add(def);
+    public void constructDUGForMethod(Method m) throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
+        Instruction[] in = m.getInstructionsAndOtherBytes();
+        if (in == null) { // No input parameters.
+            return;
+        }
+        MugglClassLoader classLoader = m.getClassFile().getClassLoader();
+        Constant[] constantPool = m.getClassFile().getConstantPool();
+        DefUseChains defUse = new DefUseChains();
+        HashSet<DefVariable> defs = new HashSet<DefVariable>();
+        int parameters = m.getNumberOfParameters();
+        for (int k = 0; k < parameters; k++){
+            DefVariable def = new DefVariable();
+            def.setInstructionIndex(k);
+            def.setPc(-1);
+            def.setMethod(m);
+            if(!defExists(def, defs)) {
+                defs.add(def);
+            }
+        }
+        for(int i =0; i<in.length; i++) {
+            if(in[i] instanceof Store) {
+                // Definition of Variable
+                getDefVariable(in, i, m, defs);
+            } else if(in[i] instanceof Astore || in[i] instanceof Putfield) {
+                // Special case of def -> write value in array or field of object
+                getObjectDefs(in, i, defs, constantPool, classLoader, m);
+            } else if(in[i] instanceof Load) {
+                // Usage of Variable
+                UseVariable use = getUseVariable(in, i, m, constantPool, classLoader);
+                DefVariable def = findDef(use, defs);
+                if(def != null) {
+                    DefUseChain chain = new DefUseChain(def, use);
+                    defUse.addChain(chain);
                 }
+            } else if(in[i] instanceof JumpConditional) {
+                // process conditional Jumps recursively
+                i = getConditionalJump(in, i, m, defs);
+            } else if(in[i] instanceof Goto) {
+                // Jump to different Instruction
+                i = getGotoInstr(in, i);
+            } else if (in[i] instanceof JumpInvocation) {
+                // new method invokation
+                getMethodInvok(in, i, constantPool, classLoader, m, defUse);
             }
-            for(int i =0; i<in.length; i++) {
-                if(in[i] instanceof Store) {
-                    // Definition of Variable
-                    getDefVariable(in, i, m, defs);
-                } else if(in[i] instanceof Astore || in[i] instanceof Putfield) {
-                    // Special case of def -> write value in array or field of object
-                    getObjectDefs(in, i, defs, constantPool, classLoader, m);
-                } else if(in[i] instanceof Load) {
-                    // Usage of Variable
-                    UseVariable use = getUseVariable(in, i, m, constantPool, classLoader);
-                    DefVariable def = findDef(use, defs);
-                    if(def != null) {
-                        DefUseChain chain = new DefUseChain(def, use);
-                        defUse.addChain(chain);
-                    }
-                } else if(in[i] instanceof JumpConditional) {
-                    // process conditional Jumps recursively
-                    i = getConditionalJump(in, i, m, defs);
-                } else if(in[i] instanceof Goto) {
-                    // Jump to different Instruction
-                    i = getGotoInstr(in, i);
-                } else if (in[i] instanceof JumpInvocation) {
-                    // new method invokation
-                    getMethodInvok(in, i, constantPool, classLoader, m, defUse);
-                }
-            }
-            if(defUseChains.containsKey(m)) {
-                DefUseChains chain = defUseChains.get(m);
-                chain.mergeChains(defUse);
-                defUseChains.put(m, chain);
-            } else {
-                defUseChains.put(m, defUse);
-            }
-        } catch(Exception e){
-
+        }
+        if(defUseChains.containsKey(m)) {
+            DefUseChains chain = defUseChains.get(m);
+            chain.mergeChains(defUse);
+            defUseChains.put(m, chain);
+        } else {
+            defUseChains.put(m, defUse);
         }
 
     }
 
-    public DefUseChains processConditionalJump(int start, Method m, HashSet<DefVariable> defs) {
-        try {
-            HashSet<DefVariable> condDefs = new HashSet<DefVariable>();
-            MugglClassLoader classLoader = m.getClassFile().getClassLoader();
-            Constant[] constantPool = m.getClassFile().getConstantPool();
-            DefUseChains defUse = new DefUseChains();
-            Instruction[] in = m.getInstructionsAndOtherBytes();
-            for (int i = start; i < in.length; i++) {
-                if (in[i] instanceof Store) {
-                    // Definition of Variable
-                    getDefVariable(in, i, m, condDefs);
-                } else if (in[i] instanceof Astore || in[i] instanceof Putfield) {
-                    // Special case von def -> Wert in Array schreiben
-                    getObjectDefs(in, i, condDefs, constantPool, classLoader, m);
-                } else if (in[i] instanceof Load) {
-                    // Usage of Variable
-                    UseVariable use = getUseVariable(in, i, m, constantPool, classLoader);
-                    DefVariable def = findDef(use, condDefs);
-                    if (def == null) {
-                        def = findDef(use, defs);
-                    }
-                    if (def != null) {
-                        DefUseChain chain = new DefUseChain(def, use);
-                        defUse.addChain(chain);
-                    }
-                } else if (in[i] instanceof JumpConditional) {
-                    // process conditional Jumps recursively
-                    HashSet<DefVariable> allDefs = new HashSet<DefVariable>();
-                    allDefs.addAll(defs);
-                    allDefs.addAll(condDefs);
-                    i = getConditionalJump(in, i, m, allDefs);
-                } else if (in[i] instanceof Goto) {
-                    // Jump to different Instruction
-                    i = getGotoInstr(in, i);
-                } else if (in[i] instanceof JumpInvocation) {
-                    // new method invokation
-                    getMethodInvok(in, i, constantPool, classLoader, m, defUse);
+    public DefUseChains processConditionalJump(int start, Method m, HashSet<DefVariable> defs) throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
+        HashSet<DefVariable> condDefs = new HashSet<DefVariable>();
+        MugglClassLoader classLoader = m.getClassFile().getClassLoader();
+        Constant[] constantPool = m.getClassFile().getConstantPool();
+        DefUseChains defUse = new DefUseChains();
+        Instruction[] in = m.getInstructionsAndOtherBytes();
+        for (int i = start; i < in.length; i++) {
+            if (in[i] instanceof Store) {
+                // Definition of Variable
+                getDefVariable(in, i, m, condDefs);
+            } else if (in[i] instanceof Astore || in[i] instanceof Putfield) {
+                // Special case von def -> Wert in Array schreiben
+                getObjectDefs(in, i, condDefs, constantPool, classLoader, m);
+            } else if (in[i] instanceof Load) {
+                // Usage of Variable
+                UseVariable use = getUseVariable(in, i, m, constantPool, classLoader);
+                DefVariable def = findDef(use, condDefs);
+                if (def == null) {
+                    def = findDef(use, defs);
                 }
+                if (def != null) {
+                    DefUseChain chain = new DefUseChain(def, use);
+                    defUse.addChain(chain);
+                }
+            } else if (in[i] instanceof JumpConditional) {
+                // process conditional Jumps recursively
+                HashSet<DefVariable> allDefs = new HashSet<DefVariable>();
+                allDefs.addAll(defs);
+                allDefs.addAll(condDefs);
+                i = getConditionalJump(in, i, m, allDefs);
+            } else if (in[i] instanceof Goto) {
+                // Jump to different Instruction
+                i = getGotoInstr(in, i);
+            } else if (in[i] instanceof JumpInvocation) {
+                // new method invokation
+                getMethodInvok(in, i, constantPool, classLoader, m, defUse);
             }
-            return defUse;
-        } catch(Exception e) {
-            return null;
         }
+        return defUse;
     }
 
     /***
@@ -188,18 +175,16 @@ public class DefUseAnalyser {
         if(use == null){
             return output;
         }
-        //for(Map.Entry<String, Integer> entry: use.getIndexOverMethods().entrySet()) {
-            for(DefVariable def: defs){
-                if(def.getInstructionIndex() == use.getInstructionIndex() && def.getMethod().getName().equals(use.getMethod().getName())){
-                    if(output != null) {
-                        if(output.getPc() < def.getPc()){
-                            output = def;
-                        }
-                    } else {
+        for(DefVariable def: defs){
+            if(def.getInstructionIndex() == use.getInstructionIndex() && def.getMethod().getName().equals(use.getMethod().getName())){
+                if(output != null) {
+                    if(output.getPc() < def.getPc()){
                         output = def;
                     }
+                } else {
+                    output = def;
                 }
-           // }
+            }
         }
         return output;
     }
@@ -240,7 +225,7 @@ public class DefUseAnalyser {
      * @param index current pc of ALoad instruction
      * @return boolean
      */
-    public boolean isNotUseLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader){
+    public boolean isNotUseLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader) throws ExecutionException, ClassFileException {
         for(int i = index + 1; i < in.length; i++) {
             if(in[i] instanceof ALoad) {
                 if(!isMethodInvLoad(in, i, constantPool, classLoader)){
@@ -255,21 +240,16 @@ public class DefUseAnalyser {
         return false;
     }
 
-    public boolean isMethodInvLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader){
+    public boolean isMethodInvLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader) throws ExecutionException, ClassFileException {
         int loads = 1;
         for(int i = index + 1; i < in.length; i++) {
             if(in[i] instanceof Load) {
                 loads++;
             } else if(in[i] instanceof JumpInvocation){
-                try {
-                    JumpInvocation jump = (JumpInvocation) in[i];
-                    Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
-                    int numberParameter = invokedMethod.getParameterTypesAsArray().length;
-                    return loads <= numberParameter;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                JumpInvocation jump = (JumpInvocation) in[i];
+                Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+                int numberParameter = invokedMethod.getParameterTypesAsArray().length;
+                return loads <= numberParameter;
             }
         }
         return false;
@@ -300,7 +280,7 @@ public class DefUseAnalyser {
      * @param m current method
      * @return use variable
      */
-    protected UseVariable getUseVariable(Instruction[] in, int i, Method m,  Constant[] constantPool, MugglClassLoader classLoader){
+    protected UseVariable getUseVariable(Instruction[] in, int i, Method m,  Constant[] constantPool, MugglClassLoader classLoader) throws ExecutionException, ClassFileException {
         // Todo eigentlich wird nur geladen, überprüfen ob auch benutzt wird?
         Load useInstruction = (Load) in[i];
         if (useInstruction instanceof ALoad) {
@@ -312,11 +292,8 @@ public class DefUseAnalyser {
         use.setInstructionIndex(useInstruction.getLocalVariableIndex());
         use.setPc(i);
         use.setMethod(m);
-        //if(indexes != null && indexes.size() > useInstruction.getLocalVariableIndex()){
-        //    use.setIndexOverMethods(indexes.get(useInstruction.getLocalVariableIndex()));
-        //} else {
-            use.addMethodIndex(m.getFullName(), useInstruction.getLocalVariableIndex());
-        //}
+
+        use.addMethodIndex(m.getFullName(), useInstruction.getLocalVariableIndex());
         return use;
     }
 
@@ -330,7 +307,7 @@ public class DefUseAnalyser {
      * @param defs previous variable definitions
      * @return new pc after jump
      */
-    protected int getConditionalJump(Instruction[] in, int i, Method m, HashSet<DefVariable> defs){
+    protected int getConditionalJump(Instruction[] in, int i, Method m, HashSet<DefVariable> defs) throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
         JumpConditional jumpInstruction = (JumpConditional) in[i];
         Instruction jump = (Instruction) jumpInstruction;
         // jump was already considered
@@ -383,30 +360,25 @@ public class DefUseAnalyser {
      * @param classLoader class loader of class
      */
     protected void getMethodInvok(Instruction[] in, int i, Constant[] constantPool, MugglClassLoader classLoader,
-                                  Method m, DefUseChains defUse) {
-        try {
-            JumpInvocation jump = (JumpInvocation) in[i];
-            Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
-            if(invokedMethod.getClassFile().getName().startsWith("java.")){
-                return;
-            }
-            List<Map<String, Integer>> paramterIndexes = new ArrayList<Map<String, Integer>>();
-            int c = 1;
-            int numberParameter = invokedMethod.getParameterTypesAsArray().length;
-            for(int n = numberParameter; n > 0; n--) {
-                UseVariable use = findUse(i-numberParameter, m.getName(), defUse);
-                Map<String, Integer> indexesP = use.getIndexOverMethods();
-                indexesP.put(invokedMethod.getFullName(), c);
-                //paramterIndexes.add(c, indexesP);
-                c++;
-            }
-            if (!invokedMethods.contains(invokedMethod)) {
-                invokedMethods.add(invokedMethod);
-                constructDUGForMethod(invokedMethod, paramterIndexes);
-
-            }
-        } catch(Exception e){
-
+                                  Method m, DefUseChains defUse) throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
+        JumpInvocation jump = (JumpInvocation) in[i];
+        Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
+        if(invokedMethod.getClassFile().getName().startsWith("java.")){
+            return;
+        }
+        List<Map<String, Integer>> paramterIndexes = new ArrayList<Map<String, Integer>>();
+        int c = 1;
+        int numberParameter = invokedMethod.getParameterTypesAsArray().length;
+        for(int n = numberParameter; n > 0; n--) {
+            UseVariable use = findUse(i-numberParameter, m.getName(), defUse);
+            Map<String, Integer> indexesP = use.getIndexOverMethods();
+            indexesP.put(invokedMethod.getFullName(), c);
+            //paramterIndexes.add(c, indexesP);
+            c++;
+        }
+        if (!invokedMethods.contains(invokedMethod)) {
+            invokedMethods.add(invokedMethod);
+            constructDUGForMethod(invokedMethod);
         }
     }
 
@@ -423,32 +395,28 @@ public class DefUseAnalyser {
      * @param m current method
      */
     protected void getObjectDefs(Instruction[] in, int i, HashSet<DefVariable> defs, Constant[] constantPool,
-                                 MugglClassLoader classLoader, Method m){
-        try {
-            int back = i - 1;
-            while (back >= 0) {
-                if (in[back] instanceof JumpInvocation) {
-                    Method invokedMethod = ((JumpInvocation) in[back])
-                            .getInvokedMethod(constantPool, classLoader);
-                    int numberParameter = invokedMethod.getParameterTypesAsArray().length;
-                    back = back - numberParameter - 1;
-                    continue;
-                } else if (in[back] instanceof ALoad) {
-                    ALoad loadInstruction = (ALoad) in[back];
-                    DefVariable def = new DefVariable();
-                    def.setInstructionIndex(loadInstruction.getLocalVariableIndex());
-                    def.setPc(i);
-                    def.setMethod(m);
-                    if (!defExists(def, defs)) {
-                        defs.add(def);
-                    }
-                    break;
-                } else {
-                    back--;
+                                 MugglClassLoader classLoader, Method m) throws ExecutionException, ClassFileException {
+        int back = i - 1;
+        while (back >= 0) {
+            if (in[back] instanceof JumpInvocation) {
+                Method invokedMethod = ((JumpInvocation) in[back])
+                        .getInvokedMethod(constantPool, classLoader);
+                int numberParameter = invokedMethod.getParameterTypesAsArray().length;
+                back = back - numberParameter - 1;
+                continue;
+            } else if (in[back] instanceof ALoad) {
+                ALoad loadInstruction = (ALoad) in[back];
+                DefVariable def = new DefVariable();
+                def.setInstructionIndex(loadInstruction.getLocalVariableIndex());
+                def.setPc(i);
+                def.setMethod(m);
+                if (!defExists(def, defs)) {
+                    defs.add(def);
                 }
+                break;
+            } else {
+                back--;
             }
-        } catch (Exception e){
-
         }
     }
 

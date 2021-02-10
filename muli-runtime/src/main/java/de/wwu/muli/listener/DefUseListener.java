@@ -16,7 +16,11 @@ public class DefUseListener implements ExecutionPathListener {
 
     public DefUseListener(LogicVirtualMachine vm){
         analyser = new DefUseAnalyser(vm);
-        analyser.initializeDUG();
+        try {
+            analyser.initializeDUG();
+        } catch (Exception e) {
+            throw new IllegalStateException(e); // TODO Better exception treatment.
+        }
         register = analyser.transformDefUse();
     }
 

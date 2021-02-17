@@ -15,10 +15,5 @@ public class TestTCGBooleanCounter {
     public void testTcgBooleanCounter() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TCGBooleanCounter");
         System.out.println(Arrays.toString(foundTrees));
-        System.out.println(LogicVirtualMachine.frameAndInstruction);
-        System.out.println("=======================================================");
-        System.out.println(LogicVirtualMachine.operandStack);
-        System.out.println("=======================================================");
-        System.out.println(LogicVirtualMachine.vmFrameStack);
     }
 }

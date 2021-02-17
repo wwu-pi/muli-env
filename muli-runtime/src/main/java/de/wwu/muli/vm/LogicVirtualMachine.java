@@ -179,7 +179,7 @@ public class LogicVirtualMachine extends SearchingVM {
 		this.maximumInstructionsBeforeFindingANewSolution = options.maxInstrBeforeFindingANewSolution;
 		this.onlyCountChoicePointGeneratingInstructions = options.onlyCountChoicePointGeneratingInst;
 		this.searchStrategies = new HashMap<>();
-		this.executionListener = new TcgExecutionListener(); // TODO Should be set with methodName of tested method?
+		this.executionListener = new TcgExecutionListener();
 	}
 
 	public ExecutionListener getExecutionListener() {
@@ -312,6 +312,8 @@ public class LogicVirtualMachine extends SearchingVM {
 			} else {
 				throw new IllegalStateException("Should be constant after labelling.");
 			}
+		} else if (k instanceof BooleanVariable) {
+			return ((BooleanConstant) ((BooleanVariable) k).insert(solution, false)).getValue();
 		} else {
 			return k;
 		}

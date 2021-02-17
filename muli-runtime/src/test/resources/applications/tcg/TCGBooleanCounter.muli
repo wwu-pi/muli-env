@@ -1,0 +1,56 @@
+package applications.tcg;
+
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import java.lang.Object;
+import de.wwu.muli.tcg.*;
+
+public class TCGBooleanCounter {
+    protected boolean b0;
+    protected boolean b1;
+    protected boolean b2;
+    protected boolean b3;
+    protected boolean b4;
+
+
+    public static void main(String[] args) {
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGBooleanCounter::driver, TCGBooleanCounter.class.getName() + ".count");
+        TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        for (Solution s : solutions) {
+            TCGBooleanCounter val = (TCGBooleanCounter) s.testCase.getInputs()[0];
+            System.out.println("TCG: ");
+            System.out.println(val.b0);
+            System.out.println(val.b1);
+            System.out.println(val.b2);
+            System.out.println(val.b3);
+            System.out.println(val.b4);
+            System.out.println("================================================");
+        }
+        tcg.generateTestClassStringRepresentation();
+    }
+
+    public static int driver() {
+        TCGBooleanCounter obj free;
+        return obj.count();
+    }
+
+    public int count() {
+        int count = 0;
+        if (b0) {
+            count += 1;
+        }
+        if (b1) {
+            count += 2;
+        }
+        if (b2) {
+            count += 4;
+        }
+        if (b3) {
+            count += 8;
+        }
+        if (b4) {
+            count += 16;
+        }
+        return count;
+    }
+}

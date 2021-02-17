@@ -15,6 +15,7 @@ import java.util.*;
 
 public class TcgExecutionListener implements ExecutionListener, TcgListener {
 
+    protected boolean isObjectMethod;
     protected String className;
     protected String methodName;
     protected LinkedHashMap<String, Object> trackInputs;
@@ -50,9 +51,10 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
         if (trackInputs == null
                 && method.getName().equals(methodName)
                 && method.getClassFile().getName().equals(className)) {
+            isObjectMethod = !method.isAccStatic();
             trackInputs = new LinkedHashMap<>();
             String[] parameterNames = method.getParameterNames();
-            int noArgs = method.getNumberOfArguments();
+            int noArgs = method.getNumberOfArguments() + (isObjectMethod ? 1 : 0);
             Object[] localVariables = frame.getLocalVariables();
             alreadyCloned = new HashMap<>();
             for (int i = 0; i < noArgs; i++) {
@@ -72,7 +74,12 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     @Override
     public LinkedHashMap<String, Object> getInputs() {
         // Propagate the type constraints for copied FreeObjects and the initialized elements for FreeArrays. // TODO Better place for this?
-        Map<Object, Object> alreadyCloned = new HashMap<>(this.alreadyCloned); // We regard potentially cloned prior elements.
+        Map<Object, Object> alreadyCloned;
+        if (this.alreadyCloned != null && trackInputs != null) {
+           alreadyCloned = new HashMap<>(this.alreadyCloned); // We regard potentially cloned prior elements.
+        } else {
+            throw new IllegalStateException("The method for which test cases are to be generated was not found: " + methodName);
+        }
         LinkedHashMap<String, Object> restoredInputs = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : trackInputs.entrySet()) {
             Object inputClone = SolutionIterator.cloneVal(entry.getValue(), alreadyCloned);
@@ -181,5 +188,10 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
         if (executionPathListener != null) {
             executionPathListener.reachedEndEvent();
         }
+    }
+
+    @Override
+    public boolean isObjectMethod() {
+        return isObjectMethod;
     }
 }

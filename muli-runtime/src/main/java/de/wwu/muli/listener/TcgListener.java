@@ -1,5 +1,7 @@
 package de.wwu.muli.listener;
 
+import de.wwu.muggl.vm.initialization.Objectref;
+
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 
@@ -14,5 +16,7 @@ public interface TcgListener {
     String getMethodName();
 
     BitSet getCover();
+
+    boolean isObjectMethod();
 
 }

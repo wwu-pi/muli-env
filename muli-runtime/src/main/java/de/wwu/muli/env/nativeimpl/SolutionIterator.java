@@ -251,7 +251,7 @@ public class SolutionIterator extends NativeMethodProvider {
     }
 
     protected static Object clonePrimitive(Object p, Map<Object, Object> alreadyCloned) {
-        if (p instanceof Number || p instanceof Term) {
+        if (p instanceof Number || p instanceof Term || p instanceof BooleanVariable) {
             alreadyCloned.put(p, p);
             return p;
         } else {

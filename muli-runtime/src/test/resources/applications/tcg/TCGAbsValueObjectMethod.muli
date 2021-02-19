@@ -8,15 +8,17 @@ import de.wwu.muli.tcg.*;
 public class TCGAbsValueObjectMethod {
 
     public static void main(String[] args) {
-        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGAbsValueObjectMethod::driver, TCGAbsValueObjectMethod.class.getName() + ".abs");
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGAbsValueObjectMethod.DriverClass::driver, TCGAbsValueObjectMethod.class.getName() + ".abs");
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         tcg.generateTestClassStringRepresentation();
     }
 
-    public static int driver() {
-        int i free;
-        TCGAbsValueObjectMethod obj = new TCGAbsValueObjectMethod();
-        return obj.abs(i);
+    protected static class DriverClass {
+        public static int driver() {
+            int i free;
+            TCGAbsValueObjectMethod obj = new TCGAbsValueObjectMethod();
+            return obj.abs(i);
+        }
     }
 
     public int abs(int i) {

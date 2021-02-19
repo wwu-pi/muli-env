@@ -83,7 +83,6 @@ public class LogicVirtualMachine extends SearchingVM {
      */
     private Stack<TrailElement> currentTrail = new Stack<>();
 
-
 	// Map search region instantiations (i.e. their iterators) to their respective search strategies (each strategy maintaining its choice points).
 	// Actual type: HashMap<SolutionIterator, SearchStrategy>.
     private HashMap<Objectref, LogicIteratorSearchAlgorithm> searchStrategies;
@@ -250,6 +249,23 @@ public class LogicVirtualMachine extends SearchingVM {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	protected void removeFieldsTooMany(Objectref fo) {
+		Class<?> foClass = fo.getInitializedClass().getClassFile().getInstanceOfClass();
+		Set<java.lang.reflect.Field> fields = new HashSet<>();
+		while (foClass != null) {
+			fields.addAll(Arrays.asList(foClass.getDeclaredFields()));
+			foClass = foClass.getSuperclass();
+		}
+
+		Set<Field> keys = new HashSet<>(fo.getFields().keySet());
+		for (Field f : keys) {
+			if (!fields.stream().anyMatch(hostField -> f.getName().equals(hostField.getName()))) {
+				fo.getFields().remove(f);
+			}
+		}
+	}
+
 	protected Objectref labelObjectref(Objectref solutionObject, Solution solution, Map<Object,Object> alreadyLabeled) {
 		alreadyLabeled.put(solutionObject, solutionObject);
 		HashMap<Field, Object> fields = solutionObject.getFields();
@@ -272,6 +288,7 @@ public class LogicVirtualMachine extends SearchingVM {
 				}
 				fo.setConcreteStaticReference(concreteClass);
 			}
+			removeFieldsTooMany(fo);
 		}
 		for (Map.Entry<Field, Object> entry : fields.entrySet()) {
 			Object labeledValue;

@@ -136,6 +136,7 @@ public class MuliVMControl extends NativeMethodProvider {
 
     public static void setMethodForTCG(Frame frame, Object methodName) {
         LogicVirtualMachine vm = (LogicVirtualMachine) frame.getVm();
+        vm.setGenerateTestCases(true);
         ((TcgListener) vm.getExecutionListener()).setMethod((String) SolutionIterator.getValFromObjectref((Objectref) methodName)); // TODO refactor.
     }
 

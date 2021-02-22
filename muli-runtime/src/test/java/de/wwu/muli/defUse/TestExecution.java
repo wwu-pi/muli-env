@@ -1,4 +1,4 @@
-package de.wwu.muli.tcg;
+package de.wwu.muli.defUse;
 
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;

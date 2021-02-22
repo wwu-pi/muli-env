@@ -8,7 +8,7 @@ import java.lang.Object;
 public class Test {
 
     public static void main(String[] args) {
-        Solution[] solution = Muli.getAllSolutions(Test2::ifTest, SearchStrategy.BreadthFirstSearch);
+        Solution[] solution = Muli.getAllSolutions(Test2::ifTest, SearchStrategy.DepthFirstSearch);
         //System.out.println(solution.value);
     }
 

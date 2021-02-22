@@ -371,8 +371,10 @@ public class DefUseAnalyser {
         int numberParameter = invokedMethod.getParameterTypesAsArray().length;
         for(int n = numberParameter; n > 0; n--) {
             UseVariable use = findUse(i-numberParameter, m.getName(), defUse);
-            Map<String, Integer> indexesP = use.getIndexOverMethods();
-            indexesP.put(invokedMethod.getFullName(), c);
+            if(use != null) {
+                Map<String, Integer> indexesP = use.getIndexOverMethods();
+                indexesP.put(invokedMethod.getFullName(), c);
+            }
             //paramterIndexes.add(c, indexesP);
             c++;
         }

@@ -1,6 +1,7 @@
 package applications.tcg;
 
 import java.util.List;
+import java.util.Arrays;
 import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
@@ -11,12 +12,12 @@ public class MainBellman {
     public static void main(String[] args) {
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(BellmanFord::searchRegion, BellmanFord.class.getName() + ".runBellmanFord");
         for(Solution s : solutions){
-            System.out.println(s.value.toString());
+            System.out.println("output: "+ s.value);
             TestCase<?> tc = s.testCase;
             Object[] inputs = tc.getInputs();
             for(Object o : inputs) {
                 //Arrayref ref = (Arrayref) o;
-                System.out.println(o.toString());
+                System.out.println("input: "+o.toString());
             }
         }
         //TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
@@ -31,10 +32,10 @@ class BellmanFord {
 
       static int[] runBellmanFord(int N, int D[], int src) {
         // Initialize distances.
-        int[] dist free;
-        if(dist.length != N) throw Muli.fail();
-        boolean[] infinite free;
-        if(infinite.length != N) throw Muli.fail();
+        int[] dist = new int[N];
+        //if(dist.length != N) throw Muli.fail();
+        boolean[] infinite = new boolean[N];
+        //if(infinite.length != N) throw Muli.fail();
         for (int i = 0; i < N; i++) { // V+1 branches
           dist[i] = INFINITY;
           infinite[i] = true;
@@ -80,8 +81,8 @@ class BellmanFord {
             throw Muli.fail();
          }*/ // V*V < Integer.MAX_VALUE
 
-         final int[] D free;
-         if(D.length != (V * V)) throw Muli.fail();
+         final int[] D = new int[V * V];
+         //if(D.length != (V * V)) throw Muli.fail();
 
          for (int i = 0; i < V; i++) {
             for (int j = 0; j < V; j++) {
@@ -94,7 +95,7 @@ class BellmanFord {
                }
              }
 
-            int[] dist = runBellmanFord(V, D, 0);
+         int[] dist = runBellmanFord(V, D, 0);
          return dist;
     }
 }

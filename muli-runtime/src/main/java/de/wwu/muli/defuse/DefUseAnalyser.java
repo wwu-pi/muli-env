@@ -454,7 +454,7 @@ public class DefUseAnalyser {
                     defs.addLink(defIndex, useIndex);
                 }
             }
-            dum.initDefUses();
+            dum.setDefUses(chains);
             dum.setDefs(defs);
             dum.setUses(uses);
             output.put(method, dum);

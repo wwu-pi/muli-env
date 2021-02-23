@@ -35,6 +35,15 @@ public class DefUseRegisters {
         return registers.size();
     }
 
+    public int getDefUseSize() {
+        int out = 0;
+        for(Map.Entry<Integer, DefUseRegister> entry : registers.entrySet()){
+            DefUseRegister reg = entry.getValue();
+            out = out + reg.link.size();
+        }
+        return out;
+    }
+
     public String toString(){
         String output = "";
         for(Integer i : registers.keySet()){

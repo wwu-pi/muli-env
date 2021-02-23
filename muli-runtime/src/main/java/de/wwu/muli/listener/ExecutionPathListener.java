@@ -5,6 +5,7 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muli.defuse.DefUseMethod;
 
+import java.util.BitSet;
 import java.util.Map;
 
 public interface ExecutionPathListener {
@@ -14,6 +15,8 @@ public interface ExecutionPathListener {
     public void reachedEndEvent();
 
     public Map<Object, Object> getResult();
+
+    public BitSet getCover();
 
 
 }

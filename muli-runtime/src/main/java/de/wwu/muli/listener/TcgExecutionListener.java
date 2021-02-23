@@ -160,7 +160,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
 
     @Override
     public BitSet getCover() {
-        return null; // TODO
+        return executionPathListener.getCover();
     }
 
     public void afterExecuteInstruction(Instruction instruction, Frame frame, int pc) {

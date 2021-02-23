@@ -8,10 +8,12 @@ import java.util.Objects;
 public class DefUseChain {
     private DefVariable def;
     private UseVariable use;
+    private boolean visited;
 
     public DefUseChain(DefVariable def, UseVariable use) {
         this.def = def;
         this.use = use;
+        this.visited = false;
     }
 
     public DefVariable getDef(){
@@ -21,6 +23,10 @@ public class DefUseChain {
     public UseVariable getUse(){
         return this.use;
     }
+
+    public void setVisited(boolean visited){ this.visited=visited;}
+
+    public boolean getVisited() {return this.visited;}
 
     @Override
     public boolean equals(Object obj) {

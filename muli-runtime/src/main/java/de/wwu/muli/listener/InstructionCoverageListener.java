@@ -33,4 +33,6 @@ public class InstructionCoverageListener implements ExecutionPathListener {
         return null;
     }
 
+    public BitSet getCover() {return null;}
+
 }

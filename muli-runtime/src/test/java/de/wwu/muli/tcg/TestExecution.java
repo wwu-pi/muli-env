@@ -139,17 +139,14 @@ public class TestExecution {
                         uses.toString());
                 // defUse chains which were visited
                 DefUseChains chains = defuseMethod.getDefUses();
-                assertEquals(3, chains.getChainSize());
+                assertEquals(7, chains.getChainSize());
                 for(DefUseChain chain: chains.getDefUseChains()){
                     if(chain.getDef().getPc() == 22){
-                        try {
-                            assertEquals(23, chain.getUse().getPc());
-                        } catch(AssertionError a){
-                            assertEquals(37, chain.getUse().getPc());
-                        }
-                    }
-                    if(chain.getDef().getPc() == 11){
-                        assertEquals(12, chain.getUse().getPc());
+                        assertTrue(chain.getVisited());
+                    } else if(chain.getDef().getPc() == 11 && chain.getUse().getPc() == 12){
+                        assertTrue(chain.getVisited());
+                    } else {
+                        assertFalse(chain.getVisited());
                     }
                 }
             }

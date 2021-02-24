@@ -1,0 +1,83 @@
+package applications.tcg;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import java.lang.Object;
+import de.wwu.muli.tcg.*;
+
+public class MainSortedList{
+
+    public static void main(String[] args) {
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(SortedListSearch::searchRegion, SortedList.class.getName() + ".insert");
+        for(Solution s : solutions){
+            System.out.println(s.value.toString());
+            TestCase<?> tc = s.testCase;
+            Object[] inputs = tc.getInputs();
+            for(Object o : inputs) {
+                //Arrayref ref = (Arrayref) o;
+                System.out.println(o.toString());
+            }
+        }
+        //TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        //tcg.generateTestClassStringRepresentation();
+        //System.out.println(solution.value);
+    }
+
+}
+
+      public class SortedList {
+          public int x;
+          public SortedList next;
+
+          private static final int SENTINEL = 1000;
+
+          private SortedList(int x, SortedList next) {
+            this.x = x;
+            this.next = next;
+          }
+
+          public SortedList() {
+            this(SENTINEL, null);
+          }
+
+          public void insert(int data) {
+            if (data > this.x) {
+              next.insert(data);
+            } else {
+              next = new SortedList(x, next);
+              x = data;
+            }
+          }
+
+          public String toString() {
+            String out = x + ", ";
+            if(next != null) out = out + next.toString();
+            return out;
+          }
+        }
+class SortedListSearch {
+    static SortedList searchRegion() {
+         int N = Verifier.nondetInt();
+         if(!(N > 1 && N < 6)){
+            throw Muli.fail();
+         }
+
+           SortedList list = new SortedList();
+           for (int i = 0; i < N; i++) list.insert(Verifier.nondetInt());
+           return list;
+    }
+}
+
+public class Verifier{
+    public static int nondetInt() {
+        int i free;
+        return i;
+    }
+
+    public static void assume(boolean condition){
+        if(!condition){
+            throw Muli.fail();
+        }
+    }
+}

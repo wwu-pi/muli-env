@@ -11,12 +11,12 @@ public class MainSort {
     public static void main(String[] args) {
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(Sort::searchRegion, Sort.class.getName() + ".sort");
         for(Solution s : solutions){
-            System.out.println(s.value.toString());
+            //System.out.println(s.value.toString());
             TestCase<?> tc = s.testCase;
             Object[] inputs = tc.getInputs();
             for(Object o : inputs) {
                 //Arrayref ref = (Arrayref) o;
-                System.out.println(o.toString());
+                //System.out.println(o.toString());
             }
         }
         //TestCaseGenerator tcg = TestCaseGenerator.get(solutions);

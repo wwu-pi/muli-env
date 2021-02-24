@@ -45,20 +45,20 @@ public class DefUseListener implements ExecutionPathListener {
         return register;
     }
 
-    public BitSet getCover(){
-        BitSet bitset = new BitSet();
-        int counter = 0;
+    public boolean[] getCover(){
+        ArrayList<Boolean> result = new ArrayList<>();
         for(Map.Entry<Object, Object> entry : register.entrySet()){
             DefUseMethod defuse = (DefUseMethod) entry.getValue();
             DefUseChains chains = defuse.getDefUses();
             for (DefUseChain chain: chains.getDefUseChains()) {
-                if(chain.getVisited()){
-                    bitset.set(counter);
-                }
-                counter++;
+                result.add(chain.getVisited());
             }
 
         }
-        return bitset;
+        boolean[] asArray = new boolean[result.size()];
+        for (int i = 0; i < result.size(); i++) {
+            asArray[i] = result.get(i);
+        }
+        return asArray;
     }
 }

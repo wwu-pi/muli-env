@@ -16,7 +16,7 @@ public interface ExecutionPathListener {
 
     public Map<Object, Object> getResult();
 
-    public BitSet getCover();
+    public boolean[] getCover();
 
 
 }

@@ -15,7 +15,7 @@ public interface TcgListener {
 
     String getMethodName();
 
-    BitSet getCover();
+    boolean[] getCover();
 
     boolean isObjectMethod();
 

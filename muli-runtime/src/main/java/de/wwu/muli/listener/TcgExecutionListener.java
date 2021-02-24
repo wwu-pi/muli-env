@@ -159,7 +159,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     }
 
     @Override
-    public BitSet getCover() {
+    public boolean[] getCover() {
         return executionPathListener.getCover();
     }
 

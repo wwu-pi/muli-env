@@ -33,6 +33,6 @@ public class InstructionCoverageListener implements ExecutionPathListener {
         throw new IllegalStateException("Not yet implemented.");
     }
 
-    public BitSet getCover() {return null;}
+    public boolean[] getCover() {return null;}
 
 }

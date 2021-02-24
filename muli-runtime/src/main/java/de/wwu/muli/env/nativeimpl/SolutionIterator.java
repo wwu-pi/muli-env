@@ -8,10 +8,7 @@ import de.wwu.muggl.vm.VirtualMachine;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
-import de.wwu.muggl.vm.execution.ConversionException;
-import de.wwu.muggl.vm.execution.MugglToJavaConversion;
-import de.wwu.muggl.vm.execution.NativeMethodProvider;
-import de.wwu.muggl.vm.execution.NativeWrapper;
+import de.wwu.muggl.vm.execution.*;
 import de.wwu.muggl.vm.initialization.*;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.iteratorsearch.LogicIteratorSearchAlgorithm;
@@ -20,6 +17,7 @@ import de.wwu.muli.listener.TcgListener;
 import de.wwu.muli.searchtree.Value;
 import de.wwu.muli.solution.ExceptionSolution;
 import de.wwu.muli.solution.Solution;
+import de.wwu.muli.tcg.utility.Utility;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.lang.invoke.MethodType;
@@ -97,10 +95,7 @@ public class SolutionIterator extends NativeMethodProvider {
     public static Objectref wrapSolutionAndFullyBacktrackVM(Frame frame, Object solutionObject, Object generateTest, Object methodToTest) {
         LogicVirtualMachine vm = (LogicVirtualMachine)frame.getVm();
         boolean getTest = (Boolean) getValFromObjectref((Objectref) generateTest);
-        String method = null;
-        if (getTest) {
-            method = (String) getValFromObjectref((Objectref) methodToTest);
-        }
+
 
         if (!classSolutionIsInitialised) {
             // Initialise de.wwu.muli.Solution inside the VM, so that areturn's type checks know an initialised class.
@@ -131,27 +126,22 @@ public class SolutionIterator extends NativeMethodProvider {
 
         // Wrap and return.
         Objectref returnValue;
-        try {
-            final MugglToJavaConversion conversion = new MugglToJavaConversion(vm);
-            Solution solution;
-            if (getTest) {
-                TcgListener tcgListener = (TcgListener) vm.getExecutionListener();
-                LinkedHashMap<String, Object> inputs = copyAndLabelEach(vm, tcgListener.getInputs());
+        final MugglAndHostJvmConversions conversion = new MugglAndHostJvmConversions();
+        Solution solution;
+        if (getTest) {
+            TcgListener tcgListener = (TcgListener) vm.getExecutionListener();
+            LinkedHashMap<String, Object> inputs = copyAndLabelEach(vm, tcgListener.getInputs());
 
-                solution = new Solution(solutionObject, inputs, tcgListener.getClassName(), tcgListener.getMethodName(), tcgListener.getCover());
-            } else {
-                solution = new Solution(solutionObject);
-            }
-            returnValue = (Objectref) conversion.toMuggl(solution, false);
-
-
-
-            vm.reachedEndEvent();
-            // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
-            // TODO A stream of test cases would only make sense without test case reduction
-        } catch (ConversionException e) {
-            throw new RuntimeException("Could not create Muggl VM object from Java object", e);
+            solution = new Solution(solutionObject, inputs, tcgListener.getClassName(), tcgListener.getMethodName(), tcgListener.getCover());
+        } else {
+            solution = new Solution(solutionObject);
         }
+        returnValue = (Objectref) conversion.toObjectInMugglJvm(solution, false);
+
+        vm.reachedEndEvent();
+        // TODO Add ListenerData...issue: def-use-chains and achievable coverage only known after all test cases are accumulated
+        // TODO A stream of test cases would only make sense without test case reduction
+
         // Backtracking.
         int pcBeforeBacktracking = vm.getPc();
         vm.getSearchAlgorithm().trackBackToRoot(vm);
@@ -194,7 +184,7 @@ public class SolutionIterator extends NativeMethodProvider {
             return alreadyInResults;
         }
         // We add new values in the cloneObjectref, cloneArrayref, and clonePrimitive methods
-        // to avoid circular dependencies. The "hull", e.g., an empty Objectref, is immediately added.
+        // to treat circular dependencies. The "hull", e.g., an empty Objectref/Arrayref, is immediately added.
         if (val instanceof Objectref) {
             return cloneObjectref((Objectref) val, alreadyCloned);
         } else if (val instanceof Arrayref) {
@@ -253,6 +243,8 @@ public class SolutionIterator extends NativeMethodProvider {
     protected static Object clonePrimitive(Object p, Map<Object, Object> alreadyCloned) {
         if (p instanceof Number || p instanceof Term || p instanceof BooleanVariable) {
             alreadyCloned.put(p, p);
+            return p;
+        } else if (Utility.isWrappingClass(p.getClass())) {
             return p;
         } else {
             throw new IllegalStateException("Not supported: " + p.getClass());

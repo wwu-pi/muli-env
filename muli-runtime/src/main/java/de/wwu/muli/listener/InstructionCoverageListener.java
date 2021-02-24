@@ -30,7 +30,7 @@ public class InstructionCoverageListener implements ExecutionPathListener {
     }
 
     public Map<Object, Object> getResult(){
-        return null;
+        throw new IllegalStateException("Not yet implemented.");
     }
 
     public BitSet getCover() {return null;}

@@ -14,10 +14,6 @@ import java.util.Arrays;
 
 public class TestTCGBooleanCounter {
 
-//    public static void main(String[] args) throws ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException {
-//        Object o = ReflectionFactory.getReflectionFactory().newConstructorForSerialization(ClassLoader.getSystemClassLoader().loadClass("applications.muliST.FlipTwoCoins")).newInstance();
-//        System.out.println(o);
-//    }
     @Test
     public void testTcgBooleanCounter() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TCGBooleanCounter");

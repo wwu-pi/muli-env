@@ -78,7 +78,7 @@ public class TspSolver {
 
 
   public static int searchRegion() {
-    final int N = (int) (Math.random() * 5);//Verifier.nondetInt();
+    final int N = (int) (1 + Math.random() * 5);//Verifier.nondetInt();
     //Verifier.assume(N > 0);
 
     int D[][] = new int[N][N];

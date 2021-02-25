@@ -19,8 +19,8 @@ public class MainSortedList{
                 System.out.println(o.toString());
             }
         }
-        //TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        //tcg.generateTestClassStringRepresentation();
+        TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.generateTestClassStringRepresentation();
         //System.out.println(solution.value);
     }
 
@@ -59,7 +59,7 @@ public class MainSortedList{
 class SortedListSearch {
     static SortedList searchRegion() {
          int N = Verifier.nondetInt();
-         if(!(N > 1 && N < 6)){
+         if(!(N > 1 && N < 3)){
             throw Muli.fail();
          }
 

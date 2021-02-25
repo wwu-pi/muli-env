@@ -19,8 +19,8 @@ public class MainSort {
                 //System.out.println(o.toString());
             }
         }
-        //TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        //tcg.generateTestClassStringRepresentation();
+        TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.generateTestClassStringRepresentation();
         //System.out.println(solution.value);
     }
 

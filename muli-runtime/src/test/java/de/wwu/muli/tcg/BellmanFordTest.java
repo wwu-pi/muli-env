@@ -16,10 +16,6 @@ public class BellmanFordTest {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.MainBellman");
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         ArrayList<Object> solutions = new ArrayList<Object>();
-        for(Object leaf : leaves){
-            if(leaf instanceof Value){
-                solutions.add(leaf);
-            }
-        }
+
     }
 }

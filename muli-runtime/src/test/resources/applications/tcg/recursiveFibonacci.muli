@@ -4,6 +4,8 @@ import java.util.List;
 import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
+import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class Main {
 
@@ -16,6 +18,9 @@ public class Main {
             for(Object o : inputs) {
                 System.out.println("input: "+o.toString());
             }
+            TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+            //tcg.setTestSetReducer(new SimpleBackwardsTestSetReducer());
+            tcg.generateTestClassStringRepresentation();
         }
     }
 

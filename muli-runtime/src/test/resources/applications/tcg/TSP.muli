@@ -5,7 +5,7 @@ import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
-import java.util.Random;
+import java.lang.Math;
 
 public class MainTSP {
 
@@ -78,7 +78,7 @@ public class TspSolver {
 
 
   public static int searchRegion() {
-    final int N = 3;//Verifier.nondetInt();
+    final int N = (int) (Math.random() * 5);//Verifier.nondetInt();
     //Verifier.assume(N > 0);
 
     int D[][] = new int[N][N];
@@ -86,7 +86,7 @@ public class TspSolver {
 
     for (int i = 0; i < N; i++) {
       for (int j = 0; j < N; j++) {
-        int next = Verifier.nondetInt();
+        int next = (int) (Math.random()*10);
         if(next < 0) throw Muli.fail();
         D[i][j] = next;
       }

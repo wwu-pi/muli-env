@@ -1,0 +1,76 @@
+package applications.tcg;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import java.lang.Object;
+import de.wwu.muli.tcg.*;
+
+public class MainSort {
+
+    public static void main(String[] args) {
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(Sort::searchRegion, Sort.class.getName() + ".sort");
+        for(Solution s : solutions){
+            //System.out.println(s.value.toString());
+            TestCase<?> tc = s.testCase;
+            Object[] inputs = tc.getInputs();
+            for(Object o : inputs) {
+                //Arrayref ref = (Arrayref) o;
+                //System.out.println(o.toString());
+            }
+        }
+        //TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        //tcg.generateTestClassStringRepresentation();
+        //System.out.println(solution.value);
+    }
+
+}
+
+class Sort {
+      static void sort(int[] a) {
+        final int N = a.length;
+        for (int i = 1; i < N; i++) { // N branches
+          int j = i - 1;
+          int x = a[i];
+          // First branch (j >= 0):  2 + 3 + ... + N = N(N+1)/2 - 1 branches
+          // Second branch (a[j] > x):  1 + 2 + ... + N-1 = (N-1)N/2 branches
+          while ((j >= 0) && (a[j] > x)) {
+            a[j + 1] = a[j];
+            j--;
+          }
+          a[j + 1] = x;
+        }
+      }
+
+    static int[] searchRegion() {
+         int N = Verifier.nondetInt();
+         if(!(N > 0 && N < 5)){
+            throw Muli.fail();
+         }
+
+         int a[] free;
+         if (a.length != N) throw Muli.fail();
+         for (int i = 0; i < N; i++) {
+            a[i] = N - i;
+         }
+
+         sort(a);
+         //for (int i = 0; i < N-1; i++) {
+         //   if(a[i] > a[i+1]) throw Muli.fail();
+         //}
+         return a;
+    }
+}
+
+public class Verifier{
+    public static int nondetInt() {
+        int i free;
+        return i;
+    }
+
+    public static void assume(boolean condition){
+        if(!condition){
+            throw Muli.fail();
+        }
+    }
+}

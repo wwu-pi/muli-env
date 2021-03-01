@@ -1,5 +1,6 @@
 package de.wwu.muli.defuse;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -16,6 +17,19 @@ public class DefUseRegisters {
     public void setVisited(int instruction){
         DefUseRegister r = registers.get(instruction);
         r.visited = true;
+    }
+
+    public HashSet<Integer> getVisited(){
+        HashSet<Integer> output = new HashSet<>();
+        for(Map.Entry<Integer, DefUseRegister> entry : registers.entrySet()){
+            if(entry.getValue().visited){
+                output.add(entry.getKey());
+                if(entry.getKey() != -1){
+                    entry.getValue().visited = false;
+                }
+            }
+        }
+        return output;
     }
 
     public boolean hasEntry(int index) {

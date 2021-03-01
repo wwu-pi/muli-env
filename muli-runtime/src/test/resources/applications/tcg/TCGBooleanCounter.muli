@@ -4,6 +4,7 @@ import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class TCGBooleanCounter {
 
@@ -35,7 +36,8 @@ public class TCGBooleanCounter {
     public static void main(String[] args) {
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGBooleanCounter::driver, BooleanCounter.class.getName() + ".count");
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        System.out.println(tcg.generateTestClassStringRepresentation());
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        tcg.generateTestClassStringRepresentation();
     }
 
     public static int driver() {

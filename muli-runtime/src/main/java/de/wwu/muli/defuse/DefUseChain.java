@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Class representing one instance of a defuse chain containing a variable definition and usage
  */
-public class DefUseChain {
+public class DefUseChain implements Cloneable {
     private DefVariable def;
     private UseVariable use;
     private boolean visited;
@@ -46,9 +46,16 @@ public class DefUseChain {
         return Objects.hash(this.getDef(), this.getUse());
     }
 
+    @Override
+    public Object clone(){
+        DefUseChain defuse = new DefUseChain(this.def, this.use);
+        defuse.setVisited(this.visited);
+        return defuse;
+    }
+
     public String toString(){
         String output = "";
-        output += "   Def: pc=" + def.getPc() + ", Use: pc=" + use.getPc();
+        output += "   Def: pc=" + def.getPc() + ", Use: pc=" + use.getPc() + ", visited="+visited;
         return output;
     }
 }

@@ -58,10 +58,10 @@ public class MainSortedList{
         }
 class SortedListSearch {
     static SortedList searchRegion() {
-         int N = Verifier.nondetInt();
-         if(!(N > 1 && N < 3)){
+         int N = (int) (2+Math.random()*5);
+         /*if(!(N > 1 && N < 4)){
             throw Muli.fail();
-         }
+         }*/
 
            SortedList list = new SortedList();
            for (int i = 0; i < N; i++) list.insert(Verifier.nondetInt());

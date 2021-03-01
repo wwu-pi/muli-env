@@ -31,6 +31,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
         if (executionPathListener == null) {
             executionPathListener = new DefUseListener(vm);
         }
+        this.executionPathListener.setMethodName(this.methodName);
     }
 
     public Map<Object, Object> getResult(){
@@ -44,6 +45,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     public void setMethod(String methodName) {
         this.className = methodName.substring(0, methodName.lastIndexOf('.'));
         this.methodName = methodName.substring(methodName.lastIndexOf('.') + 1);
+        //this.executionPathListener.setMethodName(this.methodName);
     }
 
     @Override
@@ -159,8 +161,8 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     }
 
     @Override
-    public boolean[] getCover() {
-        return executionPathListener.getCover();
+    public boolean[] getCover(LogicVirtualMachine vm) {
+        return executionPathListener.getCover(methodName, vm);
     }
 
     public void afterExecuteInstruction(Instruction instruction, Frame frame, int pc) {

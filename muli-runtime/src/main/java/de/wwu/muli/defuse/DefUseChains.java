@@ -13,6 +13,15 @@ public class DefUseChains {
         return defUseChains;
     }
 
+    public HashSet<DefUseChain> copyChains(){
+        HashSet<DefUseChain> copy = new HashSet<DefUseChain>();
+        for(DefUseChain chain : defUseChains){
+            DefUseChain defCopy = (DefUseChain) chain.clone();
+            copy.add(defCopy);
+        }
+        return copy;
+    }
+
     public void setDefUseChains(HashSet<DefUseChain> defUseChains){
         this.defUseChains = defUseChains;
     }

@@ -29,13 +29,13 @@ public class DefUseAnalyser {
 
     private LogicVirtualMachine vm;
     public Map<Method, DefUseChains> defUseChains;
-    private HashSet<Instruction> gotos;
+    private HashMap<Integer, Instruction> gotos;
     private HashSet<Instruction> jumpInstructions;
     private HashSet<Method> invokedMethods;
 
     public DefUseAnalyser(LogicVirtualMachine vm) {
         this.vm = vm;
-        this.gotos = new HashSet<Instruction>();
+        this.gotos = new HashMap<Integer, Instruction>();
         this.jumpInstructions = new HashSet<Instruction>();
         this.invokedMethods = new HashSet<Method>();
         this.defUseChains = new HashMap<Method, DefUseChains>();
@@ -86,7 +86,9 @@ public class DefUseAnalyser {
                 defs.add(def);
             }
         }
+        int prevI = 0;
         for(int i =0; i<in.length; i++) {
+            int tmp = i;
             if(in[i] instanceof Store) {
                 // Definition of Variable
                 getDefVariable(in, i, m, defs);
@@ -106,11 +108,12 @@ public class DefUseAnalyser {
                 i = getConditionalJump(in, i, m, defs);
             } else if(in[i] instanceof Goto) {
                 // Jump to different Instruction
-                i = getGotoInstr(in, i);
+                i = getGotoInstr(in, i, prevI);
             } else if (in[i] instanceof JumpInvocation) {
                 // new method invokation
                 getMethodInvok(in, i, constantPool, classLoader, m, defUse);
             }
+            prevI = tmp;
         }
         if(defUseChains.containsKey(m)) {
             DefUseChains chain = defUseChains.get(m);
@@ -128,7 +131,9 @@ public class DefUseAnalyser {
         Constant[] constantPool = m.getClassFile().getConstantPool();
         DefUseChains defUse = new DefUseChains();
         Instruction[] in = m.getInstructionsAndOtherBytes();
+        int prevI = start;
         for (int i = start; i < in.length; i++) {
+            int tmp = i;
             if (in[i] instanceof Store) {
                 // Definition of Variable
                 getDefVariable(in, i, m, condDefs);
@@ -154,11 +159,12 @@ public class DefUseAnalyser {
                 i = getConditionalJump(in, i, m, allDefs);
             } else if (in[i] instanceof Goto) {
                 // Jump to different Instruction
-                i = getGotoInstr(in, i);
+                i = getGotoInstr(in, i, prevI);
             } else if (in[i] instanceof JumpInvocation) {
                 // new method invokation
                 getMethodInvok(in, i, constantPool, classLoader, m, defUse);
             }
+            prevI = tmp;
         }
         return defUse;
     }
@@ -310,12 +316,7 @@ public class DefUseAnalyser {
     protected int getConditionalJump(Instruction[] in, int i, Method m, HashSet<DefVariable> defs) throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
         JumpConditional jumpInstruction = (JumpConditional) in[i];
         Instruction jump = (Instruction) jumpInstruction;
-        // jump was already considered
-        if(jumpInstructions.contains(jump)) {
-            return i;
-        } else {
-            jumpInstructions.add(jump);
-        }
+
         int endIf = jumpInstruction.getJumpTarget();
         DefUseChains defUseIf = processConditionalJump(i+1, m, defs);
         i = endIf -1;
@@ -337,7 +338,7 @@ public class DefUseAnalyser {
      * @param i pc of current instruction
      * @return new pc after jump
      */
-    protected int getGotoInstr(Instruction[] in, int i){
+    protected int getGotoInstr(Instruction[] in, int i, int prevI){
         Goto instruction = (Goto) in[i];
         int index = instruction.getJumpIncrement();
         index = index + i;
@@ -345,8 +346,8 @@ public class DefUseAnalyser {
             index -= Limitations.MAX_CODE_LENGTH;
         }
         // Sichergehen dass nur einmal zurück gesprungen wird -> keine endlos-Schleife
-        if (!gotos.contains(instruction)) {
-            gotos.add(instruction);
+        if (!(gotos.containsKey(prevI) && gotos.get(prevI).equals(instruction))) {
+            gotos.put(prevI, instruction);
             i = index - 1;
         }
         return i;
@@ -428,7 +429,8 @@ public class DefUseAnalyser {
         Map<Object, Object> output = new HashMap<>();
         for(Map.Entry<Method, DefUseChains> pair : defUseChains.entrySet()){
             Method method = pair.getKey();
-            DefUseChains chains = pair.getValue();
+            DefUseChains chains = new DefUseChains();
+            chains.setDefUseChains(pair.getValue().copyChains());
             DefUseMethod dum = new DefUseMethod();
             DefUseRegisters uses = new DefUseRegisters();
             DefUseRegisters defs = new DefUseRegisters();
@@ -457,7 +459,7 @@ public class DefUseAnalyser {
             dum.setDefUses(chains);
             dum.setDefs(defs);
             dum.setUses(uses);
-            output.put(method, dum);
+            output.put(method.getName(), dum);
         }
         return output;
     }

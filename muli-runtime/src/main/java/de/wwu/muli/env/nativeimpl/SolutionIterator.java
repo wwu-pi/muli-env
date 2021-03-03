@@ -154,7 +154,7 @@ public class SolutionIterator extends NativeMethodProvider {
             throw new RuntimeException(e);
         }
         vm.getCurrentFrame().setPc(nextPc);
-
+        solutions.add(returnValue);
         return returnValue;
     }
 

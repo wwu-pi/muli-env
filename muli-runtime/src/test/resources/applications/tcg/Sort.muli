@@ -43,34 +43,15 @@ class Sort {
       }
 
     static int[] searchRegion() {
-         int N = Verifier.nondetInt();
-         if(!(N > 0 && N < 5)){
+         int N free;
+         if(!(N > 0 && N < 4)){
             throw Muli.fail();
          }
 
          int a[] free;
          if (a.length != N) throw Muli.fail();
-         for (int i = 0; i < N; i++) {
-            a[i] = N - i;
-         }
 
          sort(a);
-         //for (int i = 0; i < N-1; i++) {
-         //   if(a[i] > a[i+1]) throw Muli.fail();
-         //}
          return a;
-    }
-}
-
-public class Verifier{
-    public static int nondetInt() {
-        int i free;
-        return i;
-    }
-
-    public static void assume(boolean condition){
-        if(!condition){
-            throw Muli.fail();
-        }
     }
 }

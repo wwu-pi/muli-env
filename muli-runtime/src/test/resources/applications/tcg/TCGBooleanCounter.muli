@@ -6,40 +6,45 @@ import java.lang.Object;
 import de.wwu.muli.tcg.*;
 
 public class TCGBooleanCounter {
-
-    public static class BooleanCounter {
-        public boolean b0;
-        public boolean b1;
-        public boolean b2;
-        public boolean sign;
-
-        public int count() {
-            int count = 0;
-            if (b0) {
-                count += 1;
-            }
-            if (b1) {
-                count += 2;
-            }
-            if (b2) {
-                count += 4;
-            }
-            if (sign) {
-                count = -count;
-            }
-            return count;
-        }
-    }
-
-
     public static void main(String[] args) {
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGBooleanCounter::driver, BooleanCounter.class.getName() + ".count");
+        for (Solution s : solutions) {
+            System.out.println("Input: " + s.testCase.getInput("this"));
+            System.out.println("Result: " + s.value);
+        }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        System.out.println(tcg.generateTestClassStringRepresentation());
+        tcg.generateTestClassStringRepresentation();
     }
 
     public static int driver() {
         BooleanCounter obj free;
         return obj.count();
+    }
+}
+public class BooleanCounter {
+    public boolean b0;
+    public boolean b1;
+    public boolean sign;
+    public int count() {
+    int count = 0;
+    if (b0) {
+        count += 1;
+    }
+    if (b1) {
+        count += 2;
+    }
+    if (sign) {
+        count = -count;
+    }
+        return count;
+    }
+    public boolean getB0() { return b0; }
+    public boolean getB1() { return b1; }
+    public boolean getSign() { return sign; }
+    public void setB0(boolean b) { b0 = b; }
+    public void setB1(boolean b) { b1 = b; }
+    public void setSign(boolean b) { sign = b; }
+    public String toString() {
+        return "BooleanCounter{b0="+b0+",b1="+b1+",sign="+sign+"}";
     }
 }

@@ -226,14 +226,21 @@ public class LogicVirtualMachine extends SearchingVM {
 			Map<Term, Object> freeArElements = freeAr.getFreeArrayElements();
 			IntConstant length = (IntConstant) lengthTerm.insert(solution, false);
 			alreadyLabeled.put(lengthTerm, length);
-			ArrayList<Object> elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), null));
+			ArrayList<Object> elementsInArrayList;
+			if (ar.isPrimitive()) {
+				elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), 0));
+			} else {
+				elementsInArrayList = new ArrayList<>(Collections.nCopies(length.getIntValue(), null));
+			}
 			for (Map.Entry<Term, Object> entry : freeArElements.entrySet()) {
 				Term k = entry.getKey();
 				Integer index = (Integer) label(k, solution, alreadyLabeled);
 				alreadyLabeled.put(k, index);
 				Object val = label(entry.getValue(), solution, alreadyLabeled);
 				alreadyLabeled.put(entry.getValue(), val);
-				elementsInArrayList.set(index, val);
+				if (elementsInArrayList.size() > index) {
+					elementsInArrayList.set(index, val);
+				}
 			}
 			freeAr.concretizeWith(elementsInArrayList, length);
 			return freeAr;

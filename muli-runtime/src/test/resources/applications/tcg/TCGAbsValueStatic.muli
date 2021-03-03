@@ -6,20 +6,11 @@ import java.lang.Object;
 import de.wwu.muli.tcg.TestCaseGenerator;
 
 public class TCGAbsValueStatic {
-
     public static void main(String[] args) {
-        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGAbsValueStatic.DriverClass::driver, TCGAbsValueStatic.class.getName() + ".abs");
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(DriverClass2::driver, TCGAbsValueStatic.class.getName() + ".abs");
         TestCaseGenerator gen = TestCaseGenerator.get(solutions);
         gen.generateTestClassStringRepresentation();
     }
-
-    protected static class DriverClass {
-        public static int driver() {
-                int i free;
-                return abs(i);
-        }
-    }
-
     public static int abs(int i) {
         if (i < 0) {
             return -i;
@@ -27,5 +18,10 @@ public class TCGAbsValueStatic {
             return i;
         }
     }
-
+}
+public class DriverClass2 {
+    public static int driver() {
+        int i free;
+        return TCGAbsValueStatic.abs(i);
+    }
 }

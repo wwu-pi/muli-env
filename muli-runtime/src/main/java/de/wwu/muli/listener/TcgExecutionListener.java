@@ -21,8 +21,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     protected LinkedHashMap<String, Object> trackInputs;
     protected ExecutionPathListener executionPathListener;
     protected Map<Object, Object> alreadyCloned;
-
-
+    
     public void setCoverageListener() {
         executionPathListener = new InstructionCoverageListener();
     }

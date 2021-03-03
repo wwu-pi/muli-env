@@ -425,10 +425,13 @@ public class DefUseAnalyser {
      * Transform the defuse chains in defs and uses as needed.
      * @return
      */
-    public Map<Object, Object> transformDefUse(){
+    public DefUseMethod transformDefUse(String methodName){
         Map<Object, Object> output = new HashMap<>();
         for(Map.Entry<Method, DefUseChains> pair : defUseChains.entrySet()){
             Method method = pair.getKey();
+            if(!methodName.equals(method.getName())) {
+                continue;
+            }
             DefUseChains chains = new DefUseChains();
             chains.setDefUseChains(pair.getValue().copyChains());
             DefUseMethod dum = new DefUseMethod();
@@ -460,7 +463,8 @@ public class DefUseAnalyser {
             dum.setDefs(defs);
             dum.setUses(uses);
             output.put(method.getName(), dum);
+            return dum;
         }
-        return output;
+        return null;
     }
 }

@@ -13,7 +13,8 @@ import de.wwu.muli.searchtree.Choice;
 public class DefUseListener implements ExecutionPathListener {
 
     private DefUseAnalyser analyser;
-    private Map<Object, Object> register;
+    private DefUseMethod register;
+    private DefUseChoice defusechoice;
     private Map<Choice, DefUseChoice> choices;
     private String methodName;
 
@@ -25,41 +26,50 @@ public class DefUseListener implements ExecutionPathListener {
         } catch (Exception e) {
             throw new IllegalStateException(e); // TODO Better exception treatment.
         }
-        register = analyser.transformDefUse();
         choices = new HashMap<>();
         //defUseChains = analyser.defUseChains;
     }
 
     public void setMethodName(String methodName){
         this.methodName = methodName;
+        register = analyser.transformDefUse(methodName);
+        defusechoice = new DefUseChoice(register);
     }
 
     public void executedInstruction(Instruction instruction, Frame frame, int pc){
         Method method = frame.getMethod();
         if(methodName.equals(method.getName())){
-            DefUseMethod r = (DefUseMethod) register.get(method.getName());
             Choice ch = ((LogicVirtualMachine)frame.getVm()).getCurrentChoice();
             if(ch == null){
-                r.visitDefUse(pc);
+                defusechoice.visitDefUse(pc);
                 return;
             }
             Method choiceMethod = ((UnevaluatedST) ch.getSts().get(0)).getFrame().getMethod();
-            if(methodName.equals(choiceMethod.getName()) && !choices.containsKey(ch)){
-                DefUseChoice defuse = new DefUseChoice(r);
-                Choice p = ch.getParent();
-                while(p != null){
-                    Method parentChoiceMethod = ((UnevaluatedST) p.getSts().get(0)).getFrame().getMethod();
-                    if(!methodName.equals(parentChoiceMethod.getName())){
-                        break;
-                    }
-                    DefUseChoice defUseParent = choices.get(p);
-                    defuse.addDefs(defUseParent.getDefs());
-                    defuse.addUses(defUseParent.getUses());
-                    p = p.getParent();
-                }
-                choices.put(ch, defuse);
+            if(defusechoice.getNewInstance() && choices.containsKey(ch)) {
+                DefUseChoice defUseParent = choices.get(ch);
+                defusechoice.addDefs(defUseParent.getDefs());
+                //defusechoice.addUses(defUseParent.getUses());
+                //defusechoice.addDefUses(defUseParent.getDefUse());
             }
-            r.visitDefUse(pc);
+            if(methodName.equals(choiceMethod.getName()) && !choices.containsKey(ch)){
+                Choice p = ch.getParent();
+                if(p!=null) {
+                    Method parentChoiceMethod = ((UnevaluatedST) p.getSts().get(0)).getFrame().getMethod();
+                    if (methodName.equals(parentChoiceMethod.getName())) {
+                        DefUseChoice defUseParent = choices.get(p);
+                        defusechoice.addDefs(defUseParent.getDefs());
+                        defusechoice.addUses(defUseParent.getUses());
+                        defusechoice.addDefUses(defUseParent.getDefUse());
+                        defusechoice.updateDefUse();
+                    }
+                }
+                choices.put(ch, defusechoice);
+                defusechoice = new DefUseChoice(register);
+                DefUseChoice defUseParent = choices.get(ch);
+                defusechoice.addDefs(defUseParent.getDefs());
+                //defusechoice.addUses(defUseParent.getUses());
+            }
+            defusechoice.visitDefUse(pc);
         }
     }
 
@@ -69,20 +79,31 @@ public class DefUseListener implements ExecutionPathListener {
 
     @Override
     public Map<Object, Object> getResult(){
-        return register;
+        return null;
     }
 
     public boolean[] getCover(String methodName, LogicVirtualMachine vm){
         ArrayList<Boolean> result = new ArrayList<>();
-        DefUseMethod r = (DefUseMethod) register.get(methodName);
-        DefUseChoice defuseEnd = new DefUseChoice(r);
+        DefUseMethod r = register;
         Choice choice = vm.getCurrentChoice();
         if(choices.containsKey(choice)){
             DefUseChoice defUse = choices.get(choice);
-            defuseEnd.addDefs(defUse.getDefs());
-            defuseEnd.addUses(defUse.getUses());
+            defusechoice.addDefs(defUse.getDefs());
+            defusechoice.addUses(defUse.getUses());
+            defusechoice.addDefUses(defUse.getDefUse());
+            defusechoice.updateDefUse();
+            /*boolean[] visited = defUse.getVisited();
+            defusechoice.setVisited(Arrays.copyOf(visited, visited.length));
+            defusechoice.updateVisitedArray();*/
         }
-        HashSet<Integer> defs = defuseEnd.getDefs();
+        boolean[] asArray = new boolean[defusechoice.getDefUse().getChainSize()];
+        DefUseChain[] chainArray = defusechoice.getDefUse().getDefUseChains().toArray(new DefUseChain[asArray.length]);
+        for (int i = 0; i < asArray.length; i++) {
+            asArray[i] = chainArray[i].getVisited();
+        }
+        defusechoice = new DefUseChoice(register);
+        return asArray;
+        /*HashSet<Integer> defs = defuseEnd.getDefs();
         HashSet<Integer> uses = defuseEnd.getUses();
         DefUseChains chains = r.getDefUses();
         int size = generateDefUseChains(chains, defs, uses);
@@ -129,8 +150,12 @@ public class DefUseListener implements ExecutionPathListener {
         if(visitedTwice.size() != 0){
             for(DefUseChain t: visitedTwice){
                 DefUseChain actual = t;
+                if(actual.getDef().getPc() > actual.getUse().getPc()){
+                    continue;
+                }
                 for (DefUseChain chain: chains.getDefUseChains()) {
-                    if(chain.getVisited() && chain.getUse().equals(actual.getUse()) && !chain.getDef().equals(actual.getDef())){
+                    if(chain.getVisited() && chain.getUse().equals(actual.getUse()) &&
+                            !chain.getDef().equals(actual.getDef()) && chain.getDef().getPc() < chain.getUse().getPc()){
                         if(chain.getDef().getPc() > actual.getDef().getPc()){
                             actual.setVisited(false);
                             actual = chain;

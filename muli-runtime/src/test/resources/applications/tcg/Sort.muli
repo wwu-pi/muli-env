@@ -5,6 +5,7 @@ import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class MainSort {
 
@@ -20,6 +21,7 @@ public class MainSort {
             }
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
         //System.out.println(solution.value);
     }
@@ -44,11 +46,12 @@ class Sort {
 
     static int[] searchRegion() {
          int N free;
-         if(!(N > 0 && N < 3)){
+         if(!(N > 0 && N < 20)){
             throw Muli.fail();
          }
 
          int a[] free;
+         //int[] a = {5,4,3,2,1};
          if (a.length != N) throw Muli.fail();
 
          sort(a);

@@ -6,22 +6,24 @@ import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
 import java.lang.Math;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class MainTSP {
 
     public static void main(String[] args) {
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(TspSolver::searchRegion, TspSolver.class.getName() + ".search");
         for(Solution s : solutions){
-            System.out.println("output: "+s.value.toString());
+            //System.out.println("output: "+s.value.toString());
             TestCase<?> tc = s.testCase;
             Object[] inputs = tc.getInputs();
             for(Object o : inputs) {
                 //Arrayref ref = (Arrayref) o;
-                System.out.println("input: "+o.toString());
+                //System.out.println("input: "+o.toString());
             }
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        String hell = tcg.generateTestClassStringRepresentation();
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        tcg.generateTestClassStringRepresentation();
         //System.out.println(hell);
     }
 
@@ -43,7 +45,7 @@ public class TspSolver {
     }
 
     public int solve() {
-      best = Integer.MAX_VALUE;
+      best = Integer.MAX_VALUE-1;
 
       for (int i = 0; i < N; i++) visited[i] = false;
 
@@ -78,14 +80,15 @@ public class TspSolver {
 
 
   public static int searchRegion() {
-    final int N = (int) (1 + Math.random() * 5);
+    final int N = 4;//(int) (1 + Math.random() * 5);
     System.out.println("N: "+N);
 
     int D[][] = new int[N][N];
 
     for (int i = 0; i < N; i++) {
       for (int j = 0; j < N; j++) {
-        int next = (int) (Math.random()*10);
+        int next = Verifier.nondetInt();
+        if(next<1) throw Muli.fail();
         D[i][j] = next;
       }
     }
@@ -94,4 +97,17 @@ public class TspSolver {
     int sln = tspSolver.solve();
     return sln;
   }
+}
+
+public class Verifier{
+    public static int nondetInt() {
+        int i free;
+        return i;
+    }
+
+    public static void assume(boolean condition){
+        if(!condition){
+            throw Muli.fail();
+        }
+    }
 }

@@ -233,7 +233,9 @@ public class LogicVirtualMachine extends SearchingVM {
 				alreadyLabeled.put(k, index);
 				Object val = label(entry.getValue(), solution, alreadyLabeled);
 				alreadyLabeled.put(entry.getValue(), val);
-				elementsInArrayList.set(index, val);
+				if(elementsInArrayList.size() > index) {
+					elementsInArrayList.set(index, val);
+				}
 			}
 			freeAr.concretizeWith(elementsInArrayList, length);
 			return freeAr;

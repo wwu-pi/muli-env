@@ -11,7 +11,6 @@ public class TCGBooleanCounter {
     public static class BooleanCounter {
         public boolean b0;
         public boolean b1;
-        public boolean b2;
         public boolean sign;
 
         public int count() {
@@ -21,9 +20,6 @@ public class TCGBooleanCounter {
             }
             if (b1) {
                 count += 2;
-            }
-            if (b2) {
-                count += 4;
             }
             if (sign) {
                 count = -count;

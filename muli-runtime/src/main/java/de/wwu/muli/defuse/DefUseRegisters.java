@@ -19,6 +19,15 @@ public class DefUseRegisters {
         r.visited = true;
     }
 
+    public boolean isVisited(int instruction){
+        DefUseRegister r = registers.get(instruction);
+        return r.visited;
+    }
+
+    public void setRegisters(Map<Integer, DefUseRegister> registers ){
+        this.registers = registers;
+    }
+
     public HashSet<Integer> getVisited(){
         HashSet<Integer> output = new HashSet<>();
         for(Map.Entry<Integer, DefUseRegister> entry : registers.entrySet()){
@@ -30,6 +39,14 @@ public class DefUseRegisters {
             }
         }
         return output;
+    }
+
+    public void joinRegister(DefUseRegisters r){
+        for(Map.Entry<Integer, DefUseRegister> entry : registers.entrySet()){
+            if(r.registers.get(entry.getKey()).visited){
+                setVisited(entry.getKey());
+            }
+        }
     }
 
     public boolean hasEntry(int index) {
@@ -56,6 +73,16 @@ public class DefUseRegisters {
             out = out + reg.link.size();
         }
         return out;
+    }
+
+    public DefUseRegisters clone(){
+        DefUseRegisters r = new DefUseRegisters();
+        HashMap<Integer,DefUseRegister> output = new HashMap<>();
+        for(Map.Entry<Integer, DefUseRegister> entry : registers.entrySet()){
+            output.put(entry.getKey(), entry.getValue().clone());
+        }
+        r.setRegisters(output);
+        return r;
     }
 
     public String toString(){

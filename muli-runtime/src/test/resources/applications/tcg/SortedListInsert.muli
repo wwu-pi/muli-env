@@ -30,7 +30,7 @@ public class MainSortedList{
           public int x;
           public SortedList next;
 
-          private static final int SENTINEL = 1000;
+          private static final int SENTINEL = Integer.MAX_VALUE-1;
 
           private SortedList(int x, SortedList next) {
             this.x = x;
@@ -50,6 +50,19 @@ public class MainSortedList{
             }
           }
 
+          public int limitDepth(int i){
+            int depth = 0;
+            SortedList list = next;
+            while(list!=null){
+                depth++;
+                if(depth == i){
+                    list.next = null;
+                }
+                list = list.next;
+            }
+            return depth;
+          }
+
           public String toString() {
             String out = x + ", ";
             if(next != null) out = out + next.toString();
@@ -58,13 +71,15 @@ public class MainSortedList{
         }
 class SortedListSearch {
     static SortedList searchRegion() {
-         int N = (int) (2+Math.random()*5);
-         /*if(!(N > 1 && N < 4)){
-            throw Muli.fail();
-         }*/
-
-           SortedList list = new SortedList();
-           for (int i = 0; i < N; i++) list.insert(Verifier.nondetInt());
+           SortedList list free;
+           list.limitDepth(5);
+           SortedList l = list;
+           while(l.next != null) {
+                if(l.next.x < l.x) throw Muli.fail();
+                l = l.next;
+           }
+           int i free;
+           list.insert(i);
            return list;
     }
 }

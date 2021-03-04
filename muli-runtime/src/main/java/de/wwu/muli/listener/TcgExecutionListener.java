@@ -29,8 +29,10 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     public void setDefUseListener(LogicVirtualMachine vm) {
         if (executionPathListener == null) {
             executionPathListener = new DefUseListener(vm);
+            if (methodName != null) {
+                executionPathListener.setMethodName(methodName);
+            }
         }
-        this.executionPathListener.setMethodName(this.methodName);
     }
 
     public Map<Object, Object> getResult(){
@@ -44,7 +46,9 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     public void setMethod(String methodName) {
         this.className = methodName.substring(0, methodName.lastIndexOf('.'));
         this.methodName = methodName.substring(methodName.lastIndexOf('.') + 1);
-        //this.executionPathListener.setMethodName(this.methodName);
+        if (executionPathListener != null) {
+            this.executionPathListener.setMethodName(this.methodName);
+        }
     }
 
     @Override
@@ -168,7 +172,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
         /*
          TODO After an instruction was executed, it should be recorded by a DefUseListener or a CoverageListener.
          */
-        if(executionPathListener != null) {
+        if (frame.getVm().getGenerateTestCases() && executionPathListener != null) {
             executionPathListener.executedInstruction(instruction, frame, pc);
         }
 

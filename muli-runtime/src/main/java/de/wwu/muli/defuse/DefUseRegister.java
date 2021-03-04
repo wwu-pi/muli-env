@@ -22,6 +22,14 @@ public class DefUseRegister {
         this.link.add(link);
     }
 
+    public DefUseRegister clone(){
+        DefUseRegister r = new DefUseRegister(link.first(), visited);
+        for(int i : link){
+            r.addLink(i);
+        }
+        return r;
+    }
+
     public String toString(){
         String output = "Visited: "+visited+"; Links:";
         for(int i: link){

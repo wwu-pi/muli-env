@@ -3,6 +3,7 @@ package de.wwu.muli.listener;
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
+import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -33,6 +34,11 @@ public class InstructionCoverageListener implements ExecutionPathListener {
         throw new IllegalStateException("Not yet implemented.");
     }
 
-    public boolean[] getCover() {return null;}
+    public boolean[] getCover(String method, LogicVirtualMachine vm) {return null;}
+
+    @Override
+    public void setMethodName(String methodName) {
+
+    }
 
 }

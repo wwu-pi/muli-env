@@ -132,7 +132,7 @@ public class SolutionIterator extends NativeMethodProvider {
             TcgListener tcgListener = (TcgListener) vm.getExecutionListener();
             LinkedHashMap<String, Object> inputs = copyAndLabelEach(vm, tcgListener.getInputs());
 
-            solution = new Solution(solutionObject, inputs, tcgListener.getClassName(), tcgListener.getMethodName(), tcgListener.getCover());
+            solution = new Solution(solutionObject, inputs, tcgListener.getClassName(), tcgListener.getMethodName(), tcgListener.getCover(vm));
         } else {
             solution = new Solution(solutionObject);
         }

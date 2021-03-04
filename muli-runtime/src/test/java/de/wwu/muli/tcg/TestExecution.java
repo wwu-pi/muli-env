@@ -125,7 +125,7 @@ public class TestExecution {
                 Integer[] defPcs = {33,22,11};
                 Integer [] defsPcsActual = defs.registers.keySet().toArray(new Integer[defs.getRegisterSize()]);
                 assertArrayEquals(defPcs, defsPcsActual);
-                assertEquals("\r\n   PC: 33; Visited: false; Links:12,23,37\r\n   PC: 22; Visited: true; Links:23,37"
+                assertEquals("\r\n   PC: 33; Visited: false; Links:12,37\r\n   PC: 22; Visited: true; Links:12,23,37"
                                 + "\r\n   PC: 11; Visited: true; Links:12,37",
                         defs.toString());
                 // parsed variable usages based on bytecode
@@ -134,8 +134,8 @@ public class TestExecution {
                 Integer[] usePcs = {37,23,12};
                 Integer [] usePcsActual = uses.registers.keySet().toArray(new Integer[uses.getRegisterSize()]);
                 assertArrayEquals(usePcs, usePcsActual);
-                assertEquals("\r\n   PC: 37; Visited: true; Links:11,22,33\r\n   PC: 23; Visited: true; Links:22,33"
-                                + "\r\n   PC: 12; Visited: true; Links:11,33",
+                assertEquals("\r\n   PC: 37; Visited: true; Links:11,22,33\r\n   PC: 23; Visited: true; Links:22"
+                                + "\r\n   PC: 12; Visited: true; Links:11,22,33",
                         uses.toString());
                 // defUse chains which were visited
                 DefUseChains chains = defuseMethod.getDefUses();

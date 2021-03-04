@@ -158,6 +158,8 @@ public class SolutionIterator extends NativeMethodProvider {
         return returnValue;
     }
 
+    static List<Object> solutions = new ArrayList<>();
+
     protected static LinkedHashMap<String, Object> copyAndLabelEach(LogicVirtualMachine vm, LinkedHashMap<String, Object> toCopy) {
         LinkedHashMap<String, Object> copy = new LinkedHashMap<>();
         Map<Object, Object> alreadyCopied = new HashMap<>();

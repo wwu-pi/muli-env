@@ -11,7 +11,7 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class MainTSP {
 
     public static void main(String[] args) {
-        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TspSolver::searchRegion, TspSolver.class.getName() + ".search");
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TspSolver::searchRegion, TspSolver.class.getName() + ".solve");
         for(Solution s : solutions){
             //System.out.println("output: "+s.value.toString());
             TestCase<?> tc = s.testCase;

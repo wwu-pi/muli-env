@@ -5,6 +5,7 @@ import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class MainSortedList{
 
@@ -20,6 +21,7 @@ public class MainSortedList{
             }
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
         //System.out.println(solution.value);
     }
@@ -41,13 +43,14 @@ public class MainSortedList{
             this(SENTINEL, null);
           }
 
-          public void insert(int data) {
+          public SortedList insert(int data) {
             if (data > this.x) {
               next.insert(data);
             } else {
               next = new SortedList(x, next);
               x = data;
             }
+            return this;
           }
 
           public int limitDepth(int i){
@@ -79,7 +82,7 @@ class SortedListSearch {
                 l = l.next;
            }
            int i free;
-           list.insert(i);
+           list = list.insert(i);
            return list;
     }
 }

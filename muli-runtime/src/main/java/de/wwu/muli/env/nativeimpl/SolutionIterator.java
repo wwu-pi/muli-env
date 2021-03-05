@@ -248,6 +248,9 @@ public class SolutionIterator extends NativeMethodProvider {
             return p;
         } else if (Utility.isWrappingClass(p.getClass())) {
             return p;
+        } else if (p instanceof BooleanConstant) {
+            alreadyCloned.put(p, ((BooleanConstant) p).getValue());
+            return ((BooleanConstant) p).getValue();
         } else {
             throw new IllegalStateException("Not supported: " + p.getClass());
         }

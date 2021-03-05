@@ -14,7 +14,6 @@ public class DefUseChoice {
     private DefUseRegisters defs;
     private DefUseRegisters uses;
     private DefUseChains defuse;
-    private boolean[] visited;
     private boolean newInstance;
 
     public DefUseChoice (DefUseMethod defuse){
@@ -22,7 +21,6 @@ public class DefUseChoice {
         uses = defuse.getUses().clone();
         this.defuse = new DefUseChains();
         this.defuse.setDefUseChains(defuse.getDefUses().copyChains());
-        visited = new boolean[defuse.getDefUses().getChainSize()];
         newInstance = true;
     }
 
@@ -58,12 +56,6 @@ public class DefUseChoice {
         visitUse(instruction);
     }
 
-    public boolean[] getVisited(){return visited;}
-
-    public void setVisited(boolean[] visited){
-        this.visited = visited;
-    }
-
     /**
      * If it is a definition, it is set to visited. If related usages have also been already passed,
      * the corresponding defuse chain is added.
@@ -78,12 +70,6 @@ public class DefUseChoice {
                 if(rUses.visited) {
                     DefUseChain chain = defuse.getDefUseChain(instruction, link);
                     chain.setVisited(true);
-                    /*DefVariable def = new DefVariable(instruction);
-                    UseVariable use = new UseVariable(link);
-                    DefUseChain chain = new DefUseChain(def, use);
-                    if(!defUses.getDefUseChains().contains(chain)) {
-                        defUses.addChain(chain);
-                    }*/
                 }
             }
         }
@@ -129,37 +115,8 @@ public class DefUseChoice {
                 if(rDefs.visited) {
                     DefUseChain chain = defuse.getDefUseChain(link, instruction);
                     chain.setVisited(true);
-                    /*DefVariable def = new DefVariable(link);
-                    UseVariable use = new UseVariable(instruction);
-                    DefUseChain chain = new DefUseChain(def, use);
-                    if(!defUses.getDefUseChains().contains(chain)) {
-                        defUses.addChain(chain);
-                    }*/
                     break;
                 }
-            }
-        }
-    }
-
-    public void updateVisitedArray(){
-        //List<UseVariable> visited = new ArrayList<>();
-        //List<DefUseChain> visitedTwice = new ArrayList<>();
-        int c = 0;
-        for(Map.Entry<Integer, DefUseRegister> entry: uses.registers.entrySet()){
-            DefUseRegister r = entry.getValue();
-            if(r.visited){
-                int c1 = c;
-                for(int link : r.link.descendingSet()) {
-                    DefUseRegister rDefs = defs.registers.get(link);
-                    if (rDefs.visited) {
-                        visited[c1] = true;
-                        c = c + r.link.size();
-                        break;
-                    }
-                    c1++;
-                }
-            } else {
-                c = c + r.link.size();
             }
         }
     }

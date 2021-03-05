@@ -30,13 +30,11 @@ public class DefUseAnalyser {
     private LogicVirtualMachine vm;
     public Map<Method, DefUseChains> defUseChains;
     private HashMap<Integer, Instruction> gotos;
-    private HashSet<Instruction> jumpInstructions;
     private HashSet<Method> invokedMethods;
 
     public DefUseAnalyser(LogicVirtualMachine vm) {
         this.vm = vm;
         this.gotos = new HashMap<Integer, Instruction>();
-        this.jumpInstructions = new HashSet<Instruction>();
         this.invokedMethods = new HashSet<Method>();
         this.defUseChains = new HashMap<Method, DefUseChains>();
     }

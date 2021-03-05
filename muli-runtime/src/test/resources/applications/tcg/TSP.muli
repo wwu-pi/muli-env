@@ -11,26 +11,37 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class MainTSP {
 
     public static void main(String[] args) {
-        Solution[] solutions = Muli.getAllSolutionsWithTestCases(TspSolver::searchRegion, TspSolver.class.getName() + ".solve");
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(MainTSP::searchRegion, TspSolver.class.getName() + ".solve");
         for(Solution s : solutions){
-            //System.out.println("output: "+s.value.toString());
             TestCase<?> tc = s.testCase;
             Object[] inputs = tc.getInputs();
-            for(Object o : inputs) {
-                //Arrayref ref = (Arrayref) o;
-                //System.out.println("input: "+o.toString());
-            }
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        //tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
-        //System.out.println(hell);
     }
+
+      public static int searchRegion() {
+        final int N = 4;
+        int D[][] = new int[N][N];
+
+        for (int i = 0; i < N; i++) {
+          for (int j = 0; j < N; j++) {
+            int next = Verifier.nondetInt();
+            if(next<1) throw Muli.fail();
+            D[i][j] = next;
+          }
+        }
+
+        TspSolver tspSolver = new TspSolver(N, D);
+        int sln = tspSolver.solve();
+        return sln;
+      }
 
 }
 
 public class TspSolver {
-    private final int N;
+    private int N;
     private int D[][];
     private boolean visited[];
     private int best;
@@ -45,7 +56,7 @@ public class TspSolver {
     }
 
     public int solve() {
-      best = Integer.MAX_VALUE-1;
+      best = 2000000; // Adapted since otherwise an integer overflow occurs.
 
       for (int i = 0; i < N; i++) visited[i] = false;
 
@@ -78,24 +89,24 @@ public class TspSolver {
       }
     }
 
+  public void setN(int n) {
+    this.N = n;
+  }
 
-  public static int searchRegion() {
-    final int N = 4;
-    System.out.println("N: "+N);
+  public void setD(int[][] d) {
+    this.D = d;
+  }
 
-    int D[][] = new int[N][N];
+  public void setVisited(boolean[] visited) {
+    this.visited = visited;
+  }
 
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        int next = Verifier.nondetInt();
-        if(next<1) throw Muli.fail();
-        D[i][j] = next;
-      }
-    }
+  public void setBest(Integer best) {
+    this.best = best;
+  }
 
-    TspSolver tspSolver = new TspSolver(N, D);
-    int sln = tspSolver.solve();
-    return sln;
+  public void setNCalls(int nCalls) {
+    this.nCalls = nCalls;
   }
 }
 

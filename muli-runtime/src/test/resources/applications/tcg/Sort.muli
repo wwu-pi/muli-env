@@ -12,26 +12,20 @@ public class MainSort {
     public static void main(String[] args) {
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(Sort::searchRegion, Sort.class.getName() + ".sort");
         for(Solution s : solutions){
-            //System.out.println(s.value.toString());
             TestCase<?> tc = s.testCase;
             Object[] inputs = tc.getInputs();
-            for(Object o : inputs) {
-                //Arrayref ref = (Arrayref) o;
-                //System.out.println(o.toString());
-            }
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        //tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
-        //System.out.println(solution.value);
     }
 
 }
 
 class Sort {
       static int[] sort(int[] a) {
-        //final int N = a.length;
-        for (int i = 1; i < a.length; i++) { // N branches
+        final int N = a.length;
+        for (int i = 1; i < N; i++) { // N branches
           int j = i - 1;
           int x = a[i];
           // First branch (j >= 0):  2 + 3 + ... + N = N(N+1)/2 - 1 branches

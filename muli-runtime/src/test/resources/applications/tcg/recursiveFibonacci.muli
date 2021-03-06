@@ -10,11 +10,20 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class Main {
 
     public static void main(String[] args) {
-        Solution[] solutions = Muli.getAllSolutionsWithTestCases(Fibonacci::searchRegion, Fibonacci.class.getName() + ".fibonacci");
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(Main::searchRegion, Fibonacci.class.getName() + ".fibonacci");
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         TestSetReducer reducer = new SimpleForwardsTestSetReducer();
-        tcg.setTestSetReducer(reducer);
+        //tcg.setTestSetReducer(reducer);
         tcg.generateTestClassStringRepresentation();
+    }
+
+    static int searchRegion() {
+        int x free;
+        if (x > 10 || x < 0) {
+            throw Muli.fail();
+        }
+        int result = Fibonacci.fibonacci(x);
+        return result;
     }
 
 }
@@ -56,14 +65,5 @@ class Fibonacci {
         } else {
           return fibonacci(n-1) + fibonacci(n-2);
         }
-    }
-
-    static int searchRegion() {
-        int x free;
-        if (x > 10 || x < 0) {
-          throw Muli.fail();
-        }
-        int result = fibonacci(x);
-        return result;
     }
 }

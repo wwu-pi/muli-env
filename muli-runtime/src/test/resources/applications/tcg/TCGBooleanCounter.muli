@@ -4,6 +4,7 @@ import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class TCGBooleanCounter {
     public static void main(String[] args) {
@@ -13,6 +14,8 @@ public class TCGBooleanCounter {
             System.out.println("Result: " + s.value);
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        TestSetReducer reducer = new SimpleForwardsTestSetReducer();
+        tcg.setTestSetReducer(reducer);
         tcg.generateTestClassStringRepresentation();
     }
 
@@ -38,13 +41,7 @@ public class BooleanCounter {
     }
         return count;
     }
-    public boolean getB0() { return b0; }
-    public boolean getB1() { return b1; }
-    public boolean getSign() { return sign; }
     public void setB0(boolean b) { b0 = b; }
     public void setB1(boolean b) { b1 = b; }
     public void setSign(boolean b) { sign = b; }
-    public String toString() {
-        return "BooleanCounter{b0="+b0+",b1="+b1+",sign="+sign+"}";
-    }
 }

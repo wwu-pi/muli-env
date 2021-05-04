@@ -1,4 +1,4 @@
-package applications.tcg;
+package applications.defUse;
 
 import java.util.*;
 import de.wwu.muli.*;

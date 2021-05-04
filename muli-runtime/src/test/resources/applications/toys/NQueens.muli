@@ -35,11 +35,11 @@ public class Queen {
 public class NQueens {
 
   public static void main(String[] args) {
-  Solution<Object> solution = Muli.getOneSolution(NQueens::solve);
-  Queen[] result = (Queen[])solution.value;
-  for (Queen q: result) {
-    System.out.println("(" + q.x + "," + q.y + ")");
-  }
+      Solution<Object> solution = Muli.getOneSolution(NQueens::solve);
+      Queen[] result = (Queen[])solution.value;
+      for (Queen q: result) {
+        System.out.println("(" + q.x + "," + q.y + ")");
+      }
   }
 
   private static Queen[] solve() {

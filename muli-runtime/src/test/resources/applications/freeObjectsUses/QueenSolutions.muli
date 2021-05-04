@@ -1,0 +1,67 @@
+package applications.freeObjectsUses;
+
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class Board {
+    final int dim;
+
+    public Board(int dim) {
+        this.dim = dim;
+    }
+
+    public boolean isOnBoard(Queen q) {
+        if (q.x < 0) return false;
+        if (q.x > dim-1) return false;
+        if (q.y < 0) return false;
+        if (q.y > dim-1) return false;
+        return true;
+    }
+
+    public boolean threatens(Queen p, Queen q) {
+        if (p.x == q.x) return true;
+        if (p.y == q.y) return true;
+        if (p.x - p.y == q.x - q.y) return true;
+        if (p.x + p.y == q.x + q.y) return true;
+        return false;
+    }
+}
+
+public class Queen {
+    int x, y;
+}
+
+public class NQueens {
+
+  public static void main(String[] args) {
+      Solution<TestData>[] solutions = (Solution<TestData>[]) Muli.getAllSolutions(() -> {
+        Queen q1 free; Queen q2 free;
+        Board board = new Board(8);
+        return new TestData(q1, q2, board.threatens(q1, q2));
+      });
+
+      int i = 0; for (Solution<TestData> s: solutions) {
+        TestData td = s.value;
+        System.out.println(
+          "public void test_generated" + (i++) + "() {\r\n"
+          + "\tBoard board = new Board(8);\r\n"
+          + "\tQueen q1 = new Queen(" +
+            td.q1.x + ", " + td.q1.y + ");\r\n"
+          + "\tQueen q2 = new Queen(" +
+            td.q2.x + ", " + td.q2.y + ");\r\n"
+          + "\tassertEquals(" + td.result + ", board.threatens(q1, q2));\r\n"
+          + "}");
+      }
+
+  }
+}
+
+class TestData {
+    Queen q1; Queen q2; boolean result;
+    TestData(Queen q1, Queen q2, boolean result) {
+        this.q1 = q1;
+        this.q2 = q2;
+        this.result = result;
+    }
+}

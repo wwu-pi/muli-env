@@ -17,7 +17,7 @@ public class MainTSP {
             Object[] inputs = tc.getInputs();
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        //tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
     }
 

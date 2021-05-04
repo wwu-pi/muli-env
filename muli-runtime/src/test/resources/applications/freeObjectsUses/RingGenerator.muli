@@ -1,0 +1,38 @@
+package applications.freeObjectsUses;
+import java.util.stream.Stream;
+import java.util.Iterator;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class RingGenerator {
+  public static void main(String[] args) {
+    Stream<Solution<C>> rings = (Stream<Solution<C>>) Muli.muli(() -> {
+        C o free; return generateRing(o, o);
+    }, SearchStrategy.IterativeDeepening);
+    rings.limit(5).forEach(s -> {
+        C first = (C) s.value;
+        C next = first;
+        do {
+          System.out.print("next was called ");
+          next = next.o;
+        } while (next != first);
+        System.out.print("---");
+    });
+  }
+
+  class C {
+    C o;
+  }
+
+  public static C generateRing(C first, C o) {
+    boolean initializeNext free;
+    if (initializeNext) {
+      C next free;
+      o.o = next;
+      return generateRing(first, o.o);
+    } else {
+      o.o = first;
+      return first;
+    }
+  }
+}

@@ -1,0 +1,71 @@
+package applications.freeObjectsUses;
+import java.util.stream.Stream;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+
+public class Graph {
+
+  private List<Integer> layers = new ArrayList<>();
+
+  public void addLayer() {
+    layers.add(1);
+  }
+
+  public void addNode() {
+    int currentLastIndex = layers.size() - 1;
+    if (currentLastIndex < 0) addLayer();
+    else layers.add(currentLastIndex, layers.get(currentLastIndex) + 1);
+  }
+
+  public int numLayers() {
+    return layers.size();
+  }
+
+  public List<Integer> getLayers() {
+    return layers;
+  }
+
+  public static void main(String[] args) {
+    new AddLayer(); new Return(); new AddNode();
+    Stream<Solution<Graph>> graphs = (Stream<Solution<Graph>>) Muli.muli(() -> {
+        Graph g = new Graph(); return generate(g);
+    }, SearchStrategy.IterativeDeepeningNaive);
+    graphs.limit(5).forEach(s -> {
+        System.out.println("Layers: " + ((Graph) s.value).getLayers());
+    });
+  }
+  public static Graph generate(Graph g) {
+    Operation op free;
+    return op.perform(g);
+  }
+}
+
+interface Operation {
+  Graph perform(Graph g);
+}
+
+class AddLayer implements Operation {
+  public Graph perform(Graph g) {
+      g.addLayer();
+      Operation nextOperation free;
+      return nextOperation.perform(g);
+  }
+}
+
+class AddNode implements Operation {
+  public Graph perform(Graph g) {
+    g.addNode();
+    Operation nextOperation free;
+    return nextOperation.perform(g);
+  }
+}
+
+ class Return implements Operation {
+  public Graph perform(Graph g) {
+    return g;
+  }
+}

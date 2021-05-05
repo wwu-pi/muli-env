@@ -1,0 +1,142 @@
+package applications.freeObjectsUses;
+
+import java.util.ArrayList;
+import java.util.List;
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+
+public class Logistics {
+
+    public static void main(String[] args) {
+        new TruckWithTrailer(); new RefrigeratedTruck();
+        Solution<Truck[]> solution = (Solution<Truck[]>) Muli.getOneSolution(Logistics::assign, SearchStrategy.DepthFirstSearchNaive);
+        System.out.println("Got solution");
+        Truck[] result = solution.value;
+        for (int i = 0; i < result.length; i++) {
+            List<Material> assignedMaterials = result[i].loadedGoods;
+            for (Material m : assignedMaterials) {
+                System.out.println("For truck " + i + " of type: " + result[i].getClass() + ": " + m.id);
+            }
+        }
+    }
+
+    private static boolean isTransportableBy(Material m, Truck t) {
+        if (m instanceof FrozenGood) {
+            if (!(t instanceof RefrigeratedTruck)) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
+    private static boolean canStillLoad(Truck t, Material m) {
+        if (isTransportableBy(m, t)) {
+            if (t.getRemainingWeightCapacity() < m.getWeight()) return false;
+            if (t.getRemainingVolumeCapacity() < m.getVolume()) return false;
+            return true;
+        }
+        return false;
+    }
+
+    private static void load(Truck t, Material m) {
+        t.remainingVolumeCapacity -= m.getVolume();
+        t.remainingWeightCapacity -= m.getWeight();
+        t.loadedGoods.add(m);
+    }
+
+    private static Truck[] assign() {
+        Truck[] trucks = initializeFreeTrucks(3);
+        Material[] materials = initializeMaterials(3, 6);
+        for (Material m : materials) {
+            int selectedTruckNumber free;
+            if (selectedTruckNumber >= trucks.length) {
+                throw Muli.fail();
+            }
+            if (selectedTruckNumber < 0) {
+                throw Muli.fail();
+            }
+            for (int i = 0; i < trucks.length; i++) {
+                // This workaround for the array-index is currently needed since we do not yet support
+                // free indexes for arrays of objects.
+                if (i == selectedTruckNumber) {
+                    Truck t = trucks[i];
+                    if (canStillLoad(t, m)) {
+                        load(t, m);
+                    } else {
+                        throw Muli.fail();
+                    }
+                }
+            }
+        }
+        return trucks;
+    }
+
+    private static Material[] initializeMaterials(int numUsual, int numFrozen) {
+        Material[] materials = new Material[numUsual + numFrozen];
+        for (int i = 0; i < numUsual; i++) {
+            materials[i] = new Material(i, 35, 75);
+        }
+        for (int i = numUsual; i < numUsual + numFrozen; i++) {
+            materials[i] = new FrozenGood(i, 45, 45);
+        }
+        return materials;
+    }
+
+    private static Truck[] initializeFreeTrucks(int numTrucks) {
+        Truck[] trucks = new Truck[numTrucks];
+        for (int i = 0; i < trucks.length; i++) {
+            Truck t free; t.loadedGoods = new ArrayList<>();
+            t.remainingVolumeCapacity = 150; t.remainingWeightCapacity = 150;
+            trucks[i] = t;
+        }
+        return trucks;
+    }
+
+}
+
+class Material {
+    public int id;
+    private final int weight;
+    private final int volume;
+    public Material(int id, int weight, int volume) {
+        this.id = id;
+        this.weight = weight;
+        this.volume = volume;
+    }
+    public boolean isTransportableBy(Truck t) {
+        return true;
+    }
+    public int getVolume() { return volume; }
+    public int getWeight() { return weight; }
+}
+
+class FrozenGood extends Material {
+    public FrozenGood(int id, int weight, int volume) {
+        super(id, weight, volume);
+    }
+}
+
+class Truck {
+    public int remainingVolumeCapacity;
+    public int remainingWeightCapacity;
+    public List<Material> loadedGoods;
+    public int getRemainingVolumeCapacity() {
+        return remainingVolumeCapacity;
+    }
+    public int getRemainingWeightCapacity() {
+        return remainingWeightCapacity;
+    }
+}
+
+class RefrigeratedTruck extends Truck { }
+
+class TruckWithTrailer extends Truck {
+    @Override
+    public int getRemainingVolumeCapacity() {
+        return (remainingVolumeCapacity + 150);
+    }
+}
+

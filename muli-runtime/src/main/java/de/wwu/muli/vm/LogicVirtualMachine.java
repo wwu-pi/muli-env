@@ -973,7 +973,9 @@ public class LogicVirtualMachine extends SearchingVM {
 
     public void setCurrentSearchRegion(Objectref currentSearchRegion) {
         this.currentSearchRegion = currentSearchRegion;
-        this.executionListener.setDefUseListener(this);
+        if (getGenerateTestCases()) {
+			this.executionListener.setDefUseListener(this);
+		}
     }
 
     public void recordSearchStarted() {

@@ -32,7 +32,8 @@ public class Graph {
   public static void main(String[] args) {
     new AddLayer(); new Return(); new AddNode();
     Stream<Solution<Graph>> graphs = (Stream<Solution<Graph>>) Muli.muli(() -> {
-        Graph g = new Graph(); return generate(g);
+        Graph g = new Graph(); Operation firstOperation free;
+        return firstOperation.perform(g);
     }, SearchStrategy.IterativeDeepeningNaive);
     graphs.limit(5).forEach(s -> {
         System.out.println("Layers: " + ((Graph) s.value).getLayers());

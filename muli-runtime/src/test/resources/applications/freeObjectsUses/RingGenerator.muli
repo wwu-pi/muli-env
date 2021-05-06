@@ -13,10 +13,8 @@ public class RingGenerator {
         C first = (C) s.value;
         C next = first;
         do {
-          System.out.print("next was called ");
           next = next.o;
         } while (next != first);
-        System.out.print("---");
     });
   }
 

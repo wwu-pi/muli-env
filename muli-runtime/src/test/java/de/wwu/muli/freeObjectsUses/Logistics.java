@@ -13,7 +13,10 @@ import static org.junit.Assert.assertEquals;
 public class Logistics {
     @Test
     public final void testLogistics() throws InterruptedException, ClassFileException {
+        long startTime = System.nanoTime();
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.freeObjectsUses.Logistics");
+        long endTime = System.nanoTime();
+        System.out.println("Needed time: " + (endTime - startTime));
         Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
         int solutionCount = 0;
         for (Object l : leaves) {

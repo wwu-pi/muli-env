@@ -20,33 +20,6 @@ public class Logistics {
         }
     }
 
-    private static boolean isTransportableBy(Material m, Truck t) {
-        if (m instanceof FrozenGood) {
-            if (!(t instanceof RefrigeratedTruck)) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return true;
-        }
-    }
-
-    private static boolean canStillLoad(Truck t, Material m) {
-        if (isTransportableBy(m, t)) {
-            if (t.getRemainingWeightCapacity() < m.getWeight()) return false;
-            if (t.getRemainingVolumeCapacity() < m.getVolume()) return false;
-            return true;
-        }
-        return false;
-    }
-
-    private static void load(Truck t, Material m) {
-        t.remainingVolumeCapacity -= m.getVolume();
-        t.remainingWeightCapacity -= m.getWeight();
-        t.loadedGoods.add(m);
-    }
-
     private static Truck[] assign() {
         Truck[] trucks = initializeFreeTrucks(3);
         Material[] materials = initializeMaterials(3, 6);
@@ -63,8 +36,8 @@ public class Logistics {
                 // free indexes for arrays of objects.
                 if (i == selectedTruckNumber) {
                     Truck t = trucks[i];
-                    if (canStillLoad(t, m)) {
-                        load(t, m);
+                    if (t.canStillLoad(m)) {
+                        t.load(m);
                     } else {
                         throw Muli.fail();
                     }
@@ -117,12 +90,35 @@ class FrozenGood extends Material {
     public FrozenGood(int id, int weight, int volume) {
         super(id, weight, volume);
     }
+    public boolean isTransportableBy(Truck t) {
+        if (t instanceof RefrigeratedTruck) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 class Truck {
-    public int remainingVolumeCapacity;
-    public int remainingWeightCapacity;
+    protected int remainingVolumeCapacity;
+    protected int remainingWeightCapacity;
     public List<Material> loadedGoods;
+
+    public void load(Material m) {
+        remainingVolumeCapacity -= m.getVolume();
+        remainingWeightCapacity -= m.getWeight();
+        loadedGoods.add(m);
+    }
+
+    public boolean canStillLoad(Material m) {
+        if (m.isTransportableBy(this)) {
+            if (this.getRemainingWeightCapacity() < m.getWeight()) return false;
+            if (this.getRemainingVolumeCapacity() < m.getVolume()) return false;
+            return true;
+        }
+        return false;
+    }
+
     public int getRemainingVolumeCapacity() {
         return remainingVolumeCapacity;
     }

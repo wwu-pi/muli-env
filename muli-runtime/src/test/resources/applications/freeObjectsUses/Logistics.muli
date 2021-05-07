@@ -9,7 +9,7 @@ public class Logistics {
 
     public static void main(String[] args) {
         new TruckWithTrailer(); new RefrigeratedTruck();
-        Solution<Truck[]> solution = (Solution<Truck[]>) Muli.getOneSolution(Logistics::assign, SearchStrategy.DepthFirstSearchNaive);
+        Solution<Truck[]> solution = (Solution<Truck[]>) Muli.getOneSolution(Logistics::assign);
         System.out.println("Got solution");
         Truck[] result = solution.value;
         for (int i = 0; i < result.length; i++) {

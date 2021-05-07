@@ -79,7 +79,7 @@ import java.util.Stack;
  *
  * @author Jan C. Dageförde and Finn Teegen
  */
-public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSearchAlgorithmWithGlobalBacktracking {
+public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSearchAlgorithmWithGlobalBacktracking { 
     /**
 	 * Instantiate the depth first search algorithm.
      */
@@ -112,6 +112,8 @@ public class DepthFirstSearchAlgorithmWithLocalBacktracking extends DepthFirstSe
         // Remove this choice's previous constraint from the system.
         vm.getSolverManager().removeConstraint();
 
+        vm.setReturnFromCurrentExecution(true);
+        vm.setNextFrameIsAlreadyLoaded(true);
         // Now activate the next subtree by imposing its constraint and setting current frame / pc accordingly.
         // If the resulting constraint system is infeasible, switch to the next possible decision immediately.
         // Otherwise, return false.

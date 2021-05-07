@@ -34,7 +34,7 @@ public class Graph {
     Stream<Solution<Graph>> graphs = (Stream<Solution<Graph>>) Muli.muli(() -> {
         Graph g = new Graph(); Operation firstOperation free;
         return firstOperation.perform(g);
-    }, SearchStrategy.IterativeDeepeningNaive);
+    }, SearchStrategy.IterativeDeepening);
     graphs.limit(5).forEach(s -> {
         System.out.println("Layers: " + ((Graph) s.value).getLayers());
     });

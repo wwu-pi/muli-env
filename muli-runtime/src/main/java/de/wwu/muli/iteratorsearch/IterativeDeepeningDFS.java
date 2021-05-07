@@ -93,6 +93,8 @@ public class IterativeDeepeningDFS extends IterativeDeepeningDFSNaive {
             trackBackToRoot(vm);
             return false;
         }
+        vm.setReturnFromCurrentExecution(true);
+        vm.setNextFrameIsAlreadyLoaded(true);
         return takeNextDecision(vm);
     }
 

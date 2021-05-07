@@ -40,7 +40,6 @@ public class IterativeDeepeningDFS extends IterativeDeepeningDFSNaive {
             }
 
             this.currentMaximumDepth += IterativeDeepeningDFSNaive.deepnessIncrement;
-            System.out.println("incdepth");
             this.nextNodes = this.nextNodeStack;
             this.nextNodeStack = new Stack<>();
         }
@@ -69,6 +68,8 @@ public class IterativeDeepeningDFS extends IterativeDeepeningDFSNaive {
                 // Now track back until the root using individual trails from the choices along the path.
                 trackBackUntil(trackBackTo, this.currentNode.getParent(), true, true, vm);
             }
+            vm.setReturnFromCurrentExecution(true);
+            vm.setNextFrameIsAlreadyLoaded(true);
         }
 
         return navigateTo(trackBackTo, node, vm);
@@ -93,8 +94,7 @@ public class IterativeDeepeningDFS extends IterativeDeepeningDFSNaive {
             trackBackToRoot(vm);
             return false;
         }
-        vm.setReturnFromCurrentExecution(true);
-        vm.setNextFrameIsAlreadyLoaded(true);
+
         return takeNextDecision(vm);
     }
 

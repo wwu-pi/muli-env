@@ -20,7 +20,7 @@ public class TestExecution {
 
     @Test
     public final void testDefUseIf() throws InterruptedException, ClassFileException {
-        ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.Test");
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.defUse.Test");
         Map<Object, Object> defUse = TestableMuliRunner.getCoverageMap();
         // number of invoked methods
         assertEquals(3, defUse.size());
@@ -110,7 +110,7 @@ public class TestExecution {
 
     @Test
     public final void testDefUseWhile() throws InterruptedException, ClassFileException {
-        ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TestWhile");
+        ST[] foundTrees = TestableMuliRunner.runApplication("applications.defUse.TestWhile");
         Map<Object, Object> defUse = TestableMuliRunner.getCoverageMap();
         // number of invoked methods
         assertEquals(1, defUse.size());

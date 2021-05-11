@@ -1,4 +1,4 @@
-package applications.tcg;
+package applications.defUse;
 
 import java.util.List;
 import de.wwu.muli.*;
@@ -8,7 +8,7 @@ import java.lang.Object;
 public class Test {
 
     public static void main(String[] args) {
-        Solution[] solution = Muli.getAllSolutions(Test2::ifTest, SearchStrategy.BreadthFirstSearch);
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(Test2::searchRegion, Test2.class.getName() + ".ifTest");
         //System.out.println(solution.value);
     }
 
@@ -16,9 +16,14 @@ public class Test {
 
 
 class Test2{
-    static int ifTest(){
-        Orange i = new Orange();
+    static int searchRegion(){
         int x free;
+        int y = ifTest(x);
+        return y;
+    }
+
+    static int ifTest(int x){
+        Orange i = new Orange();
         if(x == 5){
             x = i.increment(x);
         } else {

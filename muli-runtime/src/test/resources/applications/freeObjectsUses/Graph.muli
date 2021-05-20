@@ -39,10 +39,6 @@ public class Graph {
         System.out.println("Layers: " + ((Graph) s.value).getLayers());
     });
   }
-  public static Graph generate(Graph g) {
-    Operation op free;
-    return op.perform(g);
-  }
 }
 
 interface Operation {

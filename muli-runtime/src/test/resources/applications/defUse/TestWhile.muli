@@ -8,28 +8,23 @@ import java.lang.Object;
 public class TestWhile {
 
     public static void main(String[] args) {
-        Solution[] solution = Muli.getAllSolutionsWithTestCases(Class::searchRegion, Class.class.getName() + ".whileTest");
-        //System.out.println(solution.value);
+        Solution[] solution = Muli.getAllSolutionsWithTestCases(TestWhile::searchRegion, TestWhile.class.getName() + ".whileTest");
     }
-
-}
-
-
-class Class{
 
     static int searchRegion(){
-        int[] x free;
-        if(x.length < 2 || x.length >3) Muli.fail();
-        int[] y = whileTest(x);
-        return y[0];
-    }
-    static int[] whileTest(int[] x){
-        while(x[0] != 5){
-            x[0] = 5;
-            if(x[1] != 2){
-                x[1] = 2;
-            }
+            int[] x free;
+            if(x.length < 2 || x.length >3) Muli.fail();
+            int[] y = whileTest(x);
+            return y[0];
         }
-        return x;
-    }
+        static int[] whileTest(int[] x){
+            while(x[0] != 5){
+                x[0] = 5;
+                if(x[1] != 2){
+                    x[1] = 2;
+                }
+            }
+            return x;
+        }
+
 }

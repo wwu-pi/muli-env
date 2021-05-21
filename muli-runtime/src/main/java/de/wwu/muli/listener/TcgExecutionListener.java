@@ -21,7 +21,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     protected LinkedHashMap<String, Object> trackInputs;
     protected ExecutionPathListener executionPathListener;
     protected Map<Object, Object> alreadyCloned;
-    
+
     public void setCoverageListener() {
         executionPathListener = new InstructionCoverageListener();
     }
@@ -35,9 +35,9 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
         }
     }
 
-    public Map<Object, Object> getResult(){
+    public ArrayList<Map<Object, Object>> getResult(){
         if (executionPathListener == null) {
-            return new HashMap<>();
+            return new ArrayList<>();
         }
         return executionPathListener.getResult();
     }
@@ -164,7 +164,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     }
 
     @Override
-    public boolean[] getCover(LogicVirtualMachine vm) {
+    public Map<String, Object> getCover(LogicVirtualMachine vm) {
         return executionPathListener.getCover(methodName, vm);
     }
 

@@ -4,6 +4,7 @@ import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
 import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class TCGBooleanCounter {
     public static void main(String[] args) {
@@ -13,6 +14,7 @@ public class TCGBooleanCounter {
             System.out.println("Result: " + s.value);
         }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
     }
 

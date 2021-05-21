@@ -6,7 +6,7 @@ import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muli.defuse.DefUseMethod;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
-import java.util.BitSet;
+import java.util.ArrayList;
 import java.util.Map;
 
 public interface ExecutionPathListener {
@@ -15,9 +15,9 @@ public interface ExecutionPathListener {
 
     public void reachedEndEvent();
 
-    public Map<Object, Object> getResult();
+    public ArrayList<Map<Object, Object>> getResult();
 
-    public boolean[] getCover(String method, LogicVirtualMachine vm);
+    public Map<String, Object> getCover(String method, LogicVirtualMachine vm);
 
     public void setMethodName(String methodName);
 

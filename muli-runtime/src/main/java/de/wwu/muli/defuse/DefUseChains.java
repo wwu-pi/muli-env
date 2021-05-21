@@ -61,6 +61,15 @@ public class DefUseChains {
         }
     }
 
+    public boolean containsChain(int def, int use){
+        for(DefUseChain chain : defUseChains){
+            if(chain.getDef().getPc() == def && chain.getUse().getPc() == use){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String toString(){
         String output = "";
         for(DefUseChain chain : defUseChains){

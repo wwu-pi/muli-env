@@ -5,6 +5,7 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public interface TcgListener {
 
@@ -16,7 +17,7 @@ public interface TcgListener {
 
     String getMethodName();
 
-    boolean[] getCover(LogicVirtualMachine vm);
+    Map<String, Object> getCover(LogicVirtualMachine vm);
 
     boolean isObjectMethod();
 

@@ -5,10 +5,7 @@ import de.wwu.muggl.vm.Frame;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class InstructionCoverageListener implements ExecutionPathListener {
 
@@ -30,11 +27,11 @@ public class InstructionCoverageListener implements ExecutionPathListener {
         currentPath = new CoveragePath();
     }
 
-    public Map<Object, Object> getResult(){
+    public ArrayList<Map<Object, Object>> getResult(){
         throw new IllegalStateException("Not yet implemented.");
     }
 
-    public boolean[] getCover(String method, LogicVirtualMachine vm) {return null;}
+    public Map<String, Object> getCover(String method, LogicVirtualMachine vm) {return null;}
 
     @Override
     public void setMethodName(String methodName) {

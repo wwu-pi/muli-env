@@ -79,6 +79,8 @@ public class DefUseChoice {
 
     public boolean getNewInstance(){return newInstance;}
     public boolean getInitialDefs(){return initialDefs;}
+    public void setNewInstance(boolean newInstance){this.newInstance=newInstance;}
+    public void setBoolInitialDefs(boolean initialDefs){this.initialDefs=initialDefs;}
 
     public void visitDefUse(Instruction instruction, int i, Method m){
         newInstance = false;

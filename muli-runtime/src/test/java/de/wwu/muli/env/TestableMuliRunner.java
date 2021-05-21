@@ -10,20 +10,21 @@ import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.InitializationException;
 import de.wwu.muggl.vm.initialization.Objectref;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
-import de.wwu.muli.defuse.DefUseMethod;
 import de.wwu.muli.searchtree.ST;
 import de.wwu.muli.vm.LogicVirtualMachine;
 
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.ArrayList;
 
 import static org.junit.Assert.fail;
 
 public class TestableMuliRunner extends MuliRunner {
     private final static Path resourcesRoot;
-    private static Map<Object, Object> coverageMap = null;
+    private static ArrayList<Map<Object, Object>> coverageMap = null;
 
     static {
         // Statically determine the path to precompiled resources (i.e., testable artifacts).
@@ -126,7 +127,7 @@ public class TestableMuliRunner extends MuliRunner {
         return runApplication(classFileName, new String[]{});
     }
 
-    static public Map<Object, Object> getCoverageMap(){
+    static public ArrayList<Map<Object, Object>> getCoverageMap(){
         return coverageMap;
     }
 

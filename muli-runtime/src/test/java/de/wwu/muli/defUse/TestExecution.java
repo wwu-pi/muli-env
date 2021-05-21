@@ -4,6 +4,7 @@ import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.execution.nativeWrapping.TestablePrintStreamWrapper;
 import de.wwu.muli.defuse.DefUseMethod;
+import de.wwu.muli.defuse.DefUseChoice;
 import de.wwu.muli.defuse.DefUseChains;
 import de.wwu.muli.defuse.DefUseChain;
 import de.wwu.muli.defuse.DefUseRegisters;
@@ -12,6 +13,7 @@ import de.wwu.muli.env.TestableMuliRunner;
 import de.wwu.muli.searchtree.ST;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -21,137 +23,100 @@ public class TestExecution {
     @Test
     public final void testDefUseIf() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.defUse.Test");
-        Map<Object, Object> defUse = TestableMuliRunner.getCoverageMap();
+        ArrayList defUse = TestableMuliRunner.getCoverageMap();
         // number of invoked methods
         assertEquals(3, defUse.size());
-        for(Object m: defUse.keySet()){
-            DefUseMethod defuseMethod = (DefUseMethod) defUse.get(m);
-            Method method = (Method) m;
-            // Methods for the class invokation, no significant def use chains
-            if(method.getFullName().contains("init")){
-                assertTrue(defuseMethod.getDefUses().getChainSize() < 2);
-            }
-            // helper method increment
-            if(method.getFullName().contains("increment")){
-                // parsed variable definitions based on bytecode
-                DefUseRegisters defs = defuseMethod.getDefs();
-                assertEquals(2, defs.getRegisterSize());
-                Integer[] defPcs = {-1,3};
-                Integer [] defsPcsActual = defs.registers.keySet().toArray(new Integer[defs.getRegisterSize()]);
-                assertArrayEquals(defPcs, defsPcsActual);
-                assertEquals("\r\n   PC: -1; Visited: true; Links:0\r\n   PC: 3; Visited: true; Links:4",
-                        defs.toString());
-                // parsed variable usages based on bytecode
-                DefUseRegisters uses = defuseMethod.getUses();
-                assertEquals(2, uses.getRegisterSize());
-                Integer[] usePcs = {0,4};
-                Integer [] usePcsActual = uses.registers.keySet().toArray(new Integer[uses.getRegisterSize()]);
-                assertArrayEquals(usePcs, usePcsActual);
-                assertEquals("\r\n   PC: 0; Visited: true; Links:-1\r\n   PC: 4; Visited: true; Links:3",
-                        uses.toString());
-                // defUse chains which were visited
-                DefUseChains chains = defuseMethod.getDefUses();
-                assertEquals(2, chains.getChainSize());
-                for(DefUseChain chain: chains.getDefUseChains()){
-                    if(chain.getDef().getPc() == -1){
-                        assertEquals(0, chain.getUse().getPc());
-                    }
-                    if(chain.getDef().getPc() == 3){
-                        assertEquals(4, chain.getUse().getPc());
-                    }
-                }
-            }
-            // if method
-            if(method.getFullName().contains("ifTest")){
-                // parsed variable definitions based on bytecode
-                DefUseRegisters defs = defuseMethod.getDefs();
-                assertEquals(4, defs.getRegisterSize());
-                Integer[] defPcs = {23,7,11,28};
-                Integer [] defsPcsActual = defs.registers.keySet().toArray(new Integer[defs.getRegisterSize()]);
-                assertArrayEquals(defPcs, defsPcsActual);
-                assertEquals("\r\n   PC: 23; Visited: true; Links:29\r\n   PC: 7; Visited: true; Links:17"
-                        + "\r\n   PC: 11; Visited: true; Links:12,19\r\n   PC: 28; Visited: true; Links:29",
-                        defs.toString());
-                // parsed variable usages based on bytecode
-                DefUseRegisters uses = defuseMethod.getUses();
-                assertEquals(4, uses.getRegisterSize());
-                Integer[] usePcs = {17,19,12,29};
-                Integer [] usePcsActual = uses.registers.keySet().toArray(new Integer[uses.getRegisterSize()]);
-                assertArrayEquals(usePcs, usePcsActual);
-                assertEquals("\r\n   PC: 17; Visited: true; Links:7\r\n   PC: 19; Visited: true; Links:11"
-                                + "\r\n   PC: 12; Visited: true; Links:11\r\n   PC: 29; Visited: true; Links:23,28",
-                        uses.toString());
-                // defUse chains which were visited
-                DefUseChains chains = defuseMethod.getDefUses();
-                assertEquals(5, chains.getChainSize());
-                for(DefUseChain chain: chains.getDefUseChains()){
-                    if(chain.getDef().getPc() == 11){
-                        try {
-                            assertEquals(12, chain.getUse().getPc());
-                        } catch(AssertionError a){
-                            assertEquals(19, chain.getUse().getPc());
-                        }
-                    }
-                    if(chain.getDef().getPc() == 23){
-                        assertEquals(29, chain.getUse().getPc());
-                    }
-                    if(chain.getDef().getPc() == 28){
-                        assertEquals(29, chain.getUse().getPc());
-                    }
-                    if(chain.getDef().getPc() == 7){
-                        assertEquals(17, chain.getUse().getPc());
-                    }
-                }
-            }
-            System.out.println("Method: "+method.getFullName());
-            System.out.println(defuseMethod.toString());
-        }
+        Map<Object, Object> map1 = (Map<Object, Object>) defUse.get(0);
+        assertEquals(2, map1.size());
+        assertTrue(map1.containsKey("<init>"));
+        DefUseChains defuse = ((DefUseChoice) map1.get("<init>")).getDefUse();
+        assertEquals(1, defuse.getChainSize());
+        assertTrue(defuse.containsChain(-1,0));
+        assertTrue(map1.containsKey("ifTest"));
+        DefUseChains defuse2 = ((DefUseChoice) map1.get("ifTest")).getDefUse();
+        assertEquals(2, defuse2.getChainSize());
+        assertTrue(defuse2.containsChain(-1,8));
+        assertTrue(defuse2.containsChain(24,25));
+
+        Map<Object, Object> map2 = (Map<Object, Object>) defUse.get(1);
+        assertEquals(3, map2.size());
+        assertTrue(map2.containsKey("<init>"));
+        DefUseChains defuse3 = ((DefUseChoice) map2.get("<init>")).getDefUse();
+        assertEquals(1, defuse3.getChainSize());
+        assertTrue(defuse3.containsChain(-1,0));
+        assertTrue(map2.containsKey("ifTest"));
+        DefUseChains defuse4 = ((DefUseChoice) map2.get("ifTest")).getDefUse();
+        assertEquals(4, defuse4.getChainSize());
+        assertTrue(defuse4.containsChain(-1,8));
+        assertTrue(defuse4.containsChain(7,13));
+        assertTrue(defuse4.containsChain(-1,15));
+        assertTrue(defuse4.containsChain(19,25));
+        assertTrue(map2.containsKey("increment"));
+        DefUseChains defuse5 = ((DefUseChoice) map2.get("increment")).getDefUse();
+        assertEquals(2, defuse5.getChainSize());
+        assertTrue(defuse5.containsChain(-1,0));
+        assertTrue(defuse5.containsChain(-1,11));
+
+        Map<Object, Object> map3 = (Map<Object, Object>) defUse.get(2);
+        assertEquals(3, map3.size());
+        assertTrue(map3.containsKey("<init>"));
+        DefUseChains defuse6 = ((DefUseChoice) map3.get("<init>")).getDefUse();
+        assertEquals(1, defuse6.getChainSize());
+        assertTrue(defuse6.containsChain(-1,0));
+        assertTrue(map3.containsKey("ifTest"));
+        DefUseChains defuse7 = ((DefUseChoice) map3.get("ifTest")).getDefUse();
+        assertEquals(4, defuse7.getChainSize());
+        assertTrue(defuse7.containsChain(-1,8));
+        assertTrue(defuse7.containsChain(7,13));
+        assertTrue(defuse7.containsChain(-1,15));
+        assertTrue(defuse7.containsChain(19,25));
+        assertTrue(map3.containsKey("increment"));
+        DefUseChains defuse8 = ((DefUseChoice) map3.get("increment")).getDefUse();
+        assertEquals(3, defuse8.getChainSize());
+        assertTrue(defuse8.containsChain(-1,0));
+        assertTrue(defuse8.containsChain(-1,5));
+        assertTrue(defuse8.containsChain(8,9));
     }
 
     @Test
     public final void testDefUseWhile() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.defUse.TestWhile");
-        Map<Object, Object> defUse = TestableMuliRunner.getCoverageMap();
+        ArrayList defUse = TestableMuliRunner.getCoverageMap();
         // number of invoked methods
-        assertEquals(1, defUse.size());
-        for(Object m: defUse.keySet()){
-            DefUseMethod defuseMethod = (DefUseMethod) defUse.get(m);
-            Method method = (Method) m;
-            // while method
-            if(method.getFullName().contains("whileTest")){
-                // parsed variable definitions based on bytecode
-                DefUseRegisters defs = defuseMethod.getDefs();
-                assertEquals(3, defs.getRegisterSize());
-                Integer[] defPcs = {33,22,11};
-                Integer [] defsPcsActual = defs.registers.keySet().toArray(new Integer[defs.getRegisterSize()]);
-                assertArrayEquals(defPcs, defsPcsActual);
-                assertEquals("\r\n   PC: 33; Visited: false; Links:12,37\r\n   PC: 22; Visited: true; Links:12,23,37"
-                                + "\r\n   PC: 11; Visited: true; Links:12,37",
-                        defs.toString());
-                // parsed variable usages based on bytecode
-                DefUseRegisters uses = defuseMethod.getUses();
-                assertEquals(3, uses.getRegisterSize());
-                Integer[] usePcs = {37,23,12};
-                Integer [] usePcsActual = uses.registers.keySet().toArray(new Integer[uses.getRegisterSize()]);
-                assertArrayEquals(usePcs, usePcsActual);
-                assertEquals("\r\n   PC: 37; Visited: true; Links:11,22,33\r\n   PC: 23; Visited: true; Links:22"
-                                + "\r\n   PC: 12; Visited: true; Links:11,22,33",
-                        uses.toString());
-                // defUse chains which were visited
-                DefUseChains chains = defuseMethod.getDefUses();
-                assertEquals(7, chains.getChainSize());
-                for(DefUseChain chain: chains.getDefUseChains()){
-                    if(chain.getDef().getPc() == 22){
-                        assertTrue(chain.getVisited());
-                    } else if(chain.getDef().getPc() == 11 && chain.getUse().getPc() == 12){
-                        assertTrue(chain.getVisited());
-                    } else {
-                        assertFalse(chain.getVisited());
-                    }
-                }
-            }
-            System.out.println("Method: "+method.getFullName());
-            System.out.println(defuseMethod.toString());
+        assertEquals(3, defUse.size());
+        Map<Object, Object> map1 = (Map<Object, Object>) defUse.get(0);
+        assertEquals(1, map1.size());
+        for(Object m: map1.keySet()){
+            String method = (String) m;
+            assertEquals("whileTest", m);
+            DefUseChains defuse = ((DefUseChoice) map1.get(m)).getDefUse();
+            assertEquals(2, defuse.getChainSize());
+            assertTrue(defuse.containsChain(-1,0));
+            assertTrue(defuse.containsChain(-1,25));
+        }
+        Map<Object, Object> map2 = (Map<Object, Object>) defUse.get(1);
+        assertEquals(1, map2.size());
+        for(Object m: map2.keySet()){
+            String method = (String) m;
+            assertEquals("whileTest", m);
+            DefUseChains defuse = ((DefUseChoice) map2.get(m)).getDefUse();
+            assertEquals(4, defuse.getChainSize());
+            assertTrue(defuse.containsChain(-1,0));
+            assertTrue(defuse.containsChain(10,11));
+            assertTrue(defuse.containsChain(10,25));
+            assertTrue(defuse.containsChain(10,0));
+        }
+        Map<Object, Object> map3 = (Map<Object, Object>) defUse.get(2);
+        assertEquals(1, map3.size());
+        for(Object m: map3.keySet()){
+            String method = (String) m;
+            assertEquals("whileTest", m);
+            DefUseChains defuse = ((DefUseChoice) map3.get(m)).getDefUse();
+            assertEquals(4, defuse.getChainSize());
+            assertTrue(defuse.containsChain(-1,0));
+            assertTrue(defuse.containsChain(10,11));
+            assertTrue(defuse.containsChain(21,25));
+            assertTrue(defuse.containsChain(21,0));
         }
     }
 

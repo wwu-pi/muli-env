@@ -2,9 +2,7 @@ package de.wwu.muli.listener;
 
 import de.wwu.muggl.instructions.interfaces.Instruction;
 import de.wwu.muggl.instructions.interfaces.control.JumpInvocation;
-import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Constant;
-import de.wwu.muggl.vm.execution.ExecutionException;
 import de.wwu.muggl.vm.loading.MugglClassLoader;
 import de.wwu.muli.defuse.*;
 import de.wwu.muli.searchtree.UnevaluatedST;
@@ -13,17 +11,17 @@ import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.Frame;
 import java.util.*;
 import de.wwu.muli.searchtree.Choice;
-import java.util.stream.Stream;
 
 public class DefUseListener implements ExecutionPathListener {
 
     private DefUseAnalyser analyser;
     private DefUseMethod register;
     //private DefUseChoice defusechoice;
-    private Map<Choice, DefUseChoice> choices;
+    private Map<Choice, DefUseMethodMap> choices;
     private String methodName;
     private HashSet<String> relevantMethods;
-    private Map<String, DefUseChoice> defUseMap;
+    private DefUseMethodMap defUseMap;
+    private ArrayList<Map<Object, Object>> testableResult;
 
 
     public DefUseListener(LogicVirtualMachine vm){
@@ -34,8 +32,9 @@ public class DefUseListener implements ExecutionPathListener {
             throw new IllegalStateException(e); // TODO Better exception treatment.
         }
         choices = new HashMap<>();
-        defUseMap = new HashMap<>();
+        defUseMap = new DefUseMethodMap();
         relevantMethods = new HashSet<>();
+        testableResult = new ArrayList<>();
     }
 
     public void setMethodName(String methodName){
@@ -47,7 +46,7 @@ public class DefUseListener implements ExecutionPathListener {
 
     public void executedInstruction(Instruction instruction, Frame frame, int pc){
         Method method = frame.getMethod();
-        if(methodName.equals(method.getName()) || relevantMethods.contains(method.getFullName())){
+        if(methodName.equals(method.getName()) || relevantMethods.contains(method.getClassFile().getName()+method.getFullName())){
             if(instruction instanceof JumpInvocation){
                 registerNewMethod(instruction, method);
             }
@@ -62,26 +61,40 @@ public class DefUseListener implements ExecutionPathListener {
             }
             Method choiceMethod = ((UnevaluatedST) ch.getSts().get(0)).getFrame().getMethod();
             if(defusechoice.getNewInstance() && choices.containsKey(ch) && choiceMethod.equals(method)) {
-                DefUseChoice defUseParent = choices.get(ch);
+                DefUseMethodMap map = choices.get(ch);
+                DefUseChoice defUseParent = map.get(method.getName());
                 defusechoice.addDefs(defUseParent.getDefs());
             }
-            if(methodName.equals(choiceMethod.getName()) && !choices.containsKey(ch)){
+            if(method.getName().equals(choiceMethod.getName()) && !choices.containsKey(ch)){
                 Choice p = ch.getParent();
                 if(p!=null) {
                     Method parentChoiceMethod = ((UnevaluatedST) p.getSts().get(0)).getFrame().getMethod();
-                    if (methodName.equals(parentChoiceMethod.getName())) {
-                        DefUseChoice defUseParent = choices.get(p);
-                        defusechoice.addDefs(defUseParent.getDefs());
-                        //defusechoice.addUses(defUseParent.getUses());
-                        defusechoice.addDefUses(defUseParent.getDefUse());
-                        //defusechoice.updateDefUse();
+                    if (methodName.equals(parentChoiceMethod.getName()) || relevantMethods.contains(parentChoiceMethod.getClassFile().getName()+parentChoiceMethod.getFullName())) {
+                        DefUseMethodMap map = choices.get(p);
+                        for(Map.Entry<String, DefUseChoice> entry : map.entrySet()) {
+                            DefUseChoice defUseParent = entry.getValue();
+                            String m = entry.getKey();
+                            DefUseChoice defUse = defUseMap.get(m);
+                            defUse.addDefs(defUseParent.getDefs());
+                            defUse.addDefUses(defUseParent.getDefUse());
+                        }
                     }
                 }
-                choices.put(ch, defusechoice);
+                choices.put(ch, defUseMap);
+                defUseMap = new DefUseMethodMap();
+                //DefUseChoice defUseParent = defUseMap.get(method.getName());
                 defusechoice = new DefUseChoice();
-                defUseMap.put(methodName, defusechoice);
-                DefUseChoice defUseParent = choices.get(ch);
-                defusechoice.addDefs(defUseParent.getDefs());
+                DefUseMethodMap map = choices.get(ch);
+                for(Map.Entry<String, DefUseChoice> entry : map.entrySet()) {
+                    DefUseChoice newDefuse = new DefUseChoice();
+                    DefUseChoice defuseParent = entry.getValue();
+                    String m = entry.getKey();
+                    newDefuse.addDefs(defuseParent.getDefs());
+                    defUseMap.put(m, newDefuse);
+                    if(m.equals(method.getName())){
+                        defusechoice = newDefuse;
+                    }
+                }
             }
             defusechoice.visitDefUse(instruction, pc, method);
         }
@@ -92,28 +105,50 @@ public class DefUseListener implements ExecutionPathListener {
     }
 
     @Override
-    public Map<Object, Object> getResult(){
-        return null;
+    public ArrayList<Map<Object, Object>> getResult(){
+        return testableResult;
     }
 
-    public boolean[] getCover(String methodName, LogicVirtualMachine vm) {
+    public Map<String, Object> getCover(String methodName, LogicVirtualMachine vm) {
         Choice choice = vm.getCurrentChoice();
-        boolean[] result = new boolean[]{};
+        Map<String, Object> result = new HashMap<>();
         //DefUseChoice defusechoice = defUseMap.get(methodName);
+        Map<Object, Object> testOutput = new HashMap<>();
+        DefUseMethodMap map = new DefUseMethodMap();
+        if (choices.containsKey(choice)) {
+            map = choices.get(choice);
+        } else if(choices.containsKey(choice.getParent())){
+            map = choices.get(choice.getParent());
+        }
         for(Map.Entry<String, DefUseChoice> entry : defUseMap.entrySet()) {
             DefUseChoice defusechoice = entry.getValue();
             String method = entry.getKey();
-            if (choices.containsKey(choice)) {
+            DefUseChoice defUse = map.get(method);
+            if(defUse != null){
+                defusechoice.addDefs(defUse.getDefs());
+                defusechoice.addDefUses(defUse.getDefUse());
+            }
+            /*Method choiceMethod = ((UnevaluatedST) choice.getSts().get(0)).getFrame().getMethod();
+            if (choices.containsKey(choice) && choiceMethod.getName().equals(method)) {
                 DefUseChoice defUse = choices.get(choice);
                 defusechoice.addDefs(defUse.getDefs());
                 defusechoice.addDefUses(defUse.getDefUse());
-            } else if (choices.containsKey(choice.getParent())){
-                DefUseChoice defUse = choices.get(choice.getParent());
-                defusechoice.addDefs(defUse.getDefs());
-                defusechoice.addDefUses(defUse.getDefUse());
             } else {
-                throw new IllegalStateException("Final choice does not exist");
-            }
+                Choice whileChoice = choice.getParent();
+                hasNoChoice = true;
+                while(whileChoice != null){
+                    choiceMethod = ((UnevaluatedST) whileChoice.getSts().get(0)).getFrame().getMethod();
+                    if (choices.containsKey(whileChoice) && choiceMethod.getName().equals(method)) {
+                        DefUseChoice defUse = choices.get(whileChoice);
+                        defusechoice.addDefs(defUse.getDefs());
+                        defusechoice.addDefUses(defUse.getDefUse());
+                        hasNoChoice = false;
+                        break;
+                    } else {
+                        whileChoice = whileChoice.getParent();
+                    }
+                }*/
+            testOutput.put(method, defusechoice);
             int[] asArray = new int[defusechoice.getDefUse().getChainSize()];
             DefUseChain[] chainArray = defusechoice.getDefUse().getDefUseChains().toArray(new DefUseChain[asArray.length]);
             int max = 0;
@@ -124,14 +159,15 @@ public class DefUseListener implements ExecutionPathListener {
                     max = value;
                 }
             }
-            boolean[] int_result = new boolean[max+1];
+            boolean[] part_result = new boolean[max+1];
             for (int i = 0; i < asArray.length; i++) {
-                int_result[asArray[i]] = true;
+                part_result[asArray[i]] = true;
             }
             defusechoice = new DefUseChoice();
             defUseMap.put(method, defusechoice);
-            result = booleanConcat(result, int_result);
+            result.put(method, part_result);
         }
+        testableResult.add(testOutput);
         return result;
     }
 
@@ -168,21 +204,15 @@ public class DefUseListener implements ExecutionPathListener {
         JumpInvocation jump = (JumpInvocation) instruction;
         try {
             Method invokedMethod = jump.getInvokedMethod(constantPool, classLoader);
-            if(!relevantMethods.contains(invokedMethod.getFullName())){
-                relevantMethods.add(invokedMethod.getFullName());
-                defUseMap.put(invokedMethod.getName(), new DefUseChoice());
+            if(!invokedMethod.getName().equals(methodName) && !relevantMethods.contains(invokedMethod.getClassFile().getName()+invokedMethod.getFullName())){
+                if(!invokedMethod.getClassFile().getName().startsWith("java.")) {
+                    relevantMethods.add(invokedMethod.getClassFile().getName()+invokedMethod.getFullName());
+                    defUseMap.put(invokedMethod.getName(), new DefUseChoice());
+                }
             }
         } catch (Exception e) {
             // Frame method does not match instruction method
 
         }
     }
-
-    public boolean[] booleanConcat(boolean[] a, boolean[]b){
-        boolean[] r = Arrays.copyOf(a, a.length + b.length);
-        System.arraycopy(b, 0, r, a.length, b.length);
-        return r;
-    }
-
-
 }

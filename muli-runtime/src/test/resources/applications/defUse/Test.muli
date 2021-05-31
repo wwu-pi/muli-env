@@ -4,34 +4,44 @@ import java.util.List;
 import de.wwu.muli.*;
 import de.wwu.muli.solution.*;
 import java.lang.Object;
+import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
 
 public class Test {
 
     public static void main(String[] args) {
-        Solution[] solution = Muli.getAllSolutions(Test2::ifTest, SearchStrategy.BreadthFirstSearch);
+        Solution[] solutions = Muli.getAllSolutionsWithTestCases(Test::searchRegion, Test.class.getName() + ".ifTest");
         //System.out.println(solution.value);
+        TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        tcg.generateTestClassStringRepresentation();
     }
 
-}
-
-
-class Test2{
-    static int ifTest(){
-        Orange i = new Orange();
-        int x free;
-        if(x == 5){
-            x = i.increment(x);
-        } else {
-            x = 5;
+        static int searchRegion(){
+            int x free;
+            int y = ifTest(x);
+            return y;
         }
-        return x;
-    }
-}
 
-class Orange{
+        static int ifTest(int x){
+            Test2 i = new Test2();
+            if(x < 5){
+                x = i.increment(x);
+            } else {
+                x = 5;
+            }
+            return x;
+        }
+
+}
+class Test2{
 
     static int increment(int x){
-        int y = x + 1;
-        return y;
+        if(x < 2) {
+            int y = x + 1;
+            return y;
+        } else {
+            return x;
+        }
     }
 }

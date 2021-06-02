@@ -128,26 +128,7 @@ public class DefUseListener implements ExecutionPathListener {
                 defusechoice.addDefs(defUse.getDefs());
                 defusechoice.addDefUses(defUse.getDefUse());
             }
-            /*Method choiceMethod = ((UnevaluatedST) choice.getSts().get(0)).getFrame().getMethod();
-            if (choices.containsKey(choice) && choiceMethod.getName().equals(method)) {
-                DefUseChoice defUse = choices.get(choice);
-                defusechoice.addDefs(defUse.getDefs());
-                defusechoice.addDefUses(defUse.getDefUse());
-            } else {
-                Choice whileChoice = choice.getParent();
-                hasNoChoice = true;
-                while(whileChoice != null){
-                    choiceMethod = ((UnevaluatedST) whileChoice.getSts().get(0)).getFrame().getMethod();
-                    if (choices.containsKey(whileChoice) && choiceMethod.getName().equals(method)) {
-                        DefUseChoice defUse = choices.get(whileChoice);
-                        defusechoice.addDefs(defUse.getDefs());
-                        defusechoice.addDefUses(defUse.getDefUse());
-                        hasNoChoice = false;
-                        break;
-                    } else {
-                        whileChoice = whileChoice.getParent();
-                    }
-                }*/
+
             testOutput.put(method, defusechoice);
             int[] asArray = new int[defusechoice.getDefUse().getChainSize()];
             DefUseChain[] chainArray = defusechoice.getDefUse().getDefUseChains().toArray(new DefUseChain[asArray.length]);
@@ -177,26 +158,6 @@ public class DefUseListener implements ExecutionPathListener {
         int result = (int) (0.5 * (a + b) * (a + b + 1) + b);
         return result;
     }
-
-/*    public boolean isInvokedBy(Frame frame){
-        Frame currentFrame = frame;
-        String methodName = currentFrame.getMethod().getClassFile().getName();
-        if (methodName.startsWith("java.") || notRelevantMethods.contains(methodName)){
-            return false;
-        } else if(relevantMethods.contains(methodName)){
-            return true;
-        }
-        while(!currentFrame.getMethod().getName().equals(this.methodName)){
-            currentFrame = currentFrame.getInvokedBy();
-            if(currentFrame == null){
-                notRelevantMethods.add(frame.getMethod().getName());
-                return false;
-            }
-
-        }
-        relevantMethods.add(frame.getMethod().getName());
-        return true;
-    }*/
 
     public void registerNewMethod(Instruction instruction, Method m){
         MugglClassLoader classLoader = m.getClassFile().getClassLoader();

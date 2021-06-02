@@ -11,6 +11,7 @@ import de.wwu.muli.defuse.DefUseRegisters;
 import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
 import de.wwu.muli.searchtree.ST;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -120,7 +121,7 @@ public class TestExecution {
         }
     }
 
-    @Test
+    @Test @Ignore
     public final void testVariables() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TestVariables");
     }

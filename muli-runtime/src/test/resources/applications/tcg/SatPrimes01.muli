@@ -1,0 +1,118 @@
+/*
+ * Origin of the benchmark:
+ *     license: MIT (see /java/jayhorn-recursive/LICENSE)
+ *     repo: https://github.com/jayhorn/cav_experiments.git
+ *     branch: master
+ *     root directory: benchmarks/recursive
+ * The benchmark was taken from the repo: 24 January 2018
+ */
+/* 2021-06-14 Taken and adjusted from https://github.com/sosy-lab/sv-benchmarks/blob/master/java/jayhorn-recursive/SatPrimes01/Main.java
+    : HW */
+
+/* 2021-06-14 Added package declaration and other Muli-related imports : HW */
+
+package applications.tcg;
+
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
+import java.lang.Object;
+
+/* 2021-06-14 Renamed from Main to SatPrimes01 : HW */
+public class SatPrimes01 {
+
+  // Multiplies two integers n and m
+  static int mult(int n, int m) {
+    if (m < 0) {
+      return mult(n, -m);
+    }
+    if (m == 0) {
+      return 0;
+    }
+    if (m == 1) {
+      return 1;
+    }
+    return n + mult(n, m - 1);
+  }
+
+  // Is n a multiple of m?
+  static int multiple_of(int n, int m) {
+    if (m < 0) {
+      return multiple_of(n, -m);
+    }
+    if (n < 0) {
+      return 0; // 2021-06-14 Commented the following out, it does not terminate : HW :: return multiple_of(-n, m); // false
+    }
+    if (m == 0) {
+      return 0; // false
+    }
+    if (n == 0) {
+      return 1; // true
+    }
+    return multiple_of(n - m, m);
+  }
+
+  // Is n prime?
+  static int is_prime(int n) {
+    return is_prime_(n, n - 1);
+  }
+
+  static int is_prime_(int n, int m) {
+    if (n <= 1) {
+      return 0; // false
+    } else if (n == 2) {
+      return 1; // true
+    } else {
+      if (m <= 1) {
+        return 1; // true
+      } else {
+        if (multiple_of(n, m) == 1) { // 2021-06-14 Adapted the following from : HW :: multiple_of(n, m) == 1
+          return 0; // false
+        }
+        return is_prime_(n, m - 1);
+      }
+    }
+  }
+
+  /* 2021-06-14 Added driver method : HW */
+  public static int isPrimeDriver() {
+    int n free;
+    if (n < 1 || n > 30) { /* 2021-06-14 Adjusted range manually from 46340 : HW */
+      throw Muli.fail();
+    }
+    int result = is_prime(n);
+    return result;
+  }
+
+  /* 2021-06-14 Added driver method : HW */
+  public static int multDriver() {
+    int n free;
+    if (n < 1 || n > 50) { /* 2021-06-14 Adjusted range manually from 46340 : HW */
+      throw Muli.fail();
+    }
+    int m free;
+    if (m < 1 || m > 50) { /* 2021-06-14 Adjusted range manually from 46340 : HW */
+      throw Muli.fail();
+    }
+    int result = mult(n,m);
+    return result;
+  }
+
+  /* 2021-06-14 Altered main method to fit Muli : HW */
+  public static void main(String[] args) {
+    boolean checkIsPrime = true; // Else mult
+    Solution[] solutions =
+        Muli.getAllSolutionsWithTestCases(
+            checkIsPrime ? SatPrimes01::isPrimeDriver : SatPrimes01::multDriver,
+            SatPrimes01.class.getName() + (checkIsPrime ? ".is_prime" : ".mult")
+        );
+    for(Solution s : solutions){
+        TestCase<?> tc = s.testCase;
+        Object[] inputs = tc.getInputs();
+    }
+    TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+    tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+    tcg.generateTestClassStringRepresentation();
+  }
+}

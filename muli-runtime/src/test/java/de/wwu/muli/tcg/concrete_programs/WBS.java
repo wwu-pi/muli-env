@@ -25,6 +25,16 @@ public class WBS {
         Sys_Mode = 0;
     }
 
+    /* 2021-06-14 Now returns WBS : HW */
+    public static WBS launch(int pedal1, boolean auto1, boolean skid1, int pedal2, boolean auto2, boolean skid2, int pedal3, boolean auto3, boolean skid3) {
+        WBS wbs = new WBS();
+        wbs.update(pedal1, auto1, skid1);
+        wbs.update(pedal2, auto2, skid2);
+        wbs.update(pedal3, auto3, skid3);
+        return wbs;
+    }
+
+    /* 2021-06-14 Now returns WBS : HW */
     public WBS update(int PedalPos, boolean AutoBrake,
                        boolean Skid) {
         int WBS_Node_WBS_AS_MeterValve_Switch;
@@ -535,4 +545,180 @@ public class WBS {
         wBS1.setSys_Mode(integer0);
         assertEquals(wBS1, wBS0.update(integer0,boolean0,boolean0));
     }
+
+    @Test
+    public void test_launch_0() {
+        Integer integer0 = 5;
+        Boolean boolean0 = false;
+        Boolean boolean1 = true;
+        Integer integer1 = 3;
+        Integer integer2 = 0;
+        WBS wBS0 = new WBS();
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer2);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer2);
+        wBS0.setNor_Pressure(integer2);
+        wBS0.setAlt_Pressure(integer2);
+        wBS0.setSys_Mode(integer2);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean1,integer1,boolean0,boolean1,integer2,boolean1,boolean1));
+    }
+
+    @Test
+    public void test_launch_1() {
+        Integer integer0 = 5;
+        Boolean boolean0 = true;
+        Boolean boolean1 = false;
+        Integer integer1 = 0;
+        Integer integer2 = 4;
+        WBS wBS0 = new WBS();
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer1);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer0);
+        wBS0.setNor_Pressure(integer0);
+        wBS0.setAlt_Pressure(integer1);
+        wBS0.setSys_Mode(integer1);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean1,integer1,boolean0,boolean0,integer2,boolean1,boolean1));
+    }
+
+    @Test
+    public void test_launch_2() {
+        Integer integer0 = 4;
+        Boolean boolean0 = true;
+        Boolean boolean1 = false;
+        Integer integer1 = 5;
+        Integer integer2 = 2;
+        WBS wBS0 = new WBS();
+        Integer integer3 = 0;
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer3);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer2);
+        wBS0.setNor_Pressure(integer2);
+        wBS0.setAlt_Pressure(integer3);
+        wBS0.setSys_Mode(integer3);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean1,integer1,boolean1,boolean0,integer2,boolean1,boolean1));
+    }
+
+    @Test
+    public void test_launch_3() {
+        Integer integer0 = 4;
+        Boolean boolean0 = true;
+        Integer integer1 = 2;
+        Boolean boolean1 = false;
+        Integer integer2 = 0;
+        WBS wBS0 = new WBS();
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer2);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer2);
+        wBS0.setNor_Pressure(integer2);
+        wBS0.setAlt_Pressure(integer2);
+        wBS0.setSys_Mode(integer2);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean0,integer1,boolean0,boolean1,integer2,boolean1,boolean0));
+    }
+
+    @Test
+    public void test_launch_4() {
+        Integer integer0 = 3;
+        Boolean boolean0 = true;
+        Boolean boolean1 = false;
+        Integer integer1 = 1;
+        Integer integer2 = 2;
+        WBS wBS0 = new WBS();
+        Integer integer3 = 0;
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer3);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer3);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer3);
+        wBS0.setNor_Pressure(integer3);
+        wBS0.setAlt_Pressure(integer3);
+        wBS0.setSys_Mode(integer3);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean1,integer1,boolean1,boolean0,integer2,boolean0,boolean0));
+    }
+
+    @Test
+    public void test_launch_5() {
+        Integer integer0 = 2;
+        Boolean boolean0 = true;
+        Integer integer1 = 3;
+        Boolean boolean1 = false;
+        Integer integer2 = 1;
+        WBS wBS0 = new WBS();
+        Integer integer3 = 0;
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer3);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer3);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer3);
+        wBS0.setNor_Pressure(integer3);
+        wBS0.setAlt_Pressure(integer3);
+        wBS0.setSys_Mode(integer3);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean0,integer1,boolean1,boolean0,integer2,boolean1,boolean0));
+    }
+
+    @Test
+    public void test_launch_6() {
+        Integer integer0 = 1;
+        Boolean boolean0 = false;
+        Integer integer1 = 0;
+        Boolean boolean1 = true;
+        Integer integer2 = 4;
+        WBS wBS0 = new WBS();
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer1);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        Integer integer3 = 5;
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer3);
+        wBS0.setNor_Pressure(integer3);
+        wBS0.setAlt_Pressure(integer1);
+        wBS0.setSys_Mode(integer1);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean0,integer1,boolean1,boolean1,integer2,boolean0,boolean0));
+    }
+
+    @Test
+    public void test_launch_7() {
+        Integer integer0 = 1;
+        Boolean boolean0 = true;
+        Boolean boolean1 = false;
+        Integer integer1 = 2;
+        Integer integer2 = 3;
+        WBS wBS0 = new WBS();
+        Integer integer3 = 0;
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer3);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer3);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer3);
+        wBS0.setNor_Pressure(integer3);
+        wBS0.setAlt_Pressure(integer3);
+        wBS0.setSys_Mode(integer3);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean1,integer1,boolean1,boolean1,integer2,boolean0,boolean0));
+    }
+
+    @Test
+    public void test_launch_8() {
+        Integer integer0 = 0;
+        Boolean boolean0 = false;
+        Integer integer1 = 5;
+        Boolean boolean1 = true;
+        WBS wBS0 = new WBS();
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
+        Integer integer2 = 1;
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer2);
+        wBS0.setNor_Pressure(integer2);
+        wBS0.setAlt_Pressure(integer0);
+        wBS0.setSys_Mode(integer0);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean0,integer1,boolean0,boolean1,integer0,boolean1,boolean0));
+    }
+
+    @Test
+    public void test_launch_9() {
+        Integer integer0 = 0;
+        Boolean boolean0 = true;
+        Integer integer1 = 4;
+        Boolean boolean1 = false;
+        Integer integer2 = 2;
+        WBS wBS0 = new WBS();
+        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
+        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
+        wBS0.setWBS_Node_WBS_rlt_PRE2(integer0);
+        wBS0.setNor_Pressure(integer0);
+        wBS0.setAlt_Pressure(integer0);
+        wBS0.setSys_Mode(integer0);
+        assertEquals(wBS0, WBS.launch(integer0,boolean0,boolean0,integer1,boolean1,boolean1,integer2,boolean0,boolean0));
+    }
+
 }

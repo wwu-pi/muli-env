@@ -290,7 +290,7 @@ public class WBSMain {
 
     /* 2021-06-14 Altered to fit Muli : HW */
 	public static void main(String[] args) {
-	    boolean checkLaunch = false; // Else update
+	    boolean checkLaunch = true; // Else update
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(
             checkLaunch ? WBSMain::launchDriver : WBSMain::updateDriver,
             WBS.class.getName() + (checkLaunch ? ".launch" : ".update")

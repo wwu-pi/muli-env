@@ -109,9 +109,9 @@ public class DefUseListener implements ExecutionPathListener {
         return testableResult;
     }
 
-    public Map<String, Object> getCover(String methodName, LogicVirtualMachine vm) {
+    public Map<String, int[]> getCover(String methodName, LogicVirtualMachine vm) {
         Choice choice = vm.getCurrentChoice();
-        Map<String, Object> result = new HashMap<>();
+        Map<String, int[]> result = new HashMap<>();
         //DefUseChoice defusechoice = defUseMap.get(methodName);
         Map<Object, Object> testOutput = new HashMap<>();
         DefUseMethodMap map = new DefUseMethodMap();
@@ -132,21 +132,14 @@ public class DefUseListener implements ExecutionPathListener {
             testOutput.put(method, defusechoice);
             int[] asArray = new int[defusechoice.getDefUse().getChainSize()];
             DefUseChain[] chainArray = defusechoice.getDefUse().getDefUseChains().toArray(new DefUseChain[asArray.length]);
-            int max = 0;
             for (int i = 0; i < asArray.length; i++) {
                 int value = pair(chainArray[i].getDef().getPc(), chainArray[i].getUse().getPc());
                 asArray[i] = value;
-                if(value > max){
-                    max = value;
-                }
             }
-            boolean[] part_result = new boolean[max+1];
-            for (int i = 0; i < asArray.length; i++) {
-                part_result[asArray[i]] = true;
-            }
+
             defusechoice = new DefUseChoice();
             defUseMap.put(method, defusechoice);
-            result.put(method, part_result);
+            result.put(method, asArray);
         }
         testableResult.add(testOutput);
         return result;

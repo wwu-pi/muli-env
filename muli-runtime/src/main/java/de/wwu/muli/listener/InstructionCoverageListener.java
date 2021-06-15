@@ -31,7 +31,7 @@ public class InstructionCoverageListener implements ExecutionPathListener {
         throw new IllegalStateException("Not yet implemented.");
     }
 
-    public Map<String, Object> getCover(String method, LogicVirtualMachine vm) {return null;}
+    public Map<String, int[]> getCover(String method, LogicVirtualMachine vm) {throw new IllegalStateException("Not yet implemented.");}
 
     @Override
     public void setMethodName(String methodName) {

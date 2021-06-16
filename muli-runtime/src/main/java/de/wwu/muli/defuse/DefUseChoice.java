@@ -268,6 +268,7 @@ public class DefUseChoice {
      */
     public boolean isNotUseLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader) throws ExecutionException, ClassFileException {
         for(int i = index + 1; i < in.length; i++) {
+            // Todo when Methodinvokation und danach putfield zählt nicht
             if(in[i] instanceof ALoad) {
                 if(!isMethodInvLoad(in, i, constantPool, classLoader)){
                     return false;

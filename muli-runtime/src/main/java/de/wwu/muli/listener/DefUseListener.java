@@ -136,17 +136,18 @@ public class DefUseListener implements ExecutionPathListener {
             for (int i = 0; i < asArray.length; i++) {
                 int value = pair(chainArray[i].getDef().getPc(), chainArray[i].getUse().getPc());
                 asArray[i] = value;
-                if(value > max){
-                    max = value;
-                }
+                //if(value > max){
+                //    max = value;
+                //}
             }
-            boolean[] part_result = new boolean[max+1];
-            for (int i = 0; i < asArray.length; i++) {
-                part_result[asArray[i]] = true;
-            }
+            Arrays.sort(asArray);
+            //boolean[] part_result = new boolean[max+1];
+            //for (int i = 0; i < asArray.length; i++) {
+            //    part_result[asArray[i]] = true;
+            //}
             defusechoice = new DefUseChoice();
             defUseMap.put(method, defusechoice);
-            result.put(method, part_result);
+            result.put(method, asArray);
         }
         testableResult.add(testOutput);
         return result;

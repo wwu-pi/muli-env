@@ -4,6 +4,27 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * Symbolic Pathfinder (jpf-symbc) is licensed under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* 2021-06-14 Taken and adjusted from https://github.com/sosy-lab/sv-benchmarks/blob/master/java/java-ranger-regression/WBS/impl/WBS.java
+    : HW */
+
 public class WBS {
 
     //Internal state
@@ -365,17 +386,16 @@ public class WBS {
         wBS0.setNor_Pressure(integer0);
         wBS0.setAlt_Pressure(integer0);
         wBS0.setSys_Mode(integer0);
-        Integer integer2 = 4;
+        Integer integer2 = 3;
         Boolean boolean0 = false;
-        Boolean boolean1 = true;
         WBS wBS1 = new WBS();
         wBS1.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
-        wBS1.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
-        wBS1.setWBS_Node_WBS_rlt_PRE2(integer0);
-        wBS1.setNor_Pressure(integer0);
+        wBS1.setWBS_Node_WBS_BSCU_rlt_PRE1(integer2);
+        wBS1.setWBS_Node_WBS_rlt_PRE2(integer2);
+        wBS1.setNor_Pressure(integer2);
         wBS1.setAlt_Pressure(integer0);
         wBS1.setSys_Mode(integer0);
-        assertEquals(wBS1, wBS0.update(integer2,boolean0,boolean1));
+        assertEquals(wBS1, wBS0.update(integer2,boolean0,boolean0));
     }
 
     @Test
@@ -390,15 +410,13 @@ public class WBS {
         wBS0.setAlt_Pressure(integer0);
         wBS0.setSys_Mode(integer0);
         Integer integer2 = 3;
-        Boolean boolean0 = true;
-        Boolean boolean1 = false;
+        Boolean boolean0 = false;
+        Boolean boolean1 = true;
         WBS wBS1 = new WBS();
         wBS1.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
-        Integer integer3 = 4;
-        wBS1.setWBS_Node_WBS_BSCU_rlt_PRE1(integer3);
-        Integer integer4 = 5;
-        wBS1.setWBS_Node_WBS_rlt_PRE2(integer4);
-        wBS1.setNor_Pressure(integer4);
+        wBS1.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
+        wBS1.setWBS_Node_WBS_rlt_PRE2(integer0);
+        wBS1.setNor_Pressure(integer0);
         wBS1.setAlt_Pressure(integer0);
         wBS1.setSys_Mode(integer0);
         assertEquals(wBS1, wBS0.update(integer2,boolean0,boolean1));
@@ -440,29 +458,6 @@ public class WBS {
         wBS0.setNor_Pressure(integer0);
         wBS0.setAlt_Pressure(integer0);
         wBS0.setSys_Mode(integer0);
-        Integer integer2 = 2;
-        Boolean boolean0 = true;
-        WBS wBS1 = new WBS();
-        wBS1.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
-        wBS1.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
-        wBS1.setWBS_Node_WBS_rlt_PRE2(integer0);
-        wBS1.setNor_Pressure(integer0);
-        wBS1.setAlt_Pressure(integer0);
-        wBS1.setSys_Mode(integer0);
-        assertEquals(wBS1, wBS0.update(integer2,boolean0,boolean0));
-    }
-
-    @Test
-    public void test_update_6() {
-        WBS wBS0 = new WBS();
-        Integer integer0 = 0;
-        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
-        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
-        Integer integer1 = 100;
-        wBS0.setWBS_Node_WBS_rlt_PRE2(integer1);
-        wBS0.setNor_Pressure(integer0);
-        wBS0.setAlt_Pressure(integer0);
-        wBS0.setSys_Mode(integer0);
         Integer integer2 = 1;
         Boolean boolean0 = true;
         Boolean boolean1 = false;
@@ -478,30 +473,7 @@ public class WBS {
     }
 
     @Test
-    public void test_update_7() {
-        WBS wBS0 = new WBS();
-        Integer integer0 = 0;
-        wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
-        wBS0.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
-        Integer integer1 = 100;
-        wBS0.setWBS_Node_WBS_rlt_PRE2(integer1);
-        wBS0.setNor_Pressure(integer0);
-        wBS0.setAlt_Pressure(integer0);
-        wBS0.setSys_Mode(integer0);
-        Integer integer2 = 1;
-        Boolean boolean0 = true;
-        WBS wBS1 = new WBS();
-        wBS1.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
-        wBS1.setWBS_Node_WBS_BSCU_rlt_PRE1(integer0);
-        wBS1.setWBS_Node_WBS_rlt_PRE2(integer0);
-        wBS1.setNor_Pressure(integer0);
-        wBS1.setAlt_Pressure(integer0);
-        wBS1.setSys_Mode(integer0);
-        assertEquals(wBS1, wBS0.update(integer2,boolean0,boolean0));
-    }
-
-    @Test
-    public void test_update_8() {
+    public void test_update_6() {
         WBS wBS0 = new WBS();
         Integer integer0 = 0;
         wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);
@@ -525,7 +497,7 @@ public class WBS {
     }
 
     @Test
-    public void test_update_9() {
+    public void test_update_7() {
         WBS wBS0 = new WBS();
         Integer integer0 = 0;
         wBS0.setWBS_Node_WBS_BSCU_SystemModeSelCmd_rlt_PRE(integer0);

@@ -3,6 +3,16 @@ package de.wwu.muli.tcg.concrete_programs;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+/*
+ * Origin of the benchmark:
+ *     license: MIT (see /java/jayhorn-recursive/LICENSE)
+ *     repo: https://github.com/jayhorn/cav_experiments.git
+ *     branch: master
+ *     root directory: benchmarks/recursive
+ * The benchmark was taken from the repo: 24 January 2018
+ */
+/* 2021-06-14 Taken and adjusted from https://github.com/sosy-lab/sv-benchmarks/blob/master/java/jayhorn-recursive/SatPrimes01/Main.java
+    : HW */
 
 /* 2021-06-14 Renamed from Main to SatPrimes01 : HW */
 public class SatPrimes01 {

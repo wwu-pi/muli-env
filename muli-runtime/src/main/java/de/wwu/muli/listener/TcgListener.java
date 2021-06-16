@@ -17,7 +17,7 @@ public interface TcgListener {
 
     String getMethodName();
 
-    Map<String, Object> getCover(LogicVirtualMachine vm);
+    Map<String, int[]> getCover(LogicVirtualMachine vm);
 
     boolean isObjectMethod();
 

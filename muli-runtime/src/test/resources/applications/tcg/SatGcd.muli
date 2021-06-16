@@ -1,0 +1,69 @@
+/*
+ * Origin of the benchmark:
+ *     license: MIT (see /java/jayhorn-recursive/LICENSE)
+ *     repo: https://github.com/jayhorn/cav_experiments.git
+ *     branch: master
+ *     root directory: benchmarks/recursive
+ * The benchmark was taken from the repo: 24 January 2018
+ */
+
+/* 2021-06-14 Taken and adjusted from https://github.com/sosy-lab/sv-benchmarks/blob/master/java/jayhorn-recursive/SatGcd/Main.java
+    : HW */
+
+/* 2021-06-14 Added package declaration and other Muli-related imports : HW */
+
+package applications.tcg;
+
+import de.wwu.muli.*;
+import de.wwu.muli.solution.*;
+import de.wwu.muli.tcg.*;
+import de.wwu.muli.tcg.testsetreducer.*;
+import java.lang.Object;
+
+/* 2021-06-14 Renamed from Main to SatGcd : HW */
+public class SatGcd {
+
+  // Compute the greatest common denominator using Euclid's algorithm
+  static int gcd(int y1, int y2) {
+    if (y1 <= 0 || y2 <= 0) {
+      return 0;
+    }
+    if (y1 == y2) {
+      return y1;
+    }
+    if (y1 > y2) {
+      return gcd(y1 - y2, y2);
+    }
+    return gcd(y1, y2 - y1);
+  }
+
+  /* 2021-06-14 Added driver method : HW */
+  public static int driver() {
+      int m free;
+      if (m <= 0 || m > 30) { /* 2021-06-14 Adjusted range manually from 46340 : HW */
+        throw Muli.fail();
+      }
+      int n free;
+      if (n <= 0 || n > 30) { /* 2021-06-14 Adjusted range manually from 46340 : HW */
+        throw Muli.fail();
+      }
+      int z = gcd(m, n);
+      if (z < 1 && m > 0 && n > 0) {
+        throw new IllegalStateException();
+      } else {
+        return z;
+      }
+  }
+
+  /* 2021-06-14 Altered to fit Muli : HW */
+  public static void main(String[] args) {
+    Solution[] solutions = Muli.getAllSolutionsWithTestCases(SatGcd::driver, SatGcd.class.getName() + ".gcd");
+    for(Solution s : solutions){
+        TestCase<?> tc = s.testCase;
+        Object[] inputs = tc.getInputs();
+    }
+    TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+    tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+    tcg.generateTestClassStringRepresentation();
+  }
+}

@@ -17,7 +17,7 @@ public interface ExecutionPathListener {
 
     public ArrayList<Map<Object, Object>> getResult();
 
-    public Map<String, Object> getCover(String method, LogicVirtualMachine vm);
+    public Map<String, int[]> getCover(String method, LogicVirtualMachine vm);
 
     public void setMethodName(String methodName);
 

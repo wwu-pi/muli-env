@@ -25,11 +25,11 @@ public class TestCoverageConversion {
         int[] m2c2 = {1, 29, 100};
         String method3 = "method3";
         int[] m3c1 = {1};
-        Map<String, Object> coverage1 = new HashMap();
+        Map<String, int[]> coverage1 = new HashMap();
         coverage1.put(method1, m1c1);
         coverage1.put(method2, m2c1);
         TestCase tc1 = new TestCase<>(null, null,"defuse.testCoverageConversion", null, coverage1);
-        Map<String, Object> coverage2 = new HashMap();
+        Map<String, int[]> coverage2 = new HashMap();
         coverage2.put(method1, m1c2);
         coverage2.put(method2, m2c2);
         coverage2.put(method3, m3c1);

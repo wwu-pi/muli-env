@@ -164,7 +164,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     }
 
     @Override
-    public Map<String, Object> getCover(LogicVirtualMachine vm) {
+    public Map<String, int[]> getCover(LogicVirtualMachine vm) {
         return executionPathListener.getCover(methodName, vm);
     }
 

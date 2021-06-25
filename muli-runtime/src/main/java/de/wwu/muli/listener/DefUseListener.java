@@ -117,8 +117,15 @@ public class DefUseListener implements ExecutionPathListener {
         DefUseMethodMap map = new DefUseMethodMap();
         if (choices.containsKey(choice)) {
             map = choices.get(choice);
-        } else if(choices.containsKey(choice.getParent())){
-            map = choices.get(choice.getParent());
+        } else {
+            while(choice.getParent() != null) {
+                if(choices.containsKey(choice.getParent())){
+                    map = choices.get(choice.getParent());
+                    break;
+                } else {
+                    choice = choice.getParent();
+                }
+            }
         }
         for(Map.Entry<String, DefUseChoice> entry : defUseMap.entrySet()) {
             DefUseChoice defusechoice = entry.getValue();

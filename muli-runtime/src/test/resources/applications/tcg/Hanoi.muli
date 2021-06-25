@@ -19,7 +19,7 @@ public class MainHanoi {
 
     static int searchRegion() {
         int n free;
-        if (n < 1 || n > 11) {
+        if (n < 1 || n > 10) {
             throw Muli.fail();
         }
         Hanoi h = new Hanoi();
@@ -28,7 +28,7 @@ public class MainHanoi {
         h.applyHanoi(n, 1, 3, 2);
         // result and the counter should be the same!
         if(h.getCounter() != result){
-            System.out.println("result and counter not the same");
+            throw new IllegalStateException("result and counter not the same");
         }
         return result;
     }
@@ -36,36 +36,19 @@ public class MainHanoi {
 }
 
 
-/**
- * Copyright (c) 2011, Regents of the University of California All rights reserved.
- *
- * <p>Redistribution and use in source and binary forms, with or without modification, are permitted
- * provided that the following conditions are met:
- *
- * <p>1. Redistributions of source code must retain the above copyright notice, this list of
- * conditions and the following disclaimer.
- *
- * <p>2. Redistributions in binary form must reproduce the above copyright notice, this list of
- * conditions and the following disclaimer in the documentation and/or other materials provided with
- * the distribution.
- *
- * <p>3. Neither the name of the University of California, Berkeley nor the names of its
- * contributors may be used to endorse or promote products derived from this software without
- * specific prior written permission.
- *
- * <p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
- * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/*
+ * Origin of the benchmark:
+ *     license: MIT (see /java/jayhorn-recursive/LICENSE)
+ *     repo: https://github.com/jayhorn/cav_experiments.git
+ *     branch: master
+ *     root directory: benchmarks/recursive
+ * The benchmark was taken from the repo: 24 January 2018
  */
 
+// Taken and adjusted from https://github.com/sosy-lab/sv-benchmarks/blob/master/java/jayhorn-recursive/SatHanoi01/Main.java
 public class Hanoi {
 
-  public int counter;
+  public int counter; // removed static declaration
 
   /*
    * This function returns the optimal amount of steps,

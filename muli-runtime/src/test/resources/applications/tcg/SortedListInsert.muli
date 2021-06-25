@@ -69,17 +69,12 @@ public class SortedList {
             return this;
           }
 
-          public int limitDepth(int i){
-            int depth = 0;
+          public void limitDepth(int i, boolean b){
             SortedList list = next;
-            while(list!=null){
-                depth++;
-                if(depth == i){
-                    list.next = null;
-                }
-                list = list.next;
+            for(int depth = 0; depth < i; depth++){
+                if(b) list=list.next;
             }
-            return depth;
+            list.next = null;
           }
 
           public String toString() {
@@ -91,12 +86,10 @@ public class SortedList {
 class SortedListSearch {
     static SortedList searchRegion() {
            SortedList list free;
-           list.limitDepth(5);
+           boolean b free;
+           list.limitDepth(3, b);
            SortedList l = list;
-           while(l.next != null) {
-                if(l.next.x < l.x) throw Muli.fail();
-                l = l.next;
-           }
+
            int i free;
            list = list.insert(i);
            return list;

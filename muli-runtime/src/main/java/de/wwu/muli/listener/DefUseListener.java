@@ -14,9 +14,6 @@ import de.wwu.muli.searchtree.Choice;
 
 public class DefUseListener implements ExecutionPathListener {
 
-    private DefUseAnalyser analyser;
-    private DefUseMethod register;
-    //private DefUseChoice defusechoice;
     private Map<Choice, DefUseMethodMap> choices;
     private String methodName;
     private HashSet<String> relevantMethods;
@@ -25,12 +22,6 @@ public class DefUseListener implements ExecutionPathListener {
 
 
     public DefUseListener(LogicVirtualMachine vm){
-        analyser = new DefUseAnalyser(vm);
-        try {
-            //analyser.initializeDUG();
-        } catch (Exception e) {
-            throw new IllegalStateException(e); // TODO Better exception treatment.
-        }
         choices = new HashMap<>();
         defUseMap = new DefUseMethodMap();
         relevantMethods = new HashSet<>();
@@ -39,23 +30,26 @@ public class DefUseListener implements ExecutionPathListener {
 
     public void setMethodName(String methodName){
         this.methodName = methodName;
-        //register = analyser.transformDefUse(methodName);
         DefUseChoice defusechoice = new DefUseChoice();
         defUseMap.put(methodName, defusechoice);
     }
 
     public void executedInstruction(Instruction instruction, Frame frame, int pc){
         Method method = frame.getMethod();
+        // if the current instruction is within the search space
         if(methodName.equals(method.getName()) || relevantMethods.contains(method.getClassFile().getName()+method.getFullName())){
             if(instruction instanceof JumpInvocation){
+                // is invoked method within the search space
                 registerNewMethod(instruction, method);
             }
             DefUseChoice defusechoice = defUseMap.get(method.getName());
+            // initialize definitions if this has not already been done
             if(defusechoice.getDefs().size() == 0 && !defusechoice.getInitialDefs()){
                 defusechoice.setInitialDefs(method);
             }
             Choice ch = ((LogicVirtualMachine)frame.getVm()).getCurrentChoice();
             if(ch == null){
+                // if there has not been a choice yet, proceed with DefUse analysis
                 defusechoice.visitDefUse(instruction, pc, method);
                 return;
             }
@@ -65,6 +59,7 @@ public class DefUseListener implements ExecutionPathListener {
                 DefUseChoice defUseParent = map.get(method.getName());
                 defusechoice.addDefs(defUseParent.getDefs());
             }
+            // if for the current choice no defuses have been saved yet, save them together with the defuses of the parent choice
             if(method.getName().equals(choiceMethod.getName()) && !choices.containsKey(ch)){
                 Choice p = ch.getParent();
                 if(p!=null) {
@@ -80,9 +75,10 @@ public class DefUseListener implements ExecutionPathListener {
                         }
                     }
                 }
+                // save current DefUseChoice
                 choices.put(ch, defUseMap);
+                // initialize new DefUseChoice and add previous definitions
                 defUseMap = new DefUseMethodMap();
-                //DefUseChoice defUseParent = defUseMap.get(method.getName());
                 defusechoice = new DefUseChoice();
                 DefUseMethodMap map = choices.get(ch);
                 for(Map.Entry<String, DefUseChoice> entry : map.entrySet()) {
@@ -112,9 +108,9 @@ public class DefUseListener implements ExecutionPathListener {
     public Map<String, int[]> getCover(String methodName, LogicVirtualMachine vm) {
         Choice choice = vm.getCurrentChoice();
         Map<String, int[]> result = new HashMap<>();
-        //DefUseChoice defusechoice = defUseMap.get(methodName);
         Map<Object, Object> testOutput = new HashMap<>();
         DefUseMethodMap map = new DefUseMethodMap();
+        // retrieve last DefUseChoice Object
         if (choices.containsKey(choice)) {
             map = choices.get(choice);
         } else {
@@ -127,6 +123,7 @@ public class DefUseListener implements ExecutionPathListener {
                 }
             }
         }
+        // for each method, save defuses as an array where the index is a unique value based on the def and use pc
         for(Map.Entry<String, DefUseChoice> entry : defUseMap.entrySet()) {
             DefUseChoice defusechoice = entry.getValue();
             String method = entry.getKey();
@@ -142,15 +139,8 @@ public class DefUseListener implements ExecutionPathListener {
             for (int i = 0; i < asArray.length; i++) {
                 int value = pair(chainArray[i].getDef().getPc(), chainArray[i].getUse().getPc());
                 asArray[i] = value;
-                //if(value > max){
-                //    max = value;
-                //}
             }
             Arrays.sort(asArray);
-            //boolean[] part_result = new boolean[max+1];
-            //for (int i = 0; i < asArray.length; i++) {
-            //    part_result[asArray[i]] = true;
-            //}
             defusechoice = new DefUseChoice();
             defUseMap.put(method, defusechoice);
             result.put(method, asArray);
@@ -159,6 +149,12 @@ public class DefUseListener implements ExecutionPathListener {
         return result;
     }
 
+    /**
+     * Calculate a reproducible and unique number for two given numbers
+     * @param a int
+     * @param b int
+     * @return index
+     */
     public int pair(int a, int b){
         a++;
         b++;
@@ -180,7 +176,6 @@ public class DefUseListener implements ExecutionPathListener {
             }
         } catch (Exception e) {
             // Frame method does not match instruction method
-
         }
     }
 }

@@ -23,22 +23,21 @@ import java.util.*;
 public class DefUseChoice {
 
     private HashSet<DefVariable>  defs;
-    //private DefUseRegisters uses;
     private DefUseChains defuse;
     private boolean newInstance;
     private boolean initialDefs;
 
     public DefUseChoice (){
-        /*defs = defuse.getDefs().clone();
-        uses = defuse.getUses().clone();
-        this.defuse = new DefUseChains();
-        this.defuse.setDefUseChains(defuse.getDefUses().copyChains());*/
         this.defuse = new DefUseChains();
         newInstance = true;
         initialDefs = false;
         defs = new HashSet<DefVariable>();
     }
 
+    /**
+     * Set initial definitions for the method parameters.
+     * @param m method
+     */
     public void setInitialDefs(Method m){
         int parameters = m.getNumberOfParameters();
         for (int k = 0; k < parameters; k++){
@@ -57,10 +56,6 @@ public class DefUseChoice {
         this.defs.addAll(defs);
     }
 
-    /*public void addUses(DefUseRegisters registers){
-        this.uses.joinRegister(registers);
-    }*/
-
     public void addDefUses(DefUseChains defuse){
         this.defuse.mergeChains(defuse);
     }
@@ -68,10 +63,6 @@ public class DefUseChoice {
     public HashSet<DefVariable> getDefs(){
         return defs;
     }
-
-    /*public DefUseRegisters getUses(){
-        return uses;
-    }*/
 
     public DefUseChains getDefUse(){
         return defuse;
@@ -110,9 +101,10 @@ public class DefUseChoice {
     }
 
     /**
-     * If it is a definition, it is set to visited. If related usages have also been already passed,
-     * the corresponding defuse chain is added.
-     * @param instruction instruction pc
+     * Define the Variable Definition and add it to definitions
+     * @param instruction current instruction for definition
+     * @param i current pc
+     * @param m current method
      */
     public void visitDef(Instruction instruction, int i, Method m){
         Store defInstruction = (Store) instruction;
@@ -125,38 +117,14 @@ public class DefUseChoice {
         }
     }
 
-    /*public void updateDefUse(){
-        for (DefUseChain chain: defuse.getDefUseChains()) {
-            if(!chain.getVisited() && defs.isVisited(chain.getDef().getPc()) && uses.isVisited(chain.getUse().getPc())){
-                DefUseRegister r = uses.getRegister(chain.getUse().getPc());
-                if(r.link.size() > 1){
-                    boolean setTrue = true;
-                    for(int def: r.link.descendingSet()){
-                        if(def != chain.getDef().getPc() && defs.isVisited(def)){
-                            setTrue = false;
-                            break;
-                        } else if(def == chain.getDef().getPc()){
-                            break;
-                        }
-                    }
-                    if(setTrue){
-                        chain.setVisited(true);
-                    }
-                } else {
-                    chain.setVisited(true);
-                }
-
-            }
-        }
-    }*/
-
     /**
-     * If it is a usage, it is set to visited. If related definitions have also been already passed,
-     * the corresponding defuse chain is added.
-     * @param instruction instruction pc
+     * Define variable usage if it is not related to an object definition
+     * @param instruction current instruction for usage
+     * @param i pc of current instruction
+     * @param m current method
+     * @return use variable
      */
     public UseVariable visitUse(Instruction instruction, int i, Method m) throws InvalidInstructionInitialisationException, ExecutionException, ClassFileException {
-        // Todo eigentlich wird nur geladen, überprüfen ob auch benutzt wird?
         MugglClassLoader classLoader = m.getClassFile().getClassLoader();
         Constant[] constantPool = m.getClassFile().getConstantPool();
         Instruction[] in = m.getInstructionsAndOtherBytes();
@@ -170,8 +138,6 @@ public class DefUseChoice {
         use.setInstructionIndex(useInstruction.getLocalVariableIndex());
         use.setPc(i);
         use.setMethod(m);
-
-        //use.addMethodIndex(m.getFullName(), useInstruction.getLocalVariableIndex());
         return use;
     }
 
@@ -268,7 +234,6 @@ public class DefUseChoice {
      */
     public boolean isNotUseLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader) throws ExecutionException, ClassFileException {
         for(int i = index + 1; i < in.length; i++) {
-            // Todo when Methodinvokation und danach putfield zählt nicht
             if(in[i] instanceof ALoad) {
                 if(!isMethodInvLoad(in, i, constantPool, classLoader)){
                     return false;
@@ -282,6 +247,14 @@ public class DefUseChoice {
         return false;
     }
 
+    /**
+     * Checks whether the a Load instruction is part of a method invocation.
+     * @param in instruction array
+     * @param index index of the Load instruction
+     * @param constantPool
+     * @param classLoader
+     * @return boolean
+     */
     public boolean isMethodInvLoad(Instruction[] in, int index, Constant[] constantPool, MugglClassLoader classLoader) throws ExecutionException, ClassFileException {
         int loads = 1;
         for(int i = index + 1; i < in.length; i++) {

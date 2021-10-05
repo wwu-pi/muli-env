@@ -1,14 +1,8 @@
 package de.wwu.muli.defUse;
 
 import de.wwu.muggl.vm.classfile.ClassFileException;
-import de.wwu.muggl.vm.classfile.structures.Method;
-import de.wwu.muggl.vm.execution.nativeWrapping.TestablePrintStreamWrapper;
-import de.wwu.muli.defuse.DefUseMethod;
 import de.wwu.muli.defuse.DefUseChoice;
 import de.wwu.muli.defuse.DefUseChains;
-import de.wwu.muli.defuse.DefUseChain;
-import de.wwu.muli.defuse.DefUseRegisters;
-import de.wwu.muli.env.LazyDFSIterator;
 import de.wwu.muli.env.TestableMuliRunner;
 import de.wwu.muli.searchtree.ST;
 import org.junit.Ignore;

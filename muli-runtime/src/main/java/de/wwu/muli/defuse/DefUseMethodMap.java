@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 
+/**
+ * Class mapping the analyzed def-use chains to the method strings.
+ */
 public class DefUseMethodMap {
     private Map<String, DefUseChoice> defUseMap;
 

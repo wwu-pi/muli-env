@@ -4,7 +4,6 @@ import de.wwu.muggl.configuration.Options;
 import de.wwu.muggl.vm.classfile.ClassFile;
 import de.wwu.muggl.vm.classfile.ClassFileException;
 import de.wwu.muggl.vm.classfile.structures.Field;
-import de.wwu.muggl.vm.classfile.structures.Method;
 import de.wwu.muggl.vm.exceptions.NoExceptionHandlerFoundException;
 import de.wwu.muggl.vm.initialization.Arrayref;
 import de.wwu.muggl.vm.initialization.InitializationException;
@@ -16,9 +15,8 @@ import de.wwu.muli.vm.LogicVirtualMachine;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.ArrayList;
+import java.util.Map;
 
 import static org.junit.Assert.fail;
 
@@ -115,6 +113,7 @@ public class TestableMuliRunner extends MuliRunner {
             }
         }
         LogicVirtualMachine virtualMachine = (LogicVirtualMachine)runner.app.getVirtualMachine();
+        System.out.println("Total time: " + virtualMachine.getMeasuredTimeSoFar());
         coverageMap = virtualMachine.getExecutionListener().getResult();
         ST[] allSearchTrees = virtualMachine.getAllSearchTreesDebug().toArray(new ST[0]);
 

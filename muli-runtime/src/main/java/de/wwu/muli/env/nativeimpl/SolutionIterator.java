@@ -33,9 +33,9 @@ public class SolutionIterator extends NativeMethodProvider {
     private static ClassFile CLASS_SOLUTION = null;
     private static boolean classSolutionIsInitialised = false;
     public static boolean labelSolutions = true;
-    private static int solutionCounter = 0;
-    private static long totalSearchTime = 0L;
+    public static long totalSearchTime = 0L;
     private static long totalSolutionCount = 0L;
+    private static long startTime;
     private static boolean abortEarly = false;
 
     public static void initialiseAndRegister(MugglClassLoader classLoader) throws ClassFileException {
@@ -43,6 +43,7 @@ public class SolutionIterator extends NativeMethodProvider {
         registerNatives();
         LogicVirtualMachine vm =  ((LogicVirtualMachine) VirtualMachine.getLatestVM());
         vm.startMeasuringOverallTime();
+        startTime = System.currentTimeMillis();
     }
 
     public static void registerNatives() {
@@ -108,9 +109,6 @@ public class SolutionIterator extends NativeMethodProvider {
             Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Result " + solutionObject);
         }
         vm.resetInstructionsExecutedSinceLastSolution();
-        long timeSpent = vm.recordSearchEnded();
-        SolutionIterator.totalSearchTime += timeSpent;
-        SolutionIterator.totalSolutionCount++;
         // We clone first to not alter the objects used after backtracking during labelling
         solutionObject = cloneSolution(solutionObject);
 
@@ -120,6 +118,8 @@ public class SolutionIterator extends NativeMethodProvider {
         // Store Value node in ST.
         Value val = new Value(solutionObject);
         vm.getSearchAlgorithm().recordValue(val);
+        totalSolutionCount++;
+        totalSearchTime += (System.nanoTime() - startTime);
 
         // Maybe abort after an amount of time has elapsed -- only for evaluation purposes.
         maybeAbortEarly(vm);
@@ -154,11 +154,8 @@ public class SolutionIterator extends NativeMethodProvider {
             throw new RuntimeException(e);
         }
         vm.getCurrentFrame().setPc(nextPc);
-        solutions.add(returnValue);
         return returnValue;
     }
-
-    static List<Object> solutions = new ArrayList<>();
 
     protected static LinkedHashMap<String, Object> copyAndLabelEach(LogicVirtualMachine vm, LinkedHashMap<String, Object> toCopy) {
         LinkedHashMap<String, Object> copy = new LinkedHashMap<>();
@@ -270,18 +267,16 @@ public class SolutionIterator extends NativeMethodProvider {
             Globals.getInst().symbolicExecLogger.debug("Record solution (iterator): Exception " + solutionException);
         }
         vm.resetInstructionsExecutedSinceLastSolution();
-        SolutionIterator.totalSearchTime += vm.recordSearchEnded();
-        SolutionIterator.totalSolutionCount++;
 
         // We clone first to not alter the objects used after backtracking during labelling
         solutionException = cloneSolution(solutionException);
 
         // Label solution if enabled.
         solutionException = maybeLabel(vm, solutionException);
-
         // Store Exception node in ST.
         de.wwu.muli.searchtree.Exception exception = new de.wwu.muli.searchtree.Exception(solutionException);
         vm.getSearchAlgorithm().recordException(exception);
+        totalSearchTime += (System.nanoTime() - startTime);
 
         // Maybe abort after an amount of time has elapsed -- only for evaluation purposes.
         maybeAbortEarly(vm);

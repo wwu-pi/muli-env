@@ -12,6 +12,6 @@ public class TestTCGAbsValueStatic {
     @Test
     public void testTcg() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.TCGAbsValueStatic");
-        System.out.println(Arrays.toString(foundTrees));
+        //System.out.println(Arrays.toString(foundTrees));
     }
 }

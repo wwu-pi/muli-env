@@ -10,11 +10,14 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class MainEvenOdd {
 
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(EvenOdd::searchRegion, EvenOdd.class.getName() + ".isOdd");
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         TestSetReducer reducer = new SimpleForwardsTestSetReducer();
         tcg.setTestSetReducer(reducer);
         tcg.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+"ns");
     }
 
 }
@@ -71,7 +74,7 @@ public class EvenOdd {
 
   public static int searchRegion() {
     int n free;
-    if (n < 0 || n > 3) {
+    if (n < 0 || n > 30) {
       throw Muli.fail();
     }
     int result = isOdd(n);

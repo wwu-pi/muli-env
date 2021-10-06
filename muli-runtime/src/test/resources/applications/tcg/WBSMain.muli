@@ -290,17 +290,16 @@ public class WBSMain {
 
     /* 2021-06-14 Altered to fit Muli : HW */
 	public static void main(String[] args) {
-	    boolean checkLaunch = true; // Else update
-        Solution[] solutions = Muli.getAllSolutionsWithTestCases(
-            checkLaunch ? WBSMain::launchDriver : WBSMain::updateDriver,
-            WBS.class.getName() + (checkLaunch ? ".launch" : ".update")
-        );
-        for(Solution s : solutions){
-            TestCase<?> tc = s.testCase;
-            Object[] inputs = tc.getInputs();
-        }
-        TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
-        tcg.generateTestClassStringRepresentation();
+            long startTime = System.nanoTime();
+            boolean checkLaunch = true; // Else update
+            Solution[] solutions = Muli.getAllSolutionsWithTestCases(
+                checkLaunch ? WBSMain::launchDriver : WBSMain::updateDriver,
+                WBS.class.getName() + (checkLaunch ? ".launch" : ".update")
+            );
+            TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+            tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+            tcg.generateTestClassStringRepresentation();
+            long endTime = System.nanoTime();
+            System.out.println((endTime-startTime)+"ns");
 	}
 }

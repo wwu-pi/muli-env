@@ -10,11 +10,14 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class Main {
 
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(Main::searchRegion, Fibonacci.class.getName() + ".fibonacci");
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         TestSetReducer reducer = new SimpleForwardsTestSetReducer();
         tcg.setTestSetReducer(reducer);
         tcg.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+"ns");
     }
 
     static int searchRegion() {

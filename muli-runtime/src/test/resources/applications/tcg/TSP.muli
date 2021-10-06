@@ -11,14 +11,13 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class MainTSP {
 
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(MainTSP::searchRegion, TspSolver.class.getName() + ".solve");
-        for(Solution s : solutions){
-            TestCase<?> tc = s.testCase;
-            Object[] inputs = tc.getInputs();
-        }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+" ns");
     }
 
       public static int searchRegion() {

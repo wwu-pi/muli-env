@@ -101,18 +101,18 @@ public class SatPrimes01 {
 
   /* 2021-06-14 Altered main method to fit Muli : HW */
   public static void main(String[] args) {
-    boolean checkIsPrime = true; // Else mult
-    Solution[] solutions =
-        Muli.getAllSolutionsWithTestCases(
-            checkIsPrime ? SatPrimes01::isPrimeDriver : SatPrimes01::multDriver,
-            SatPrimes01.class.getName() + (checkIsPrime ? ".is_prime" : ".mult")
-        );
-    for(Solution s : solutions){
-        TestCase<?> tc = s.testCase;
-        Object[] inputs = tc.getInputs();
-    }
-    TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-    tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
-    tcg.generateTestClassStringRepresentation();
+        long startTime = System.nanoTime();
+
+        boolean checkIsPrime = true; // Else mult
+        Solution[] solutions =
+            Muli.getAllSolutionsWithTestCases(
+                checkIsPrime ? SatPrimes01::isPrimeDriver : SatPrimes01::multDriver,
+                SatPrimes01.class.getName() + (checkIsPrime ? ".is_prime" : ".mult")
+            );
+        TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+        tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+        tcg.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+" ns");
   }
 }

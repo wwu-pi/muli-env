@@ -57,13 +57,12 @@ public class SatGcd {
 
   /* 2021-06-14 Altered to fit Muli : HW */
   public static void main(String[] args) {
-    Solution[] solutions = Muli.getAllSolutionsWithTestCases(SatGcd::driver, SatGcd.class.getName() + ".gcd");
-    for(Solution s : solutions){
-        TestCase<?> tc = s.testCase;
-        Object[] inputs = tc.getInputs();
-    }
-    TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
-    tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
-    tcg.generateTestClassStringRepresentation();
+     long startTime = System.nanoTime();
+     Solution[] solutions = Muli.getAllSolutionsWithTestCases(SatGcd::driver, SatGcd.class.getName() + ".gcd");
+     TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
+     tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
+     tcg.generateTestClassStringRepresentation();
+     long endTime = System.nanoTime();
+     System.out.println((endTime-startTime)+"ns");
   }
 }

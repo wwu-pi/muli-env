@@ -11,7 +11,7 @@ public class SatPrimes01Test {
     @Test
     public final void testSatPrimes01() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.SatPrimes01");
-        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
-        System.out.println("Done");
+        //Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        //System.out.println("Done");
     }
 }

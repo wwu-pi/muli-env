@@ -8,15 +8,14 @@ import de.wwu.muli.tcg.testsetreducer.*;
 
 public class TCGBooleanCounter {
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(TCGBooleanCounter::driver, BooleanCounter.class.getName() + ".count");
-        for (Solution s : solutions) {
-            System.out.println("Input: " + s.testCase.getInput("this"));
-            System.out.println("Result: " + s.value);
-        }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         TestSetReducer reducer = new SimpleForwardsTestSetReducer();
         tcg.setTestSetReducer(reducer);
         tcg.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+"ns");
     }
 
     public static int driver() {

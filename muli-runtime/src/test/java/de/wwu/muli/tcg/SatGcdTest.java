@@ -11,8 +11,8 @@ public class SatGcdTest {
     @Test
     public final void testSatGcd() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.SatGcd");
-        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
-        System.out.println("Done");
+        //Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        //System.out.println("Done");
     }
 
 }

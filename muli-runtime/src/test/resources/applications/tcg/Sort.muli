@@ -10,14 +10,13 @@ import de.wwu.muli.tcg.testsetreducer.*;
 public class MainSort {
 
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(MainSort::searchRegion, Sort.class.getName() + ".sort");
-        for(Solution s : solutions){
-            TestCase<?> tc = s.testCase;
-            Object[] inputs = tc.getInputs();
-        }
         TestCaseGenerator tcg = TestCaseGenerator.get(solutions);
         tcg.setTestSetReducer(new SimpleForwardsTestSetReducer());
         tcg.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+" ns");
     }
 
     static int[] searchRegion() {

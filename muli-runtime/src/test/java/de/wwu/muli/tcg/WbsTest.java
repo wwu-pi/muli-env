@@ -11,8 +11,8 @@ public class WbsTest {
     @Test
     public final void testWbs() throws InterruptedException, ClassFileException {
         ST[] foundTrees = TestableMuliRunner.runApplication("applications.tcg.WBSMain");
-        Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
-        System.out.println("Done");
+        //Object[] leaves = LazyDFSIterator.stream(foundTrees[0]).toArray();
+        //System.out.println("Done");
     }
 
 }

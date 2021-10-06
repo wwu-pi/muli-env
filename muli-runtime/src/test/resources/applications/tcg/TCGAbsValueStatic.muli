@@ -7,9 +7,12 @@ import de.wwu.muli.tcg.TestCaseGenerator;
 
 public class TCGAbsValueStatic {
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         Solution[] solutions = Muli.getAllSolutionsWithTestCases(DriverClass2::driver, TCGAbsValueStatic.class.getName() + ".abs");
         TestCaseGenerator gen = TestCaseGenerator.get(solutions);
         gen.generateTestClassStringRepresentation();
+        long endTime = System.nanoTime();
+        System.out.println((endTime-startTime)+"ns");
     }
     public static int abs(int i) {
         if (i < 0) {

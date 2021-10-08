@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class DefUseChoice {
 
-    private HashSet<DefVariable>  defs;
+    private ArrayDeque<DefVariable>  defs;
     private DefUseChains defuse;
     private boolean newInstance;
     private boolean initialDefs;
@@ -31,7 +31,7 @@ public class DefUseChoice {
         this.defuse = new DefUseChains();
         newInstance = true;
         initialDefs = false;
-        defs = new HashSet<DefVariable>();
+        defs = new ArrayDeque<>();
     }
 
     /**
@@ -45,22 +45,27 @@ public class DefUseChoice {
             def.setInstructionIndex(k);
             def.setPc(-1);
             def.setMethod(m);
-            if(!defExists(def, defs)) {
-                defs.add(def);
+            if(defExists(def, defs)) {
+                defs.remove(def);
             }
+            defs.add(def);
         }
         initialDefs = true;
     }
 
-    public void addDefs(HashSet<DefVariable> defs){
-        this.defs.addAll(defs);
+    public void addDefs(ArrayDeque<DefVariable> defs){
+        for(DefVariable d:defs){
+            if(!defExists(d, this.defs)){
+                this.defs.add(d);
+            }
+        }
     }
 
     public void addDefUses(DefUseChains defuse){
         this.defuse.mergeChains(defuse);
     }
 
-    public HashSet<DefVariable> getDefs(){
+    public ArrayDeque<DefVariable> getDefs(){
         return defs;
     }
 
@@ -112,9 +117,10 @@ public class DefUseChoice {
         def.setInstructionIndex(defInstruction.getLocalVariableIndex());
         def.setPc(i);
         def.setMethod(m);
-        if (!defExists(def, defs)) {
-            defs.add(def);
+        if (defExists(def, defs)) {
+            defs.remove(def);
         }
+        defs.addFirst(def);
     }
 
     /**
@@ -167,9 +173,10 @@ public class DefUseChoice {
                 def.setInstructionIndex(loadInstruction.getLocalVariableIndex());
                 def.setPc(i);
                 def.setMethod(m);
-                if (!defExists(def, defs)) {
-                    defs.add(def);
+                if (defExists(def, defs)) {
+                    defs.remove(def);
                 }
+                defs.addFirst(def);
                 break;
             } else {
                 back--;
@@ -191,20 +198,15 @@ public class DefUseChoice {
      * @param defs set of definitions
      * @return variable definition
      */
-    public DefVariable findDef(UseVariable use, HashSet<DefVariable> defs) {
+    public DefVariable findDef(UseVariable use, ArrayDeque<DefVariable> defs) {
         DefVariable output = null;
         if(use == null){
             return output;
         }
         for(DefVariable def: defs){
-            if(def.getInstructionIndex() == use.getInstructionIndex() && def.getMethod().getName().equals(use.getMethod().getName())){
-                if(output != null) {
-                    if(output.getPc() < def.getPc()){
-                        output = def;
-                    }
-                } else {
-                    output = def;
-                }
+            if(def.getInstructionIndex() == use.getInstructionIndex() && def.getMethod().getName().equals(use.getMethod().getName())) {
+                output = def;
+                return output;
             }
         }
         return output;
@@ -216,7 +218,7 @@ public class DefUseChoice {
      * @param defs set of variable defitions
      * @return boolean
      */
-    public boolean defExists(DefVariable def, HashSet<DefVariable> defs){
+    public boolean defExists(DefVariable def, ArrayDeque<DefVariable> defs){
         for(DefVariable d: defs){
             if(def.equals(d)){
                 return true;

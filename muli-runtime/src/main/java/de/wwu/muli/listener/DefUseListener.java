@@ -43,13 +43,13 @@ public class DefUseListener implements ExecutionPathListener {
                 registerNewMethod(instruction, method);
             }
             DefUseChoice defusechoice = defUseMap.get(method.getName());
-            // initialize definitions if this has not already been done
-            if(defusechoice.getDefs().size() == 0 && !defusechoice.getInitialDefs()){
-                defusechoice.setInitialDefs(method);
-            }
+
             Choice ch = ((LogicVirtualMachine)frame.getVm()).getCurrentChoice();
             if(ch == null){
                 // if there has not been a choice yet, proceed with DefUse analysis
+                if(defusechoice.getDefs().size() == 0 && !defusechoice.getInitialDefs()){
+                    defusechoice.setInitialDefs(method);
+                }
                 defusechoice.visitDefUse(instruction, pc, method);
                 return;
             }
@@ -58,6 +58,7 @@ public class DefUseListener implements ExecutionPathListener {
                 DefUseMethodMap map = choices.get(ch);
                 DefUseChoice defUseParent = map.get(method.getName());
                 defusechoice.addDefs(defUseParent.getDefs());
+                defusechoice.setNewInstance(false);
             }
             // if for the current choice no defuses have been saved yet, save them together with the defuses of the parent choice
             if(method.getName().equals(choiceMethod.getName()) && !choices.containsKey(ch)){
@@ -91,6 +92,10 @@ public class DefUseListener implements ExecutionPathListener {
                         defusechoice = newDefuse;
                     }
                 }
+            }
+            // initialize definitions if this has not already been done
+            if(defusechoice.getDefs().size() == 0 && !defusechoice.getInitialDefs()){
+                defusechoice.setInitialDefs(method);
             }
             defusechoice.visitDefUse(instruction, pc, method);
         }

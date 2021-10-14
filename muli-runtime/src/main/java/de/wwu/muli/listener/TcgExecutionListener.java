@@ -27,11 +27,9 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
     }
 
     public void setDefUseListener(LogicVirtualMachine vm) {
-        if (executionPathListener == null) {
+        if (methodName != null && executionPathListener == null) {
             executionPathListener = new DefUseListener(vm);
-            if (methodName != null) {
-                executionPathListener.setMethodName(methodName);
-            }
+            executionPathListener.setMethodName(methodName);
         }
     }
 
@@ -53,7 +51,7 @@ public class TcgExecutionListener implements ExecutionListener, TcgListener {
 
     @Override
     public Instruction beforeExecuteInstruction(Instruction instruction, Method method, Frame frame) {
-        if (trackInputs == null
+        if (methodName != null && trackInputs == null
                 && method.getName().equals(methodName)
                 && method.getClassFile().getName().equals(className)) {
             isObjectMethod = !method.isAccStatic();
